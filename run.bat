@@ -1,23 +1,24 @@
 @echo off
 title BAO TANG QUOC GIA VIET NAM - HE THONG QUAN LY
+cd /d "%~dp0"
+
 cls
 echo ===================================================
 echo   BAO TANG QUOC GIA VIET NAM - MUSEUM MANAGEMENT
 echo ===================================================
 echo.
+echo Dang khoi dong he thong va mo Google Chrome...
+echo.
 
-:: Kiểm tra xem Port 5173 đã được lắng nghe chưa
-netstat -ano | findstr ":5173" >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [!] Dev Server hien chua chay. Dang tu dong khoi dong Server...
-    start /min "Museum Dev Server" cmd /c "npm.cmd run dev"
-    echo [*] Dang cho Server nạp trong 3 giay...
-    timeout /t 3 /nobreak >nul
-) else (
-    echo [*] Dev Server dang hoat dong san sang!
-)
+:: Chạy Dev Server trong một cửa sổ Command Prompt riêng biệt
+start "Museum_Server" cmd /k "cd /d "%~dp0" && npm.cmd run dev"
 
-echo [*] Dang mo Google Chrome va truy cap he thong...
-start "" "http://localhost:5173/"
+:: Chờ 3 giây bằng lệnh ping an toàn (không bao giờ bị crash)
+ping 127.0.0.1 -n 4 >nul
 
+:: Mở Google Chrome trực tiếp tới địa chỉ 127.0.0.1:5173
+start "" "http://127.0.0.1:5173/"
+
+echo He thong da khoi chay thanh cong!
+ping 127.0.0.1 -n 2 >nul
 exit
