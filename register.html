@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng Ký Tài Khoản - Bảo Tàng Quốc Gia Việt Nam</title>
+  
+  <!-- Google Fonts: Be Vietnam Pro -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Auth Custom Stylesheet -->
+  <link rel="stylesheet" href="assets/css/auth.css">
+</head>
+<body>
+
+  <div class="auth-wrapper" style="max-width: 520px;">
+    <div class="auth-card">
+      
+      <!-- Brand Logo Header -->
+      <div class="auth-brand" style="text-align: center; margin-bottom: 1.5rem;">
+        <div class="brand-icon">🏛️</div>
+        <h1 class="brand-title">BẢO TÀNG QUỐC GIA VIỆT NAM</h1>
+        <p class="brand-subtitle">Tạo Tài Khoản Khách Tham Quan / Nhân Viên</p>
+      </div>
+
+      <!-- Top Banner Alert Notification -->
+      <div id="auth-alert" class="alert-box"></div>
+
+      <!-- Register Form -->
+      <form id="register-form" novalidate>
+        
+        <!-- Họ và tên -->
+        <div class="form-group">
+          <label for="fullname" class="form-label">
+            Họ và tên <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              id="fullname" 
+              class="form-input" 
+              placeholder="VD: Nguyễn Văn A"
+              autocomplete="name"
+            >
+          </div>
+          <span class="error-msg" id="fullname-error"></span>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email" class="form-label">
+            Địa chỉ Email <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="email" 
+              id="email" 
+              class="form-input" 
+              placeholder="email@example.com"
+              autocomplete="off"
+            >
+          </div>
+          <span class="error-msg" id="email-error"></span>
+        </div>
+
+        <!-- Tên đăng nhập -->
+        <div class="form-group">
+          <label for="username" class="form-label">
+            Tên đăng nhập <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              id="username" 
+              class="form-input" 
+              placeholder="VD: nguyenvana"
+              autocomplete="username"
+            >
+          </div>
+          <span class="error-msg" id="username-error"></span>
+        </div>
+
+        <!-- Mật khẩu -->
+        <div class="form-group">
+          <label for="password" class="form-label">
+            Mật khẩu <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="password" 
+              class="form-input" 
+              placeholder="Tối thiểu 8 ký tự, gồm chữ hoa, chữ thường và số"
+              autocomplete="new-password"
+            >
+          </div>
+          <span class="error-msg" id="password-error"></span>
+        </div>
+
+        <!-- Xác nhận mật khẩu -->
+        <div class="form-group">
+          <label for="confirm-password" class="form-label">
+            Xác nhận mật khẩu <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="confirm-password" 
+              class="form-input" 
+              placeholder="Nhập lại mật khẩu"
+              autocomplete="new-password"
+            >
+          </div>
+          <span class="error-msg" id="confirm-password-error"></span>
+        </div>
+
+        <!-- Số điện thoại (Tùy chọn) -->
+        <div class="form-group">
+          <label for="phone" class="form-label">
+            Số điện thoại <span style="font-weight: 400; color: #9CA3AF;">(Tùy chọn)</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="tel" 
+              id="phone" 
+              class="form-input" 
+              placeholder="VD: 0912345678"
+              autocomplete="tel"
+            >
+          </div>
+          <span class="error-msg" id="phone-error"></span>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-submit" style="margin-top: 0.5rem;">
+          <span class="spinner"></span>
+          <span class="btn-text">Đăng ký tài khoản</span>
+        </button>
+
+      </form>
+
+      <!-- Footer Link to Login -->
+      <div class="auth-footer">
+        Bạn đã có tài khoản? 
+        <a href="login.html">&larr; Quay lại Đăng nhập</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Auth JS Logic -->
+  <script src="assets/js/auth.js"></script>
+
+</body>
+</html>

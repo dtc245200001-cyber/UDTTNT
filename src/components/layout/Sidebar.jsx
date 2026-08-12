@@ -46,7 +46,7 @@ export const Sidebar = () => {
             <Landmark className="w-6 h-6" />
           </div>
           <div className="leading-tight">
-            <div className="font-extrabold text-lg tracking-wider text-white">BẢO TÀNG</div>
+            <div className="font-extrabold text-sm tracking-wider text-white">BẢO TÀNG QUỐC GIA</div>
             <div className="font-semibold text-xs tracking-widest text-museum-gold-lt uppercase">VIỆT NAM</div>
           </div>
         </div>

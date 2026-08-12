@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - BẢO TÀNG QUỐC GIA VIỆT NAM</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/auth.css">
+</head>
+<body style="align-items: stretch; justify-content: flex-start; padding: 0;">
+
+  <div style="background-color: #ffffff; border-b: 1px solid #E5E7EB; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <span style="font-size: 1.75rem;">🏛️</span>
+      <div>
+        <h1 style="font-size: 1.125rem; font-weight: 800; color: #5B3A1F; margin: 0;">BẢO TÀNG QUỐC GIA VIỆT NAM</h1>
+        <span style="font-size: 0.75rem; color: #B8860B; font-weight: 600; text-transform: uppercase;">Trang Quản Trị Hệ Thống</span>
+      </div>
+    </div>
+
+    <button id="btn-logout" class="btn-submit" style="width: auto; padding: 0.5rem 1.25rem; background-color: #DC2626;">
+      Đăng xuất
+    </button>
+  </div>
+
+  <main style="max-width: 1000px; margin: 3rem auto; padding: 0 1.5rem; width: 100%;">
+    <div class="auth-card" style="max-width: 100%;">
+      <h2 style="color: #5B3A1F; font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5rem;">
+        🎉 Đăng nhập thành công!
+      </h2>
+      <p style="color: #6B7280; font-size: 0.875rem; margin-bottom: 1.5rem;">
+        Chào mừng bạn đã truy cập vào Hệ thống Quản lý Bảo tàng Việt Nam.
+      </p>
+
+      <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1.5rem;">
+        <h3 style="font-size: 0.875rem; font-weight: 700; color: #5B3A1F; margin-bottom: 0.5rem;">
+          🔑 Thông tin Phiên Đăng Nhập (Auth Token):
+        </h3>
+        <code id="token-display" style="font-family: monospace; font-size: 0.8125rem; word-break: break-all; color: #B8860B; font-weight: 600;">
+          Đang nạp token...
+        </code>
+      </div>
+
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="login.html" class="btn-submit" style="width: auto; background-color: #5B3A1F; text-decoration: none;">
+          &larr; Trở về Trang Đăng Nhập
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function() {
+      // Check auth token
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      const tokenDisplay = document.getElementById('token-display');
+      if (tokenDisplay) {
+        tokenDisplay.textContent = token;
+      }
+
+      const btnLogout = document.getElementById('btn-logout');
+      if (btnLogout) {
+        btnLogout.addEventListener('click', function() {
+          localStorage.removeItem('authToken');
+          window.location.href = 'login.html';
+        });
+      }
+    })();
+  </script>
+
+</body>
+</html>

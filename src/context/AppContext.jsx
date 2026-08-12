@@ -16,12 +16,21 @@ export const AppProvider = ({ children }) => {
   const [ticketStatsState] = useState(initialTicketStats);
   const [categoriesList] = useState(initialCategories);
 
-  // User list state with LocalStorage persistence
+  // User list state with LocalStorage persistence & auto-merge initial users
   const [usersList, setUsersList] = useState(() => {
     const savedUsers = localStorage.getItem('museum_users');
     if (savedUsers) {
       try {
-        return JSON.parse(savedUsers);
+        let parsed = JSON.parse(savedUsers);
+        const adminIndex = parsed.findIndex((u) => u.email.toLowerCase() === 'admin@gmail.com');
+        if (adminIndex !== -1) {
+          parsed[adminIndex].password = 'Admin@123';
+          parsed[adminIndex].role = 'admin';
+          parsed[adminIndex].roleLabel = 'Quản trị viên';
+        } else {
+          parsed.unshift(initialUsers[0]);
+        }
+        return parsed;
       } catch (e) {
         console.error('Failed to parse museum_users from localStorage', e);
       }
@@ -34,7 +43,12 @@ export const AppProvider = ({ children }) => {
     const savedCurrentUser = localStorage.getItem('museum_current_user');
     if (savedCurrentUser) {
       try {
-        return JSON.parse(savedCurrentUser);
+        let userObj = JSON.parse(savedCurrentUser);
+        if (userObj.email?.toLowerCase() === 'admin@gmail.com') {
+          userObj.role = 'admin';
+          userObj.roleLabel = 'Quản trị viên';
+        }
+        return userObj;
       } catch (e) {
         console.error('Failed to parse museum_current_user from localStorage', e);
       }
@@ -102,8 +116,6 @@ export const AppProvider = ({ children }) => {
       return { success: false, message: 'Email đã tồn tại' };
     }
 
-    // SECURITY NOTE: Self-registration from public form is strictly locked to 'visitor' role.
-    // Admin accounts must be created internally or seeded by existing administrators.
     const newUser = {
       id: `USR${String(usersList.length + 1).padStart(3, '0')}`,
       name: userData.name.trim(),
@@ -160,6 +172,58 @@ export const AppProvider = ({ children }) => {
     addToast(`Đã xóa hiện vật "${item?.name || id}" thành công!`, 'error');
   };
 
+  const updateUserRole = (userId, newRole) => {
+    const updatedUsers = usersList.map((u) => {
+      if (u.id === userId) {
+        const roleLabel = newRole === 'admin' ? 'Quản trị viên' : 'Khách tham quan';
+        return { ...u, role: newRole, roleLabel };
+      }
+      return u;
+    });
+
+    setUsersList(updatedUsers);
+    localStorage.setItem('museum_users', JSON.stringify(updatedUsers));
+
+    if (currentUser && currentUser.id === userId) {
+      const updatedCurrent = {
+        ...currentUser,
+        role: newRole,
+        roleLabel: newRole === 'admin' ? 'Quản trị viên' : 'Khách tham quan',
+      };
+      setCurrentUser(updatedCurrent);
+      localStorage.setItem('museum_current_user', JSON.stringify(updatedCurrent));
+    }
+
+    const targetUser = usersList.find((u) => u.id === userId);
+    addToast(
+      `Đã chuyển quyền cho "${targetUser?.name || userId}" thành ${
+        newRole === 'admin' ? 'Quản trị viên (Admin)' : 'Khách tham quan (Visitor)'
+      }!`,
+      'success'
+    );
+    return { success: true };
+  };
+
+  const addUser = (newUser) => {
+    const createdUser = {
+      id: `USR${String(usersList.length + 1).padStart(3, '0')}`,
+      name: newUser.name || newUser.email.split('@')[0],
+      email: newUser.email,
+      password: newUser.password || '123456',
+      role: newUser.role || 'visitor',
+      roleLabel: newUser.role === 'admin' ? 'Quản trị viên' : 'Khách tham quan',
+      status: 'Hoạt động',
+      avatar: newUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+      joinedAt: new Date().toISOString().split('T')[0],
+    };
+
+    const updatedUsers = [createdUser, ...usersList];
+    setUsersList(updatedUsers);
+    localStorage.setItem('museum_users', JSON.stringify(updatedUsers));
+    addToast(`Đã tạo tài khoản "${createdUser.name}" (${createdUser.roleLabel}) thành công!`, 'success');
+    return { success: true, user: createdUser };
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -169,6 +233,8 @@ export const AppProvider = ({ children }) => {
         register,
         logout,
         users: usersList,
+        updateUserRole,
+        addUser,
         artifacts: artifactsList,
         exhibitions: exhibitionsList,
         events: eventsList,

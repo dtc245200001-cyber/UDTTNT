@@ -21,7 +21,7 @@ export const AuthLayout = () => {
             <Landmark className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-xl font-black tracking-widest text-white">BẢO TÀNG VIỆT NAM</h1>
+            <h1 className="text-xl font-black tracking-widest text-white">BẢO TÀNG QUỐC GIA VIỆT NAM</h1>
             <p className="text-xs font-semibold text-museum-gold-lt uppercase tracking-widest">
               Hệ Thống Quản Lý & Khám Phá Di Sản
             </p>
@@ -58,7 +58,7 @@ export const AuthLayout = () => {
             <div className="w-8 h-8 rounded-xl bg-museum-gold flex items-center justify-center text-white shadow-xs">
               <Landmark className="w-5 h-5" />
             </div>
-            <span className="font-extrabold text-sm text-museum-brown tracking-wider">BẢO TÀNG VIỆT NAM</span>
+            <span className="font-extrabold text-sm text-museum-brown tracking-wider">BẢO TÀNG QUỐC GIA VIỆT NAM</span>
           </div>
         </div>
 

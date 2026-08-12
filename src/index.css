@@ -32,3 +32,13 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #5B3A1F;
 }
+
+/* Block Chrome/Edge browser autofill light blue background & prefilled styling */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #F9FAFB inset !important;
+  -webkit-text-fill-color: #2D241E !important;
+  transition: background-color 500000s ease-in-out 0s !important;
+}

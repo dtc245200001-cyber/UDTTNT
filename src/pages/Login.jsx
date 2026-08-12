@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { Mail, Lock, LogIn, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, LogIn } from 'lucide-react';
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -12,12 +12,16 @@ export const Login = () => {
   const [rememberMe, setRememberMe] = useState(true);
   const [errors, setErrors] = useState({});
 
+  // Ensure fields start empty on mount to defeat browser autofill
+  useEffect(() => {
+    setEmail('');
+    setPassword('');
+  }, []);
+
   const validate = () => {
     const newErrors = {};
     if (!email.trim()) {
       newErrors.email = 'Vui lòng nhập địa chỉ email.';
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Địa chỉ email không đúng định dạng.';
     }
     if (!password) {
       newErrors.password = 'Vui lòng nhập mật khẩu.';
@@ -40,17 +44,6 @@ export const Login = () => {
     }
   };
 
-  // Quick fill for testing
-  const fillSampleAdmin = () => {
-    setEmail('admin@baotang.gov.vn');
-    setPassword('admin123');
-  };
-
-  const fillSampleVisitor = () => {
-    setEmail('visitor@gmail.com');
-    setPassword('visitor123');
-  };
-
   return (
     <div className="space-y-6 animate-fadeIn">
       <div>
@@ -62,30 +55,11 @@ export const Login = () => {
         </p>
       </div>
 
-      {/* Quick Test Accounts Pill */}
-      <div className="p-3 bg-museum-cream/70 rounded-xl border border-museum-gold/30 space-y-2 text-xs">
-        <div className="font-bold text-museum-brown flex items-center justify-between">
-          <span>Tài khoản thử nghiệm nhanh:</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={fillSampleAdmin}
-            className="px-2.5 py-1 bg-museum-brown text-white font-semibold rounded-lg hover:bg-museum-brown-dk transition-colors"
-          >
-            🔑 Admin (Quản trị)
-          </button>
-          <button
-            type="button"
-            onClick={fillSampleVisitor}
-            className="px-2.5 py-1 bg-museum-gold text-white font-semibold rounded-lg hover:bg-museum-gold-lt transition-colors"
-          >
-            👤 Visitor (Khách)
-          </button>
-        </div>
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+        {/* Dummy inputs to defeat browser autofill */}
+        <input type="text" name="fake_email_prevent_autofill" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
+        <input type="password" name="fake_password_prevent_autofill" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
 
-      <form onSubmit={handleSubmit} className="space-y-4">
         {/* Email Field */}
         <div>
           <label className="block text-xs font-bold text-museum-brown mb-1.5">
@@ -94,10 +68,12 @@ export const Login = () => {
           <div className="relative">
             <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
-              type="email"
+              type="text"
+              name="user_email_login_no_autofill"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="VD: admin@baotang.gov.vn"
+              autoComplete="new-password"
               className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-museum-gold transition-colors ${
                 errors.email ? 'border-danger bg-red-50' : 'border-gray-200'
               }`}
@@ -127,9 +103,11 @@ export const Login = () => {
             <Lock className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="password"
+              name="user_password_login_no_autofill"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              autoComplete="new-password"
               className={`w-full pl-10 pr-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border focus:outline-none focus:ring-2 focus:ring-museum-gold transition-colors ${
                 errors.password ? 'border-danger bg-red-50' : 'border-gray-200'
               }`}

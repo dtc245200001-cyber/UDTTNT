@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng Nhập - Bảo Tàng Quốc Gia Việt Nam</title>
+  
+  <!-- Google Fonts: Be Vietnam Pro -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Auth Custom Stylesheet -->
+  <link rel="stylesheet" href="assets/css/auth.css">
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      
+      <!-- Brand Logo Header -->
+      <div class="auth-brand" style="text-align: center; margin-bottom: 1.75rem;">
+        <div class="brand-icon">🏛️</div>
+        <h1 class="brand-title">BẢO TÀNG QUỐC GIA VIỆT NAM</h1>
+        <p class="brand-subtitle">Hệ Thống Quản Lý & Khám Phá Di Sản</p>
+      </div>
+
+      <!-- Top Banner Alert Notification -->
+      <div id="auth-alert" class="alert-box"></div>
+
+      <!-- Login Form -->
+      <form id="login-form" novalidate>
+        
+        <!-- Tên đăng nhập hoặc Email -->
+        <div class="form-group">
+          <label for="identity" class="form-label">
+            Tên đăng nhập hoặc Email <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              id="identity" 
+              class="form-input" 
+              placeholder="VD: admin@baotang.gov.vn"
+              autocomplete="off"
+            >
+          </div>
+          <span class="error-msg" id="identity-error"></span>
+        </div>
+
+        <!-- Mật khẩu -->
+        <div class="form-group">
+          <label for="password" class="form-label">
+            Mật khẩu <span class="required">*</span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="password" 
+              id="password" 
+              class="form-input" 
+              placeholder="••••••••"
+              autocomplete="current-password"
+            >
+          </div>
+          <span class="error-msg" id="password-error"></span>
+        </div>
+
+        <!-- Options: Ghi nhớ & Quên mật khẩu -->
+        <div class="form-options">
+          <label class="checkbox-label">
+            <input type="checkbox" id="remember" checked>
+            <span>Ghi nhớ đăng nhập</span>
+          </label>
+          <a href="#" class="forgot-link" onclick="alert('Vui lòng liên hệ Quản trị viên hệ thống để khôi phục mật khẩu!'); return false;">
+            Quên mật khẩu?
+          </a>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn-submit">
+          <span class="spinner"></span>
+          <span class="btn-text">Đăng nhập</span>
+        </button>
+
+      </form>
+
+      <!-- Footer Link to Register -->
+      <div class="auth-footer">
+        Bạn chưa có tài khoản? 
+        <a href="register.html">Đăng ký ngay &rarr;</a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Auth JS Logic -->
+  <script src="assets/js/auth.js"></script>
+
+</body>
+</html>

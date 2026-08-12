@@ -1,5 +1,16 @@
 export const users = [
   {
+    id: 'USR000',
+    name: 'Quản trị viên',
+    email: 'admin@gmail.com',
+    password: 'Admin@123',
+    role: 'admin',
+    roleLabel: 'Quản trị viên',
+    status: 'Hoạt động',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    joinedAt: '2024-01-01',
+  },
+  {
     id: 'USR001',
     name: 'Nguyễn Văn Quản',
     email: 'admin@baotang.gov.vn',
@@ -7,7 +18,7 @@ export const users = [
     role: 'admin',
     roleLabel: 'Quản trị viên',
     status: 'Hoạt động',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
     joinedAt: '2023-01-10',
   },
   {
@@ -29,7 +40,7 @@ export const users = [
     role: 'admin',
     roleLabel: 'Hướng dẫn viên',
     status: 'Hoạt động',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150',
     joinedAt: '2023-06-20',
   },
   {

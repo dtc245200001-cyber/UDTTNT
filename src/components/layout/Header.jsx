@@ -12,11 +12,12 @@ import {
   Star,
   Ticket,
   CalendarDays,
+  Globe,
 } from 'lucide-react';
 
 export const Header = () => {
   const navigate = useNavigate();
-  const { setIsMobileSidebarOpen, globalSearch, setGlobalSearch } = useApp();
+  const { setIsMobileSidebarOpen, globalSearch, setGlobalSearch, currentUser, logout } = useApp();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -51,6 +52,11 @@ export const Header = () => {
     } else {
       navigate('/artifacts');
     }
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   return (
@@ -88,7 +94,17 @@ export const Header = () => {
       </div>
 
       {/* Right Action Icons & Profile */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
+        {/* Link to Visitor Public Site */}
+        <button
+          onClick={() => navigate('/')}
+          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 border border-museum-gold/40 text-museum-brown font-semibold text-xs rounded-full hover:bg-museum-cream transition-colors"
+          title="Xem giao diện Khách tham quan"
+        >
+          <Globe className="w-3.5 h-3.5 text-museum-gold" />
+          <span>Trang công khai</span>
+        </button>
+
         {/* Notification Bell Dropdown */}
         <div className="relative">
           <button
@@ -142,25 +158,25 @@ export const Header = () => {
               setShowUserMenu(!showUserMenu);
               setShowNotifications(false);
             }}
-            className="flex items-center gap-3 p-1.5 rounded-full hover:bg-museum-cream/60 transition-colors"
+            className="flex items-center gap-2.5 p-1.5 rounded-full hover:bg-museum-cream/60 transition-colors"
           >
             <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
-              alt="Admin Avatar"
+              src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+              alt={currentUser?.name || 'Admin'}
               className="w-10 h-10 rounded-full object-cover border-2 border-museum-gold/40 shadow-xs"
             />
             <div className="hidden sm:block text-left leading-tight">
-              <div className="font-bold text-sm text-museum-brown">Admin</div>
-              <div className="text-xs text-gray-500 font-medium">Quản trị viên</div>
+              <div className="font-bold text-sm text-museum-brown">{currentUser?.name || 'Admin'}</div>
+              <div className="text-xs text-gray-500 font-medium">{currentUser?.roleLabel || 'Quản trị viên'}</div>
             </div>
             <ChevronDown className="w-4 h-4 text-gray-500 hidden sm:block" />
           </button>
 
           {showUserMenu && (
-            <div className="absolute right-0 mt-3 w-52 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-fadeIn">
+            <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-fadeIn">
               <div className="px-4 py-2 border-b border-gray-100 sm:hidden">
-                <p className="font-bold text-sm text-museum-brown">Admin</p>
-                <p className="text-xs text-gray-500">Quản trị viên</p>
+                <p className="font-bold text-sm text-museum-brown">{currentUser?.name || 'Admin'}</p>
+                <p className="text-xs text-gray-500">{currentUser?.roleLabel || 'Quản trị viên'}</p>
               </div>
               <button
                 onClick={() => {
@@ -184,10 +200,7 @@ export const Header = () => {
               </button>
               <div className="my-1 border-t border-gray-100" />
               <button
-                onClick={() => {
-                  setShowUserMenu(false);
-                  alert('Đã đăng xuất hệ thống!');
-                }}
+                onClick={handleLogout}
                 className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-rose-50 flex items-center gap-2.5 font-medium transition-colors"
               >
                 <LogOut className="w-4 h-4" />
