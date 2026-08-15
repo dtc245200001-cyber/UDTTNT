@@ -224,6 +224,120 @@ export const AppProvider = ({ children }) => {
     return { success: true, user: createdUser };
   };
 
+  // Event registrations list state
+  const [eventRegistrationsList, setEventRegistrationsList] = useState(() => {
+    const saved = localStorage.getItem('museum_event_registrations');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse museum_event_registrations', e);
+      }
+    }
+    return [];
+  });
+
+  const registerForEvent = (registrationData) => {
+    const targetId = typeof registrationData === 'object' ? registrationData.eventId : registrationData;
+    const ev = eventsList.find((e) => e.id === targetId) || {
+      id: targetId,
+      title: registrationData?.eventTitle || 'Sự kiện Bảo tàng',
+    };
+
+    const newRecord = {
+      id: `EVREG-${Date.now()}`,
+      eventId: targetId,
+      eventTitle: registrationData?.eventTitle || ev.title,
+      name: registrationData?.name ? registrationData.name.trim() : (currentUser?.name || 'Khách tham quan'),
+      phone: registrationData?.phone ? registrationData.phone.trim() : 'N/A',
+      email: registrationData?.email ? registrationData.email.trim() : (currentUser?.email || 'N/A'),
+      visitDate: registrationData?.visitDate || new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+
+    const updatedRegistrations = [newRecord, ...eventRegistrationsList];
+    setEventRegistrationsList(updatedRegistrations);
+    localStorage.setItem('museum_event_registrations', JSON.stringify(updatedRegistrations));
+
+    setEventsList((prev) =>
+      prev.map((e) => {
+        if (e.id === targetId) {
+          const currentCount = e.registered || 0;
+          const maxSeats = e.seats || 100;
+          return { ...e, registered: Math.min(maxSeats, currentCount + 1) };
+        }
+        return e;
+      })
+    );
+
+    if (currentUser) {
+      const prevRegistered = currentUser.registeredEvents || [];
+      if (!prevRegistered.includes(targetId)) {
+        const updatedUser = {
+          ...currentUser,
+          registeredEvents: [...prevRegistered, targetId],
+        };
+        setCurrentUser(updatedUser);
+      }
+    }
+
+    const safeTitle = (registrationData?.eventTitle || ev.title || '').replace(/"/g, '”');
+    addToast(`✓ Đăng ký thành công sự kiện "${safeTitle}"! Vui lòng kiểm tra email của bạn.`, 'success');
+    return { success: true, event: ev, registration: newRecord };
+  };
+
+  // Booked tickets state with LocalStorage persistence
+  const [bookedTicketsList, setBookedTicketsList] = useState(() => {
+    const saved = localStorage.getItem('museum_booked_tickets');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse museum_booked_tickets', e);
+      }
+    }
+    return [
+      {
+        id: 'TK-2026-001',
+        ticketCode: 'TK-2026-001',
+        name: 'Nguyễn Văn Anh',
+        phone: '0912345678',
+        email: 'nguyenvana@gmail.com',
+        ticketType: 'Vé Người lớn',
+        price: 50000,
+        visitDate: '2026-08-20',
+        quantity: 1,
+        paymentMethod: 'Thanh toán tại quầy',
+        status: 'Đã xác nhận',
+        createdAt: '2026-08-15',
+      },
+    ];
+  });
+
+  const bookTicket = (bookingData) => {
+    const newBooking = {
+      id: `TK-2026-${String(bookedTicketsList.length + 1).padStart(3, '0')}`,
+      ticketCode: `TK-2026-${String(bookedTicketsList.length + 1).padStart(3, '0')}`,
+      name: bookingData.name.trim(),
+      phone: bookingData.phone.trim(),
+      email: bookingData.email.trim(),
+      ticketType: bookingData.ticketType || 'Vé Người lớn',
+      price: bookingData.price || 50000,
+      visitDate: bookingData.visitDate,
+      quantity: bookingData.quantity || 1,
+      paymentMethod: 'Thanh toán tại quầy',
+      status: 'Đã xác nhận',
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+
+    const updated = [newBooking, ...bookedTicketsList];
+    setBookedTicketsList(updated);
+    localStorage.setItem('museum_booked_tickets', JSON.stringify(updated));
+
+    addToast('Đặt vé thành công! Vui lòng kiểm tra email của bạn.', 'success');
+    return { success: true, booking: newBooking };
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -238,7 +352,10 @@ export const AppProvider = ({ children }) => {
         artifacts: artifactsList,
         exhibitions: exhibitionsList,
         events: eventsList,
+        registerForEvent,
         tickets: ticketsList,
+        bookedTickets: bookedTicketsList,
+        bookTicket,
         ticketStats: ticketStatsState,
         categories: categoriesList,
         addArtifact,

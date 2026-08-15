@@ -5,14 +5,13 @@ import { Mail, Lock, LogIn } from 'lucide-react';
 
 export const Login = () => {
   const navigate = useNavigate();
-  const { login } = useApp();
+  const { login, registerForEvent } = useApp();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [errors, setErrors] = useState({});
 
-  // Ensure fields start empty on mount to defeat browser autofill
   useEffect(() => {
     setEmail('');
     setPassword('');
@@ -36,6 +35,19 @@ export const Login = () => {
 
     const result = login(email, password);
     if (result.success) {
+      const pendingReg = localStorage.getItem('pending_event_registration');
+      if (pendingReg) {
+        try {
+          const { eventId } = JSON.parse(pendingReg);
+          localStorage.removeItem('pending_event_registration');
+          registerForEvent(eventId);
+          navigate('/events');
+          return;
+        } catch (err) {
+          console.error('Failed to parse pending event registration', err);
+        }
+      }
+
       if (result.user.role === 'admin') {
         navigate('/dashboard');
       } else {
@@ -45,7 +57,7 @@ export const Login = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn font-sans">
       <div>
         <h2 className="text-2xl sm:text-3xl font-black text-museum-brown tracking-tight">
           Đăng Nhập Hệ Thống
@@ -56,7 +68,6 @@ export const Login = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
-        {/* Dummy inputs to defeat browser autofill */}
         <input type="text" name="fake_email_prevent_autofill" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
         <input type="password" name="fake_password_prevent_autofill" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
 
@@ -132,7 +143,7 @@ export const Login = () => {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full py-3 px-4 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition-colors pt-3"
+          className="w-full py-3 px-4 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition-colors cursor-pointer"
         >
           <LogIn className="w-4 h-4" />
           <span>Đăng nhập</span>

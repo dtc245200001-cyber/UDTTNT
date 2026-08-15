@@ -3,10 +3,11 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { ToastContainer } from '@/components/ui/Toast';
+import { MuseumAI } from '@/components/MuseumAI';
 
 export const MainLayout = () => {
   return (
-    <div className="min-h-screen flex bg-museum-ivory text-gray-800 antialiased font-sans">
+    <div className="min-h-screen flex bg-museum-ivory text-gray-800 antialiased font-sans relative">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
@@ -16,6 +17,7 @@ export const MainLayout = () => {
           </div>
         </main>
       </div>
+      <MuseumAI />
       <ToastContainer />
     </div>
   );

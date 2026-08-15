@@ -13,22 +13,22 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import { Login } from '@/pages/Login';
 import { Register } from '@/pages/Register';
 
-// Visitor Public Home
+// Visitor Public Pages (No Login Required)
 import { VisitorHome } from '@/pages/VisitorHome';
-
-// Admin Pages
-import { Dashboard } from '@/pages/Dashboard';
 import { Artifacts } from '@/pages/Artifacts';
 import { ArtifactDetail } from '@/pages/ArtifactDetail';
-import { Categories } from '@/pages/Categories';
 import { Galleries } from '@/pages/Galleries';
 import { Exhibitions } from '@/pages/Exhibitions';
 import { Events } from '@/pages/Events';
+import { AiAssistant } from '@/pages/AiAssistant';
+
+// Protected Admin Pages (Admin Login Required)
+import { Dashboard } from '@/pages/Dashboard';
+import { Categories } from '@/pages/Categories';
 import { Tickets } from '@/pages/Tickets';
 import { UsersPage } from '@/pages/Users';
 import { Articles } from '@/pages/Articles';
 import { Reviews } from '@/pages/Reviews';
-import { AiAssistant } from '@/pages/AiAssistant';
 import { Reports } from '@/pages/Reports';
 import { Settings } from '@/pages/Settings';
 import { NotFound } from '@/pages/NotFound';
@@ -42,26 +42,26 @@ export const AppRoutes = () => {
         <Route path="/register" element={<Register />} />
       </Route>
 
-      {/* 2. Public Visitor Site Routes (VisitorLayout) */}
+      {/* 2. Public Visitor Site Routes (VisitorLayout - Public for ALL visitors without login) */}
       <Route element={<VisitorLayout />}>
         <Route path="/" element={<VisitorHome />} />
+        <Route path="/artifacts" element={<Artifacts />} />
+        <Route path="/artifacts/:id" element={<ArtifactDetail />} />
+        <Route path="/galleries" element={<Galleries />} />
+        <Route path="/exhibitions" element={<Exhibitions />} />
+        <Route path="/events" element={<Events />} />
+        <Route path="/ai-assistant" element={<AiAssistant />} />
       </Route>
 
-      {/* 3. Protected Admin Dashboard Routes (MainLayout bọc trong ProtectedRoute role admin) */}
+      {/* 3. Protected Admin Dashboard Routes (Requires Admin Login) */}
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/artifacts" element={<Artifacts />} />
-          <Route path="/artifacts/:id" element={<ArtifactDetail />} />
           <Route path="/categories" element={<Categories />} />
-          <Route path="/galleries" element={<Galleries />} />
-          <Route path="/exhibitions" element={<Exhibitions />} />
-          <Route path="/events" element={<Events />} />
           <Route path="/tickets" element={<Tickets />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/articles" element={<Articles />} />
           <Route path="/reviews" element={<Reviews />} />
-          <Route path="/ai-assistant" element={<AiAssistant />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />

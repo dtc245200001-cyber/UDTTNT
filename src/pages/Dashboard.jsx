@@ -8,9 +8,11 @@ import { ExhibitionCard } from '@/components/cards/ExhibitionCard';
 import { VisitChart } from '@/components/charts/VisitChart';
 import { ChatWidget } from '@/components/ai/ChatWidget';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal';
 
 export const Dashboard = () => {
-  const { artifacts, exhibitions } = useApp();
+  const { artifacts, users, exhibitions, ticketStats, currentUser } = useApp();
+  const [selectedArtifact, setSelectedArtifact] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Mock 400ms loading effect when page mounts
@@ -85,7 +87,7 @@ export const Dashboard = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {recentArtifacts.map((item) => (
-              <ArtifactCard key={item.id} artifact={item} />
+              <ArtifactCard key={item.id} artifact={item} onClick={setSelectedArtifact} />
             ))}
           </div>
         </div>
@@ -123,6 +125,12 @@ export const Dashboard = () => {
           <ChatWidget />
         </div>
       </div>
+
+      <ArtifactDetailModal
+        artifact={selectedArtifact}
+        isOpen={!!selectedArtifact}
+        onClose={() => setSelectedArtifact(null)}
+      />
     </div>
   );
 };

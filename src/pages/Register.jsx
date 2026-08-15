@@ -61,6 +61,18 @@ export const Register = () => {
     });
 
     if (result.success) {
+      const pendingReg = localStorage.getItem('pending_event_registration');
+      if (pendingReg) {
+        try {
+          const { eventId } = JSON.parse(pendingReg);
+          localStorage.removeItem('pending_event_registration');
+          registerForEvent(eventId);
+          navigate('/events');
+          return;
+        } catch (err) {
+          console.error('Failed to parse pending event registration', err);
+        }
+      }
       navigate('/');
     }
   };

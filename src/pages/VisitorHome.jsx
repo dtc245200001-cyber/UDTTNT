@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import {
   Sparkles,
@@ -11,29 +12,80 @@ import {
   Clock,
   ArrowRight,
   ShieldCheck,
+  Lock,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate, formatCurrency } from '@/utils/formatters';
 
+import { EventRegistrationModal } from '@/components/events/EventRegistrationModal';
+import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal';
+import { ArtifactCard } from '@/components/cards/ArtifactCard';
+
 export const VisitorHome = () => {
-  const { artifacts, exhibitions, events, tickets, addToast } = useApp();
-  const [selectedAiArtifact, setSelectedAiArtifact] = useState(null);
+  const navigate = useNavigate();
+  const { artifacts, exhibitions, events, tickets, addToast, isAuthenticated, currentUser, registerForEvent, bookTicket } = useApp();
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [pendingAuthEvent, setPendingAuthEvent] = useState(null);
+  const [activeRegisterEvent, setActiveRegisterEvent] = useState(null);
+  const [selectedArtifact, setSelectedArtifact] = useState(null);
+
+  const [bookingFormData, setBookingFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    visitDate: '',
+  });
+  const [bookingErrors, setBookingErrors] = useState({});
+
+  const handleEventRegistration = (ev) => {
+    setActiveRegisterEvent(ev);
+  };
 
   const featuredArtifacts = artifacts.slice(0, 6);
   const activeExhibitions = exhibitions;
 
   const handleBookTicket = (ticket) => {
     setSelectedTicket(ticket);
+    setBookingErrors({});
     setTicketModalOpen(true);
+  };
+
+  const validateBooking = () => {
+    const errors = {};
+    if (!bookingFormData.name.trim()) {
+      errors.name = 'Vui lòng nhập họ tên người nhận vé.';
+    }
+    if (!bookingFormData.phone.trim()) {
+      errors.phone = 'Vui lòng nhập số điện thoại liên hệ.';
+    }
+    if (!bookingFormData.email.trim() || !/\S+@\S+\.\S+/.test(bookingFormData.email.trim())) {
+      errors.email = 'Vui lòng nhập email hợp lệ.';
+    }
+    if (!bookingFormData.visitDate) {
+      errors.visitDate = 'Vui lòng chọn ngày tham quan dự kiến.';
+    }
+    setBookingErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const confirmBooking = (e) => {
     e.preventDefault();
+    if (!validateBooking()) return;
+
+    bookTicket({
+      name: bookingFormData.name,
+      phone: bookingFormData.phone,
+      email: bookingFormData.email,
+      visitDate: bookingFormData.visitDate,
+      ticketType: selectedTicket?.name,
+      price: selectedTicket?.price,
+    });
+
     setTicketModalOpen(false);
-    addToast(`Đã đăng ký mua "${selectedTicket?.name}" thành công! Vui lòng nhận vé tại Quầy.`, 'success');
+    setBookingFormData({ name: '', phone: '', email: '', visitDate: '' });
+    setBookingErrors({});
   };
 
   return (
@@ -48,11 +100,6 @@ export const VisitorHome = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/40" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white space-y-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-museum-gold/30 border border-museum-gold-lt/50 text-museum-gold-lt text-xs font-bold uppercase tracking-widest backdrop-blur-sm animate-bounce">
-            <Sparkles className="w-4 h-4" />
-            Trải nghiệm Bảo Tàng Tích Hợp Trợ Lý AI
-          </div>
-
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight uppercase drop-shadow-md">
             KHÁM PHÁ BẢO VẬT & <br />
             <span className="text-museum-gold-lt">DI SẢN VĂN HÓA VIỆT NAM</span>
@@ -96,46 +143,11 @@ export const VisitorHome = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {featuredArtifacts.map((item) => (
-            <div
+            <ArtifactCard
               key={item.id}
-              className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-xl border border-gray-100 transition-all duration-300 flex flex-col group"
-            >
-              <div className="aspect-[4/3] overflow-hidden relative bg-museum-cream">
-                <img
-                  src={item.image}
-                  alt={item.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute top-3 left-3">
-                  <span className="bg-museum-brown/90 text-museum-cream text-[11px] font-bold px-3 py-1 rounded-full backdrop-blur-xs">
-                    {item.culture}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                <div>
-                  <div className="text-xs text-museum-gold font-bold mb-1">{item.period}</div>
-                  <h3 className="font-bold text-lg text-museum-brown group-hover:text-museum-gold transition-colors">
-                    {item.name}
-                  </h3>
-                  <p className="text-xs text-gray-600 line-clamp-2 mt-2 leading-relaxed">
-                    {item.description}
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-400">Vị trí: {item.location}</span>
-                  <button
-                    onClick={() => setSelectedAiArtifact(item)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-museum-cream hover:bg-museum-gold hover:text-white text-museum-brown text-xs font-bold rounded-lg transition-colors"
-                  >
-                    <Bot className="w-4 h-4 text-museum-gold group-hover:text-white" />
-                    <span>AI phân tích</span>
-                  </button>
-                </div>
-              </div>
-            </div>
+              artifact={item}
+              onClick={setSelectedArtifact}
+            />
           ))}
         </div>
       </section>
@@ -231,8 +243,8 @@ export const VisitorHome = () => {
                   <span>{ev.location}</span>
                 </div>
                 <button
-                  onClick={() => addToast(`Đã ghi danh tham dự "${ev.title}"!`, 'success')}
-                  className="w-full mt-2 py-2 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold rounded-xl text-xs transition-colors shadow-xs"
+                  onClick={() => handleEventRegistration(ev)}
+                  className="w-full mt-2 py-2 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold rounded-xl text-xs transition-colors shadow-xs cursor-pointer"
                 >
                   Đăng ký tham dự miễn phí
                 </button>
@@ -286,66 +298,153 @@ export const VisitorHome = () => {
         </div>
       </section>
 
-      {/* AI Artifact Analysis Modal */}
-      <Modal
-        isOpen={!!selectedAiArtifact}
-        onClose={() => setSelectedAiArtifact(null)}
-        title={`🤖 AI Phân Tích: ${selectedAiArtifact?.name}`}
-        maxWidth="max-w-2xl"
-      >
-        <div className="space-y-4">
-          <div className="flex gap-4">
-            <img
-              src={selectedAiArtifact?.image}
-              alt={selectedAiArtifact?.name}
-              className="w-28 h-28 rounded-xl object-cover border border-museum-cream flex-shrink-0"
-            />
-            <div>
-              <h4 className="font-extrabold text-lg text-museum-brown">{selectedAiArtifact?.name}</h4>
-              <p className="text-xs text-museum-gold font-bold mt-1">
-                {selectedAiArtifact?.culture} • {selectedAiArtifact?.period}
-              </p>
-              <p className="text-xs text-gray-500 mt-2">Vị trí: {selectedAiArtifact?.location}</p>
-            </div>
-          </div>
-          <div className="p-4 bg-museum-cream/80 rounded-xl border border-museum-gold/30 text-xs sm:text-sm text-museum-brown-dk leading-relaxed italic">
-            "{selectedAiArtifact?.aiAnalysis}"
-          </div>
-        </div>
-      </Modal>
+
 
       {/* Ticket Booking Modal */}
       <Modal
         isOpen={ticketModalOpen}
-        onClose={() => setTicketModalOpen(false)}
+        onClose={() => {
+          setTicketModalOpen(false);
+          setBookingErrors({});
+        }}
         title={`Đặt Vé: ${selectedTicket?.name}`}
         maxWidth="max-w-md"
       >
-        <form onSubmit={confirmBooking} className="space-y-4 text-xs">
+        <form onSubmit={confirmBooking} className="space-y-4 text-xs" noValidate>
           <div className="p-3 bg-museum-cream rounded-xl text-museum-brown font-bold flex justify-between">
             <span>Loại vé: {selectedTicket?.name}</span>
             <span className="text-museum-gold">{formatCurrency(selectedTicket?.price)}</span>
           </div>
+
+          {/* 1. Họ tên */}
           <div>
-            <label className="block font-bold text-museum-brown mb-1">Họ tên người nhận vé</label>
-            <input type="text" required placeholder="Nguyễn Văn A" className="w-full p-2.5 bg-gray-50 border rounded-xl" />
+            <label className="block font-bold text-museum-brown mb-1">
+              Họ tên người nhận vé <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              value={bookingFormData.name}
+              onChange={(e) => setBookingFormData({ ...bookingFormData, name: e.target.value })}
+              placeholder="Nguyễn Văn A"
+              className={`w-full p-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-museum-gold transition-colors ${
+                bookingErrors.name ? 'border-danger bg-red-50' : 'border-gray-200'
+              }`}
+            />
+            {bookingErrors.name && <p className="text-xs text-danger mt-1">{bookingErrors.name}</p>}
           </div>
+
+          {/* 2. Số điện thoại */}
           <div>
-            <label className="block font-bold text-museum-brown mb-1">Số điện thoại liên hệ</label>
-            <input type="tel" required placeholder="0912 345 678" className="w-full p-2.5 bg-gray-50 border rounded-xl" />
+            <label className="block font-bold text-museum-brown mb-1">
+              Số điện thoại liên hệ <span className="text-danger">*</span>
+            </label>
+            <input
+              type="tel"
+              value={bookingFormData.phone}
+              onChange={(e) => setBookingFormData({ ...bookingFormData, phone: e.target.value })}
+              placeholder="0912 345 678"
+              className={`w-full p-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-museum-gold transition-colors ${
+                bookingErrors.phone ? 'border-danger bg-red-50' : 'border-gray-200'
+              }`}
+            />
+            {bookingErrors.phone && <p className="text-xs text-danger mt-1">{bookingErrors.phone}</p>}
           </div>
+
+          {/* 3. Email nhận vé (Đặt ngay sau Số điện thoại liên hệ) */}
           <div>
-            <label className="block font-bold text-museum-brown mb-1">Ngày tham quan dự kiến</label>
-            <input type="date" required className="w-full p-2.5 bg-gray-50 border rounded-xl" />
+            <label className="block font-bold text-museum-brown mb-1">
+              Email nhận vé <span className="text-danger">*</span>
+            </label>
+            <input
+              type="email"
+              value={bookingFormData.email}
+              onChange={(e) => setBookingFormData({ ...bookingFormData, email: e.target.value })}
+              placeholder="example@gmail.com"
+              className={`w-full p-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-museum-gold transition-colors ${
+                bookingErrors.email ? 'border-danger bg-red-50' : 'border-gray-200'
+              }`}
+            />
+            {bookingErrors.email && <p className="text-xs text-danger mt-1">{bookingErrors.email}</p>}
           </div>
+
+          {/* 4. Ngày tham quan dự kiến */}
+          <div>
+            <label className="block font-bold text-museum-brown mb-1">
+              Ngày tham quan dự kiến <span className="text-danger">*</span>
+            </label>
+            <input
+              type="date"
+              value={bookingFormData.visitDate}
+              onChange={(e) => setBookingFormData({ ...bookingFormData, visitDate: e.target.value })}
+              className={`w-full p-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-museum-gold transition-colors ${
+                bookingErrors.visitDate ? 'border-danger bg-red-50' : 'border-gray-200'
+              }`}
+            />
+            {bookingErrors.visitDate && <p className="text-xs text-danger mt-1">{bookingErrors.visitDate}</p>}
+          </div>
+
+          {/* 5. Nút Xác nhận đặt vé */}
           <button
             type="submit"
-            className="w-full py-3 bg-museum-brown text-white font-bold rounded-xl hover:bg-museum-brown-dk transition-colors"
+            className="w-full py-3 bg-museum-brown text-white font-bold rounded-xl hover:bg-museum-brown-dk transition-colors cursor-pointer"
           >
             Xác nhận đặt vé
           </button>
         </form>
       </Modal>
+
+      {/* Auth Required Modal for Event Registration */}
+      <Modal
+        isOpen={!!pendingAuthEvent}
+        onClose={() => setPendingAuthEvent(null)}
+        title="🔐 Yêu cầu đăng nhập"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4 text-center py-2">
+          <div className="w-12 h-12 rounded-2xl bg-museum-cream text-museum-brown flex items-center justify-center mx-auto text-xl shadow-xs">
+            🔐
+          </div>
+          <p className="text-xs sm:text-sm text-gray-700 font-medium leading-relaxed">
+            Vui lòng đăng nhập tài khoản để đăng ký tham dự sự kiện.
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => {
+                if (pendingAuthEvent) {
+                  localStorage.setItem(
+                    'pending_event_registration',
+                    JSON.stringify({ eventId: pendingAuthEvent.id, eventTitle: pendingAuthEvent.title })
+                  );
+                }
+                setPendingAuthEvent(null);
+                navigate('/login');
+              }}
+              className="px-5 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-md transition-colors cursor-pointer"
+            >
+              Đăng nhập
+            </button>
+            <button
+              onClick={() => setPendingAuthEvent(null)}
+              className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-xl transition-colors cursor-pointer"
+            >
+              Để sau
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Event Registration Modal */}
+      <EventRegistrationModal
+        event={activeRegisterEvent}
+        isOpen={!!activeRegisterEvent}
+        onClose={() => setActiveRegisterEvent(null)}
+      />
+      {/* Artifact Detail Modal */}
+      <ArtifactDetailModal
+        artifact={selectedArtifact}
+        isOpen={!!selectedArtifact}
+        onClose={() => setSelectedArtifact(null)}
+      />
     </div>
   );
 };

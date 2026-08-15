@@ -1,13 +1,14 @@
 import React from 'react';
 import { useApp } from '@/context/AppContext';
-import { Ticket, Plus, DollarSign, TrendingUp, ShoppingBag } from 'lucide-react';
+import { Ticket, Plus, TrendingUp, Mail, User, Calendar, Phone } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
+import { Badge } from '@/components/ui/Badge';
 
 export const Tickets = () => {
-  const { tickets, ticketStats } = useApp();
+  const { tickets, ticketStats, bookedTickets } = useApp();
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn font-sans">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="text-xs font-semibold text-gray-400 mb-1">
@@ -17,7 +18,7 @@ export const Tickets = () => {
             QUẢN LÝ VÉ THAM QUAN
           </h2>
         </div>
-        <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md transition-colors">
+        <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md transition-colors cursor-pointer">
           <Plus className="w-5 h-5" />
           <span>+ Cấu hình loại vé</span>
         </button>
@@ -49,10 +50,59 @@ export const Tickets = () => {
         </div>
       </div>
 
+      {/* Booked Tickets List (Online Reservations) */}
+      <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden space-y-2">
+        <div className="p-4 bg-museum-ivory border-b border-gray-200 font-bold text-sm text-museum-brown flex items-center justify-between">
+          <span>DANH SÁCH VÉ ĐẶT TRỰC TUYẾN</span>
+          <span className="text-xs font-normal text-gray-500">Tổng cộng: {bookedTickets?.length || 0} vé</span>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[700px]">
+            <thead>
+              <tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-100">
+                <th className="py-3 px-4">Mã vé</th>
+                <th className="py-3 px-4">Họ tên người nhận</th>
+                <th className="py-3 px-4">Số điện thoại</th>
+                <th className="py-3 px-4">Email nhận vé</th>
+                <th className="py-3 px-4">Loại vé</th>
+                <th className="py-3 px-4">Ngày tham quan</th>
+                <th className="py-3 px-4">Giá vé</th>
+                <th className="py-3 px-4">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-xs text-gray-700">
+              {(!bookedTickets || bookedTickets.length === 0) ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-6 text-gray-400 font-medium">
+                    Chưa có lịch sử đặt vé trực tuyến nào.
+                  </td>
+                </tr>
+              ) : (
+                bookedTickets.map((b) => (
+                  <tr key={b.id} className="hover:bg-museum-cream/30 transition-colors">
+                    <td className="py-3 px-4 font-bold text-museum-brown">{b.ticketCode}</td>
+                    <td className="py-3 px-4 font-semibold text-gray-800">{b.name}</td>
+                    <td className="py-3 px-4 text-gray-600">{b.phone}</td>
+                    <td className="py-3 px-4 text-museum-gold font-medium">{b.email}</td>
+                    <td className="py-3 px-4">{b.ticketType}</td>
+                    <td className="py-3 px-4 font-medium">{b.visitDate}</td>
+                    <td className="py-3 px-4 font-bold text-museum-brown">{formatCurrency(b.price)}</td>
+                    <td className="py-3 px-4">
+                      <Badge variant="emerald">{b.status}</Badge>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Ticket Types List */}
       <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
         <div className="p-4 bg-museum-ivory border-b border-gray-200 font-bold text-sm text-museum-brown">
-          CÁC LOẠI VÉ THAM QUAN
+          CẤU HÌNH CÁC LOẠI VÉ THAM QUAN
         </div>
         <div className="divide-y divide-gray-100">
           {tickets.map((t) => (
