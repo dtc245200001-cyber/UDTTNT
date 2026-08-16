@@ -54,8 +54,9 @@ export const AppRoutes = () => {
         <Route path="/exhibitions" element={<Exhibitions />} />
         <Route path="/events" element={<Events />} />
         <Route path="/ai-assistant" element={<AiAssistant />} />
-        {/* Visitor My Tickets page */}
+        {/* Visitor My Tickets & Reviews page */}
         <Route path="/my-tickets" element={<MyTickets />} />
+        <Route path="/visitor-reviews" element={<Reviews />} />
       </Route>
 
       {/* 3. Protected Admin Dashboard Routes (Requires Admin Login) */}

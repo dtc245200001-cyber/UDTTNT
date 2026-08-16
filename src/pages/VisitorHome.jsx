@@ -21,6 +21,7 @@ import { formatDate, formatCurrency } from '@/utils/formatters';
 import { EventRegistrationModal } from '@/components/events/EventRegistrationModal';
 import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal';
 import { ArtifactCard } from '@/components/cards/ArtifactCard';
+import { TicketBookingModal } from '@/components/tickets/TicketBookingModal';
 
 export const VisitorHome = () => {
   const navigate = useNavigate();
@@ -345,98 +346,12 @@ export const VisitorHome = () => {
 
 
 
-      {/* Ticket Booking Modal */}
-      <Modal
+      {/* Ticket Booking & Payment Modal */}
+      <TicketBookingModal
         isOpen={ticketModalOpen}
-        onClose={() => {
-          setTicketModalOpen(false);
-          setBookingErrors({});
-        }}
-        title={`Đặt Vé: ${selectedTicket?.name}`}
-        maxWidth="max-w-md"
-      >
-        <form onSubmit={confirmBooking} className="space-y-4 text-xs" noValidate>
-          <div className="p-3 bg-museum-cream rounded-xl text-museum-brown font-bold flex justify-between">
-            <span>Loại vé: {selectedTicket?.name}</span>
-            <span className="text-museum-gold">{formatCurrency(selectedTicket?.price)}</span>
-          </div>
-
-          {/* 1. Họ tên */}
-          <div>
-            <label className="block font-bold text-museum-brown mb-1">
-              Họ tên người nhận vé <span className="text-danger">*</span>
-            </label>
-            <input
-              type="text"
-              value={bookingFormData.name}
-              onChange={(e) => setBookingFormData({ ...bookingFormData, name: e.target.value })}
-              placeholder="Nguyễn Văn A"
-              className={`w-full p-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-museum-gold transition-colors ${
-                bookingErrors.name ? 'border-danger bg-red-50' : 'border-gray-200'
-              }`}
-            />
-            {bookingErrors.name && <p className="text-xs text-danger mt-1">{bookingErrors.name}</p>}
-          </div>
-
-          {/* 2. Số điện thoại */}
-          <div>
-            <label className="block font-bold text-museum-brown mb-1">
-              Số điện thoại liên hệ <span className="text-danger">*</span>
-            </label>
-            <input
-              type="tel"
-              value={bookingFormData.phone}
-              onChange={(e) => setBookingFormData({ ...bookingFormData, phone: e.target.value })}
-              placeholder="0912 345 678"
-              className={`w-full p-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-museum-gold transition-colors ${
-                bookingErrors.phone ? 'border-danger bg-red-50' : 'border-gray-200'
-              }`}
-            />
-            {bookingErrors.phone && <p className="text-xs text-danger mt-1">{bookingErrors.phone}</p>}
-          </div>
-
-          {/* 3. Email nhận vé (Đặt ngay sau Số điện thoại liên hệ) */}
-          <div>
-            <label className="block font-bold text-museum-brown mb-1">
-              Email nhận vé <span className="text-danger">*</span>
-            </label>
-            <input
-              type="email"
-              value={bookingFormData.email}
-              onChange={(e) => setBookingFormData({ ...bookingFormData, email: e.target.value })}
-              placeholder="example@gmail.com"
-              className={`w-full p-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-museum-gold transition-colors ${
-                bookingErrors.email ? 'border-danger bg-red-50' : 'border-gray-200'
-              }`}
-            />
-            {bookingErrors.email && <p className="text-xs text-danger mt-1">{bookingErrors.email}</p>}
-          </div>
-
-          {/* 4. Ngày tham quan dự kiến */}
-          <div>
-            <label className="block font-bold text-museum-brown mb-1">
-              Ngày tham quan dự kiến <span className="text-danger">*</span>
-            </label>
-            <input
-              type="date"
-              value={bookingFormData.visitDate}
-              onChange={(e) => setBookingFormData({ ...bookingFormData, visitDate: e.target.value })}
-              className={`w-full p-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-museum-gold transition-colors ${
-                bookingErrors.visitDate ? 'border-danger bg-red-50' : 'border-gray-200'
-              }`}
-            />
-            {bookingErrors.visitDate && <p className="text-xs text-danger mt-1">{bookingErrors.visitDate}</p>}
-          </div>
-
-          {/* 5. Nút Xác nhận đặt vé */}
-          <button
-            type="submit"
-            className="w-full py-3 bg-museum-brown text-white font-bold rounded-xl hover:bg-museum-brown-dk transition-colors cursor-pointer"
-          >
-            Xác nhận đặt vé
-          </button>
-        </form>
-      </Modal>
+        onClose={() => setTicketModalOpen(false)}
+        selectedTicket={selectedTicket}
+      />
 
       {/* Auth Required Modal for Ticket Booking */}
       <Modal

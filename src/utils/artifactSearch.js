@@ -1,6 +1,6 @@
 /**
- * Utility helper for searching museum artifacts with Vietnamese accent-insensitive matching,
- * keyword searching, and accurate structured AI responses.
+ * Advanced RAG Utility helper for searching museum data (Artifacts, Events, Exhibitions, Tickets)
+ * with Vietnamese accent-insensitive matching, validation, and structured AI response generation.
  * 100% PUBLIC - No authentication or login required.
  */
 
@@ -19,22 +19,83 @@ export function removeVietnameseTones(str) {
 }
 
 /**
- * Search artifacts in dataset based on user query string.
+ * Validate user prompt text
+ */
+export function validateInput(query) {
+  if (!query || typeof query !== 'string') {
+    return { valid: false, message: 'Vui lòng nhập nội dung câu hỏi!' };
+  }
+  const clean = query.trim();
+  if (clean.length === 0) {
+    return { valid: false, message: 'Câu hỏi không được để trống.' };
+  }
+  if (clean.length < 2) {
+    return { valid: false, message: 'Câu hỏi quá ngắn. Vui lòng nhập từ 2 ký tự trở lên.' };
+  }
+  return { valid: true, clean };
+}
+
+/**
+ * Search artifacts, events, tickets in dataset based on user query string.
  * @param {Array} artifactsList - List of artifact objects
  * @param {string} query - User search prompt/question
+ * @param {Object} extraData - Optional extra data (events, tickets, exhibitions)
  * @returns {Object} Search result containing matched artifacts & generated answer
  */
-export function searchArtifacts(artifactsList, query) {
-  if (!query || !query.trim() || !Array.isArray(artifactsList)) {
+export function searchArtifacts(artifactsList = [], query = '', extraData = {}) {
+  const validation = validateInput(query);
+  if (!validation.valid) {
     return {
       success: false,
-      message: 'Vui lòng nhập câu hỏi hoặc tên hiện vật cần tìm kiếm.',
+      message: validation.message,
       matchedArtifacts: [],
     };
   }
 
-  const cleanQuery = removeVietnameseTones(query);
+  const cleanQuery = removeVietnameseTones(validation.clean);
+  const eventsList = extraData.events || [];
+  const ticketsList = extraData.tickets || [];
 
+  // Check 1: Intent regarding Ticket Price or Opening Hours
+  if (
+    cleanQuery.includes('gia ve') ||
+    cleanQuery.includes('mua ve') ||
+    cleanQuery.includes('ve tham quan') ||
+    cleanQuery.includes('bao nhieu tien') ||
+    cleanQuery.includes('gio mo cua') ||
+    cleanQuery.includes('thoi gian mo cua')
+  ) {
+    return {
+      success: true,
+      message: `🎟️ Thông tin vé tham quan & Giờ mở cửa Bảo tàng:\n• Giờ mở cửa: 08:00 - 17:00 hàng ngày (Tất cả các ngày trong tuần).\n• Vé Người lớn: 50.000đ/vé.\n• Vé Học sinh - Sinh viên: 20.000đ/vé.\n• Trẻ em dưới 6 tuổi & Người cao tuổi: Miễn phí.\n• Vé Khách quốc tế: 100.000đ/vé.\nBạn có thể nhấn nút "Đặt vé tham quan" để mua vé trực tuyến ngay!`,
+      matchedArtifacts: [],
+    };
+  }
+
+  // Check 2: Intent regarding Events / Exhibitions
+  if (
+    cleanQuery.includes('su kien') ||
+    cleanQuery.includes('toa dam') ||
+    cleanQuery.includes('trien lam') ||
+    cleanQuery.includes('lich trinh')
+  ) {
+    const matchedEvents = eventsList.filter((e) => {
+      const titleClean = removeVietnameseTones(e.title || '');
+      const descClean = removeVietnameseTones(e.description || '');
+      return titleClean.includes(cleanQuery) || descClean.includes(cleanQuery);
+    });
+
+    if (matchedEvents.length > 0) {
+      const topEv = matchedEvents[0];
+      return {
+        success: true,
+        message: `📅 Sự kiện nổi bật: "${topEv.title}".\n• Thời gian: ${topEv.date} (${topEv.time}).\n• Địa điểm: ${topEv.location}.\n• Diễn giả: ${topEv.speaker}.\n• Mô tả: ${topEv.description}`,
+        matchedArtifacts: [],
+      };
+    }
+  }
+
+  // Check 3: Query Artifacts Database
   const stopWords = ['co', 'nhung', 'hien', 'vat', 'nao', 'cho', 'toi', 'biet', 've', 'la', 'gi', 'y', 'nghia', 'nhu', 'the', 'nao', 'tim', 'lay', 'xem'];
   const queryTokens = cleanQuery
     .split(/\s+/)
@@ -46,9 +107,7 @@ export function searchArtifacts(artifactsList, query) {
     const descClean = removeVietnameseTones(item.description || '');
     const periodClean = removeVietnameseTones(item.period || item.culture || '');
 
-    if (nameClean.includes(cleanQuery)) {
-      score += 100;
-    }
+    if (nameClean.includes(cleanQuery)) score += 100;
 
     queryTokens.forEach((token) => {
       if (nameClean.includes(token)) score += 30;
@@ -60,9 +119,6 @@ export function searchArtifacts(artifactsList, query) {
       score += 50;
     }
     if (cleanQuery.includes('dien bien phu') && (nameClean.includes('dien bien phu') || descClean.includes('dien bien phu'))) {
-      score += 50;
-    }
-    if (cleanQuery.includes('nguyen ai quoc') && (nameClean.includes('nguyen ai quoc') || descClean.includes('nguyen ai quoc') || descClean.includes('ho chi minh'))) {
       score += 50;
     }
     if (cleanQuery.includes('canh thinh') && (nameClean.includes('canh thinh') || descClean.includes('canh thinh'))) {
@@ -80,10 +136,11 @@ export function searchArtifacts(artifactsList, query) {
     .sort((a, b) => b.score - a.score)
     .map((res) => res.artifact);
 
+  // If NO data found -> Requirement 12 explicit notice
   if (matches.length === 0) {
     return {
       success: false,
-      message: 'Xin lỗi, tôi chưa tìm thấy thông tin về hiện vật này trong dữ liệu của bảo tàng.',
+      message: '❌ Xin lỗi, hệ thống AI chưa tìm thấy thông tin hoặc hiện vật phù hợp với câu hỏi của bạn trong CSDL bảo tàng. Vui lòng thử lại với tên hiện vật hoặc chủ đề khác (ví dụ: Trống đồng Cảnh Thịnh, Bảo vật thời Tây Sơn, Vé tham quan...).',
       matchedArtifacts: [],
     };
   }
@@ -101,11 +158,11 @@ export function searchArtifacts(artifactsList, query) {
   const locStr = primary.location || 'Tầng 1 · Phòng A · Kệ 01';
 
   if (isAskingLocation) {
-    answerText = `"${primary.name}" hiện đang được trưng bày tại vị trí: ${locStr}. (Lưu ý: Đây là thông tin vị trí trưng bày trên hệ thống bảo tàng demo).`;
-  } else if (matches.length === 1 || primary.name.toLowerCase().includes(query.toLowerCase())) {
-    answerText = `"${primary.name}" là hiện vật thuộc bộ sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam. ${primary.date ? `(Niên đại: ${primary.date}). ` : ''}${primary.description} 📍 Vị trí trưng bày: ${locStr}.`;
+    answerText = `📍 Hiện vật "${primary.name}" đang được trưng bày tại: ${locStr}. (Thời kỳ: ${primary.culture || primary.period}).`;
+  } else if (matches.length === 1 || primary.name.toLowerCase().includes(validation.clean.toLowerCase())) {
+    answerText = `🏛️ "${primary.name}" là bảo vật quốc gia tiêu biểu. ${primary.date ? `(Niên đại: ${primary.date}). ` : ''}${primary.description} 📍 Vị trí trưng bày: ${locStr}.`;
   } else {
-    answerText = `Tôi đã tìm thấy ${matches.length} hiện vật phù hợp. Hiện vật tiêu biểu nhất là "${primary.name}"${primary.date ? ` (Niên đại: ${primary.date})` : ''} được đặt tại: ${locStr}.`;
+    answerText = `💡 AI đã tra cứu CSDL và tìm thấy ${matches.length} hiện vật liên quan. Tiêu biểu nhất là "${primary.name}"${primary.date ? ` (Niên đại: ${primary.date})` : ''} — trưng bày tại: ${locStr}.`;
   }
 
   return {

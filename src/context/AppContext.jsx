@@ -7,20 +7,28 @@ import { ticketTypes as initialTickets, ticketStats as initialTicketStats } from
 import { categories as initialCategories } from '../data/categories';
 import { users as initialUsers } from '../data/users';
 import { reviews as initialReviews } from '../data/reviews';
+import { getAuditLogs, logAction as createAuditLog } from '../utils/auditLogger';
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  // 1. Data States
+  // 1. Core Data States
   const [artifactsList, setArtifactsList] = useState(initialArtifacts);
   const [exhibitionsList, setExhibitionsList] = useState(initialExhibitions);
   const [eventsList, setEventsList] = useState(initialEvents);
   const [ticketsList, setTicketsList] = useState(initialTickets);
-  const [ticketStatsState] = useState(initialTicketStats);
+  const [ticketStatsState, setTicketStatsState] = useState(initialTicketStats);
   const [categoriesList, setCategoriesList] = useState(initialCategories);
-  const [reviewsList, setReviewsList] = useState(initialReviews);
 
-  // 2. Users state
+  // 2. Audit Logs State
+  const [auditLogsList, setAuditLogsList] = useState(getAuditLogs);
+  const logAudit = (action, description) => {
+    const entry = createAuditLog(currentUser, action, description);
+    setAuditLogsList(getAuditLogs());
+    return entry;
+  };
+
+  // 3. Users list state with LocalStorage persistence & auto-merge initial users
   const [usersList, setUsersList] = useState(() => {
     const savedUsers = localStorage.getItem('museum_users');
     if (savedUsers) {
@@ -42,7 +50,7 @@ export const AppProvider = ({ children }) => {
     return initialUsers;
   });
 
-  // 3. Current User State
+  // 4. Current User State
   const [currentUser, setCurrentUser] = useState(() => {
     const savedCurrentUser = localStorage.getItem('museum_current_user');
     if (savedCurrentUser) {
@@ -60,7 +68,7 @@ export const AppProvider = ({ children }) => {
     return null;
   });
 
-  // 4. Booked Tickets
+  // 5. Booked tickets state with LocalStorage persistence
   const [bookedTicketsList, setBookedTicketsList] = useState(() => {
     const saved = localStorage.getItem('museum_booked_tickets');
     if (saved) {
@@ -76,19 +84,22 @@ export const AppProvider = ({ children }) => {
         ticketCode: 'TK-2026-001',
         name: 'Nguyễn Văn Anh',
         phone: '0912345678',
-        email: 'nguyenvana@gmail.com',
+        email: 'admin@gmail.com',
         ticketType: 'Vé Người lớn',
         price: 50000,
         visitDate: '2026-08-20',
-        quantity: 1,
-        paymentMethod: 'Thanh toán tại quầy',
+        quantity: 2,
+        totalPrice: 100000,
+        paymentMethod: 'Tại quầy',
         status: 'Đã xác nhận',
         createdAt: '2026-08-15',
+        qrCode: 'TK-2026-001-ADMIN-100K',
+        userEmail: 'admin@gmail.com',
       },
     ];
   });
 
-  // 5. Event Registrations
+  // 6. Event registrations list state
   const [eventRegistrationsList, setEventRegistrationsList] = useState(() => {
     const saved = localStorage.getItem('museum_event_registrations');
     if (saved) {
@@ -101,7 +112,20 @@ export const AppProvider = ({ children }) => {
     return [];
   });
 
-  // 6. Toasts
+  // 7. Reviews list state
+  const [reviewsList, setReviewsList] = useState(() => {
+    const saved = localStorage.getItem('museum_reviews');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse museum_reviews from localStorage', e);
+      }
+    }
+    return initialReviews;
+  });
+
+  // 8. Toast notification state
   const [toasts, setToasts] = useState([]);
   const addToast = (message, type = 'success') => {
     const id = Date.now() + Math.random();
@@ -114,11 +138,36 @@ export const AppProvider = ({ children }) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // 7. Sync Supabase on Mount
+  // Sync state changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('museum_reviews', JSON.stringify(reviewsList));
+  }, [reviewsList]);
+
+  useEffect(() => {
+    localStorage.setItem('museum_users', JSON.stringify(usersList));
+  }, [usersList]);
+
+  useEffect(() => {
+    localStorage.setItem('museum_booked_tickets', JSON.stringify(bookedTicketsList));
+  }, [bookedTicketsList]);
+
+  useEffect(() => {
+    localStorage.setItem('museum_event_registrations', JSON.stringify(eventRegistrationsList));
+  }, [eventRegistrationsList]);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('museum_current_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('museum_current_user');
+    }
+  }, [currentUser]);
+
+  // 9. Sync Supabase on Mount
   const fetchSupabaseData = useCallback(async () => {
     try {
       // 1. Fetch Danh mục
-      const { data: catData, error: catError } = await supabase.from('danh_muc').select('*');
+      const { data: catData, error: catError } = await supabase.from('danh_muc').select('*').order('id');
       if (!catError && catData && catData.length > 0) {
         setCategoriesList(catData);
       }
@@ -129,7 +178,6 @@ export const AppProvider = ({ children }) => {
         .select('*')
         .order('id', { ascending: true });
       if (!artError && artData && artData.length > 0) {
-        // Map database fields if needed
         const mapped = artData.map((item) => ({
           ...item,
           categoryId: item.category_id || item.categoryId,
@@ -197,26 +245,12 @@ export const AppProvider = ({ children }) => {
     fetchSupabaseData();
   }, [fetchSupabaseData]);
 
-  // Sync usersList & currentUser with localStorage
-  useEffect(() => {
-    localStorage.setItem('museum_users', JSON.stringify(usersList));
-  }, [usersList]);
-
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('museum_current_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('museum_current_user');
-    }
-  }, [currentUser]);
-
   // Auth: Supabase Auth Session listener
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        // Try fetching user record from nguoi_dung table
         const { data: userData } = await supabase
           .from('nguoi_dung')
           .select('*')
@@ -237,7 +271,7 @@ export const AppProvider = ({ children }) => {
     };
   }, []);
 
-  // 8. Authentication Functions
+  // 10. Authentication Functions
   const login = async (email, password) => {
     const cleanEmail = email.trim().toLowerCase();
 
@@ -271,6 +305,7 @@ export const AppProvider = ({ children }) => {
 
         setCurrentUser(userObj);
         addToast(`Xin chào mừng, ${userObj.name}!`, 'success');
+        logAudit('LOGIN', `Người dùng ${userObj.email} đăng nhập hệ thống (${userObj.roleLabel})`);
         return { success: true, user: userObj };
       }
     } catch (e) {
@@ -290,6 +325,7 @@ export const AppProvider = ({ children }) => {
 
       setCurrentUser(foundUser);
       addToast(`Xin chào mừng, ${foundUser.name}!`, 'success');
+      logAudit('LOGIN', `Người dùng ${foundUser.email} đăng nhập hệ thống (${foundUser.roleLabel})`);
       return { success: true, user: foundUser };
     } else {
       addToast('Email hoặc mật khẩu không chính xác!', 'error');
@@ -318,68 +354,118 @@ export const AppProvider = ({ children }) => {
       joinedAt: new Date().toISOString().split('T')[0],
     };
 
-    // Try creating on Supabase
-    try {
-      await supabase.auth.signUp({
-        email: cleanEmail,
-        password: userData.password,
-        options: { data: { name: newUser.name, role: 'visitor' } },
-      });
-
-      await supabase.from('nguoi_dung').insert([
-        {
-          id: newUser.id,
-          name: newUser.name,
-          email: newUser.email,
-          role: 'visitor',
-          role_label: 'Khách tham quan',
-          status: 'Hoạt động',
-          avatar: newUser.avatar,
-        },
-      ]);
-    } catch (e) {
-      console.warn('Supabase auth signup notice', e);
-    }
-
     setUsersList((prev) => [...prev, newUser]);
     setCurrentUser(newUser);
     addToast('Đăng ký tài khoản thành công! Tự động đăng nhập.', 'success');
+    logAudit('REGISTER', `Tài khoản mới đăng ký: ${newUser.email}`);
     return { success: true, user: newUser };
   };
 
-  const logout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.warn('Supabase sign out notice', e);
+  const logout = () => {
+    if (currentUser) {
+      logAudit('LOGOUT', `Người dùng ${currentUser.email} đã đăng xuất`);
     }
     setCurrentUser(null);
     addToast('Đã đăng xuất khỏi hệ thống thành công.', 'info');
   };
 
-  // 9. User Management CRUD
-  const updateUserRole = async (userId, newRole) => {
-    const roleLabel = newRole === 'admin' ? 'Quản trị viên' : 'Khách tham quan';
+  // 11. CRUD Artifacts
+  const addArtifact = async (newArtifact) => {
+    const created = {
+      ...newArtifact,
+      id: `AV${String(artifactsList.length + 1).padStart(3, '0')}`,
+      createdAt: new Date().toISOString().split('T')[0],
+      image: newArtifact.image || '/images/trong-dong.jpg',
+      aiAnalysis: newArtifact.aiAnalysis || `Bản phân tích AI: hiện vật ${newArtifact.name} được bổ sung mới vào danh mục lưu trữ.`,
+    };
+    setArtifactsList((prev) => [created, ...prev]);
+
+    try {
+      await supabase.from('hien_vat').insert([
+        {
+          id: created.id,
+          name: created.name,
+          category_id: created.categoryId || 'DM01',
+          category: created.category || 'Vũ khí & khí tài quân sự',
+          culture: created.culture || 'Lịch sử Việt Nam',
+          period: created.period || 'Hiện đại',
+          location: created.location || 'Tầng 1',
+          status: created.status || 'Đang trưng bày',
+          image: created.image,
+          description: created.description,
+          ai_analysis: created.aiAnalysis,
+        },
+      ]);
+    } catch (e) {
+      console.warn('Supabase insert artifact notice', e);
+    }
+
+    addToast(`Đã thêm hiện vật "${created.name}" thành công!`, 'success');
+    logAudit('CREATE_ARTIFACT', `Thêm hiện vật mới: ${created.name} (${created.id})`);
+    return created;
+  };
+
+  const updateArtifact = async (id, updatedData) => {
+    setArtifactsList((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...updatedData } : item))
+    );
+
+    try {
+      await supabase
+        .from('hien_vat')
+        .update({
+          name: updatedData.name,
+          category_id: updatedData.categoryId,
+          category: updatedData.category,
+          culture: updatedData.culture,
+          period: updatedData.period,
+          location: updatedData.location,
+          status: updatedData.status,
+          image: updatedData.image,
+          description: updatedData.description,
+        })
+        .eq('id', id);
+    } catch (e) {
+      console.warn('Supabase update artifact notice', e);
+    }
+
+    addToast('Đã cập nhật thông tin hiện vật thành công!', 'success');
+    logAudit('UPDATE_ARTIFACT', `Cập nhật hiện vật mã: ${id}`);
+  };
+
+  const deleteArtifact = async (id) => {
+    const item = artifactsList.find((a) => a.id === id);
+    setArtifactsList((prev) => prev.filter((a) => a.id !== id));
+
+    try {
+      await supabase.from('hien_vat').delete().eq('id', id);
+    } catch (e) {
+      console.warn('Supabase delete artifact notice', e);
+    }
+
+    addToast(`Đã xóa hiện vật "${item?.name || id}" thành công!`, 'error');
+    logAudit('DELETE_ARTIFACT', `Xóa hiện vật: ${item?.name || id}`);
+  };
+
+  // 12. User Management
+  const updateUserRole = (userId, newRole) => {
     const updatedUsers = usersList.map((u) => {
       if (u.id === userId) {
+        const roleLabel = newRole === 'admin' ? 'Quản trị viên' : 'Khách tham quan';
         return { ...u, role: newRole, roleLabel };
       }
       return u;
     });
 
     setUsersList(updatedUsers);
-    localStorage.setItem('museum_users', JSON.stringify(updatedUsers));
-
-    try {
-      await supabase.from('nguoi_dung').update({ role: newRole, role_label: roleLabel }).eq('id', userId);
-    } catch (e) {
-      console.warn('Supabase update user role notice', e);
-    }
 
     if (currentUser && currentUser.id === userId) {
-      const updatedCurrent = { ...currentUser, role: newRole, roleLabel };
+      const updatedCurrent = {
+        ...currentUser,
+        role: newRole,
+        roleLabel: newRole === 'admin' ? 'Quản trị viên' : 'Khách tham quan',
+      };
       setCurrentUser(updatedCurrent);
-      localStorage.setItem('museum_current_user', JSON.stringify(updatedCurrent));
     }
 
     const targetUser = usersList.find((u) => u.id === userId);
@@ -389,46 +475,30 @@ export const AppProvider = ({ children }) => {
       }!`,
       'success'
     );
+    logAudit('UPDATE_USER_ROLE', `Thay đổi quyền người dùng ${targetUser?.email} sang ${newRole}`);
     return { success: true };
   };
 
-  const toggleUserStatus = async (userId) => {
-    const target = usersList.find((u) => u.id === userId);
-    if (!target) return;
-    const newStatus = target.status === 'Tạm khóa' ? 'Hoạt động' : 'Tạm khóa';
-    const updatedUsers = usersList.map((u) => (u.id === userId ? { ...u, status: newStatus } : u));
+  const toggleUserStatus = (userId) => {
+    const updatedUsers = usersList.map((u) => {
+      if (u.id === userId) {
+        const newStatus = u.status === 'Hoạt động' ? 'Tạm khóa' : 'Hoạt động';
+        return { ...u, status: newStatus };
+      }
+      return u;
+    });
     setUsersList(updatedUsers);
-    localStorage.setItem('museum_users', JSON.stringify(updatedUsers));
-
-    try {
-      await supabase.from('nguoi_dung').update({ status: newStatus }).eq('id', userId);
-    } catch (e) {
-      console.warn('Supabase toggle status notice', e);
-    }
-
-    addToast(
-      `${newStatus === 'Tạm khóa' ? '🔒 Đã khóa' : '🔓 Đã mở khóa'} tài khoản "${target.name}" thành công!`,
-      newStatus === 'Tạm khóa' ? 'error' : 'success'
-    );
+    addToast('Đã thay đổi trạng thái tài khoản.', 'info');
+    logAudit('TOGGLE_USER_STATUS', `Cập nhật trạng thái người dùng ID: ${userId}`);
   };
 
-  const deleteUser = async (userId) => {
-    const target = usersList.find((u) => u.id === userId);
-    if (!target) return;
-    const updatedUsers = usersList.filter((u) => u.id !== userId);
-    setUsersList(updatedUsers);
-    localStorage.setItem('museum_users', JSON.stringify(updatedUsers));
-
-    try {
-      await supabase.from('nguoi_dung').delete().eq('id', userId);
-    } catch (e) {
-      console.warn('Supabase delete user notice', e);
-    }
-
-    addToast(`🗑️ Đã xóa tài khoản "${target.name}" thành công!`, 'error');
+  const deleteUser = (userId) => {
+    setUsersList((prev) => prev.filter((u) => u.id !== userId));
+    addToast('Đã xóa tài khoản người dùng.', 'info');
+    logAudit('DELETE_USER', `Xóa tài khoản người dùng ID: ${userId}`);
   };
 
-  const addUser = async (newUser) => {
+  const addUser = (newUser) => {
     const createdUser = {
       id: `USR${String(usersList.length + 1).padStart(3, '0')}`,
       name: newUser.name || newUser.email.split('@')[0],
@@ -443,241 +513,13 @@ export const AppProvider = ({ children }) => {
 
     const updatedUsers = [createdUser, ...usersList];
     setUsersList(updatedUsers);
-    localStorage.setItem('museum_users', JSON.stringify(updatedUsers));
-
-    try {
-      await supabase.from('nguoi_dung').insert([
-        {
-          id: createdUser.id,
-          name: createdUser.name,
-          email: createdUser.email,
-          role: createdUser.role,
-          role_label: createdUser.roleLabel,
-          status: createdUser.status,
-          avatar: createdUser.avatar,
-        },
-      ]);
-    } catch (e) {
-      console.warn('Supabase add user notice', e);
-    }
-
     addToast(`Đã tạo tài khoản "${createdUser.name}" (${createdUser.roleLabel}) thành công!`, 'success');
+    logAudit('CREATE_USER', `Tạo tài khoản người dùng: ${createdUser.email}`);
     return { success: true, user: createdUser };
   };
 
-  // 10. Artifacts CRUD (Supabase Sync)
-  const addArtifact = async (newArtifact) => {
-    const created = {
-      ...newArtifact,
-      id: `AV${String(artifactsList.length + 1).padStart(3, '0')}`,
-      createdAt: new Date().toISOString().split('T')[0],
-      image: newArtifact.image || '/images/trong-dong.jpg',
-      aiAnalysis: newArtifact.aiAnalysis || `Bản phân tích AI: hiện vật ${newArtifact.name} được bổ sung mới vào danh mục lưu trữ.`,
-    };
-
-    setArtifactsList((prev) => [created, ...prev]);
-
-    try {
-      await supabase.from('hien_vat').insert([
-        {
-          id: created.id,
-          name: created.name,
-          category: created.category,
-          category_id: created.categoryId,
-          culture: created.culture,
-          period: created.period,
-          material: created.material,
-          dimensions: created.dimensions,
-          origin: created.origin,
-          location: created.location,
-          status: created.status || 'Đang trưng bày',
-          image: created.image,
-          description: created.description,
-          ai_analysis: created.aiAnalysis,
-        },
-      ]);
-    } catch (e) {
-      console.warn('Supabase add artifact notice', e);
-    }
-
-    addToast(`Đã thêm hiện vật "${created.name}" thành công!`, 'success');
-    return created;
-  };
-
-  const updateArtifact = async (id, updatedData) => {
-    setArtifactsList((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updatedData } : item))
-    );
-
-    try {
-      await supabase
-        .from('hien_vat')
-        .update({
-          name: updatedData.name,
-          category: updatedData.category,
-          category_id: updatedData.categoryId,
-          culture: updatedData.culture,
-          period: updatedData.period,
-          material: updatedData.material,
-          dimensions: updatedData.dimensions,
-          origin: updatedData.origin,
-          location: updatedData.location,
-          status: updatedData.status,
-          image: updatedData.image,
-          description: updatedData.description,
-        })
-        .eq('id', id);
-    } catch (e) {
-      console.warn('Supabase update artifact notice', e);
-    }
-
-    addToast('Đã cập nhật thông tin hiện vật thành công!', 'success');
-  };
-
-  const deleteArtifact = async (id) => {
-    const item = artifactsList.find((a) => a.id === id);
-    setArtifactsList((prev) => prev.filter((a) => a.id !== id));
-
-    try {
-      await supabase.from('hien_vat').delete().eq('id', id);
-    } catch (e) {
-      console.warn('Supabase delete artifact notice', e);
-    }
-
-    addToast(`Đã xóa hiện vật "${item?.name || id}" thành công!`, 'error');
-  };
-
-  // 11. Tickets CRUD
-  const addTicketType = async (newType) => {
-    const created = {
-      ...newType,
-      id: `TK${String(ticketsList.length + 1).padStart(3, '0')}`,
-    };
-    setTicketsList((prev) => [...prev, created]);
-
-    try {
-      await supabase.from('ve_tham_quan').insert([
-        {
-          id: created.id,
-          name: created.name,
-          price: created.price,
-          description: created.description,
-          active: created.active !== false,
-        },
-      ]);
-    } catch (e) {
-      console.warn('Supabase add ticket type notice', e);
-    }
-
-    addToast(`Đã thêm loại vé "${created.name}" thành công!`, 'success');
-  };
-
-  const updateTicketType = async (id, updatedData) => {
-    setTicketsList((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, ...updatedData } : t))
-    );
-
-    try {
-      await supabase
-        .from('ve_tham_quan')
-        .update({
-          name: updatedData.name,
-          price: updatedData.price,
-          description: updatedData.description,
-          active: updatedData.active !== false,
-        })
-        .eq('id', id);
-    } catch (e) {
-      console.warn('Supabase update ticket type notice', e);
-    }
-
-    addToast('Đã cập nhật loại vé thành công!', 'success');
-  };
-
-  const deleteTicketType = async (id) => {
-    const target = ticketsList.find((t) => t.id === id);
-    setTicketsList((prev) => prev.filter((t) => t.id !== id));
-
-    try {
-      await supabase.from('ve_tham_quan').delete().eq('id', id);
-    } catch (e) {
-      console.warn('Supabase delete ticket type notice', e);
-    }
-
-    addToast(`Đã xóa loại vé "${target?.name || id}"!`, 'error');
-  };
-
-  // 12. Exhibitions CRUD
-  const addExhibition = async (newEx) => {
-    const created = {
-      ...newEx,
-      id: `EX${String(exhibitionsList.length + 1).padStart(3, '0')}`,
-      artifactsCount: newEx.artifactsCount || 20,
-      visitorsCount: 0,
-    };
-    setExhibitionsList((prev) => [created, ...prev]);
-
-    try {
-      await supabase.from('trien_lam').insert([
-        {
-          id: created.id,
-          name: created.name,
-          status: created.status,
-          start_date: created.startDate,
-          end_date: created.endDate,
-          location: created.location,
-          image: created.image,
-          description: created.description,
-          artifacts_count: created.artifactsCount,
-        },
-      ]);
-    } catch (e) {
-      console.warn('Supabase add exhibition notice', e);
-    }
-
-    addToast(`Đã tạo triển lãm "${created.name}" thành công!`, 'success');
-  };
-
-  const updateExhibition = async (id, updatedData) => {
-    setExhibitionsList((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, ...updatedData } : e))
-    );
-
-    try {
-      await supabase
-        .from('trien_lam')
-        .update({
-          name: updatedData.name,
-          status: updatedData.status,
-          start_date: updatedData.startDate,
-          end_date: updatedData.endDate,
-          location: updatedData.location,
-          image: updatedData.image,
-          description: updatedData.description,
-        })
-        .eq('id', id);
-    } catch (e) {
-      console.warn('Supabase update exhibition notice', e);
-    }
-
-    addToast('Đã cập nhật triển lãm thành công!', 'success');
-  };
-
-  const deleteExhibition = async (id) => {
-    const target = exhibitionsList.find((e) => e.id === id);
-    setExhibitionsList((prev) => prev.filter((e) => e.id !== id));
-
-    try {
-      await supabase.from('trien_lam').delete().eq('id', id);
-    } catch (e) {
-      console.warn('Supabase delete exhibition notice', e);
-    }
-
-    addToast(`Đã xóa triển lãm "${target?.name || id}"!`, 'error');
-  };
-
-  // 13. Events Registration & CRUD
-  const registerForEvent = async (registrationData) => {
+  // 13. Event Registrations
+  const registerForEvent = (registrationData) => {
     const targetId = typeof registrationData === 'object' ? registrationData.eventId : registrationData;
     const ev = eventsList.find((e) => e.id === targetId) || {
       id: targetId,
@@ -688,17 +530,15 @@ export const AppProvider = ({ children }) => {
       id: `EVREG-${Date.now()}`,
       eventId: targetId,
       eventTitle: registrationData?.eventTitle || ev.title,
-      userId: currentUser?.id || null,
-      name: registrationData?.name ? registrationData.name.trim() : currentUser?.name || 'Khách tham quan',
+      name: registrationData?.name ? registrationData.name.trim() : (currentUser?.name || 'Khách tham quan'),
       phone: registrationData?.phone ? registrationData.phone.trim() : 'N/A',
-      email: registrationData?.email ? registrationData.email.trim() : currentUser?.email || 'N/A',
+      email: registrationData?.email ? registrationData.email.trim() : (currentUser?.email || 'N/A'),
       visitDate: registrationData?.visitDate || new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString().split('T')[0],
     };
 
     const updatedRegistrations = [newRecord, ...eventRegistrationsList];
     setEventRegistrationsList(updatedRegistrations);
-    localStorage.setItem('museum_event_registrations', JSON.stringify(updatedRegistrations));
 
     setEventsList((prev) =>
       prev.map((e) => {
@@ -711,60 +551,40 @@ export const AppProvider = ({ children }) => {
       })
     );
 
-    try {
-      await supabase.from('dang_ky_su_kien').insert([
-        {
-          id: newRecord.id,
-          event_id: newRecord.eventId,
-          event_title: newRecord.eventTitle,
-          user_id: newRecord.userId,
-          name: newRecord.name,
-          phone: newRecord.phone,
-          email: newRecord.email,
-          visit_date: newRecord.visitDate,
-        },
-      ]);
-    } catch (e) {
-      console.warn('Supabase event registration notice', e);
-    }
-
-    if (currentUser) {
-      const prevRegistered = currentUser.registeredEvents || [];
-      if (!prevRegistered.includes(targetId)) {
-        const updatedUser = {
-          ...currentUser,
-          registeredEvents: [...prevRegistered, targetId],
-        };
-        setCurrentUser(updatedUser);
-      }
-    }
-
     const safeTitle = (registrationData?.eventTitle || ev.title || '').replace(/"/g, '”');
     addToast(`✓ Đăng ký thành công sự kiện "${safeTitle}"!`, 'success');
+    logAudit('EVENT_REGISTER', `Khách hàng ${newRecord.email} đăng ký sự kiện: ${ev.title}`);
     return { success: true, event: ev, registration: newRecord };
   };
 
-  // 14. Book Tickets
+  // 14. Ticket Booking
   const bookTicket = async (bookingData) => {
+    const ticketCode = `TK-${Date.now().toString().slice(-6)}`;
+    const unitPrice = bookingData.price || 50000;
+    const qty = bookingData.quantity || 1;
+    const total = unitPrice * qty;
+
     const newBooking = {
-      id: `TK-2026-${String(bookedTicketsList.length + 1).padStart(3, '0')}`,
-      ticketCode: `TK-2026-${String(bookedTicketsList.length + 1).padStart(3, '0')}`,
+      id: `BK-${Date.now()}`,
+      ticketCode,
       userId: currentUser?.id || null,
       name: bookingData.name.trim(),
       phone: bookingData.phone.trim(),
       email: bookingData.email.trim(),
       ticketType: bookingData.ticketType || 'Vé Người lớn',
-      price: bookingData.price || 50000,
+      price: unitPrice,
+      quantity: qty,
+      totalPrice: total,
       visitDate: bookingData.visitDate,
-      quantity: bookingData.quantity || 1,
-      paymentMethod: bookingData.paymentMethod || 'Thanh toán tại quầy',
+      paymentMethod: bookingData.paymentMethod || 'Tại quầy',
       status: 'Đã xác nhận',
       createdAt: new Date().toISOString().split('T')[0],
+      qrCode: `${ticketCode}-${bookingData.email.trim()}-${total}VND`,
+      userEmail: currentUser?.email || bookingData.email.trim(),
     };
 
     const updated = [newBooking, ...bookedTicketsList];
     setBookedTicketsList(updated);
-    localStorage.setItem('museum_booked_tickets', JSON.stringify(updated));
 
     try {
       await supabase.from('dat_ve').insert([
@@ -787,41 +607,60 @@ export const AppProvider = ({ children }) => {
       console.warn('Supabase book ticket notice', e);
     }
 
-    addToast('Đặt vé thành công! Mã vé điện tử đã được tạo trong mục Vé của tôi.', 'success');
+    addToast(`🎫 Đặt vé thành công (${ticketCode})! Đã lưu vào mục "Vé của tôi".`, 'success');
+    logAudit('BOOK_TICKET', `Đặt vé thành công: ${ticketCode} - ${newBooking.ticketType} (${qty} vé)`);
     return { success: true, booking: newBooking };
   };
 
   // 15. Reviews
-  const addReview = async (newReview) => {
-    const created = {
+  const bannedWords = ['spam', 'lừa đảo', 'xúc phạm', 'bậy bạ', 'đồi trụy', 'fuck', 'shit'];
+
+  const addReview = async (reviewData) => {
+    const commentText = (reviewData.comment || '').trim();
+    if (!commentText || commentText.length < 5) {
+      addToast('Nội dung đánh giá quá ngắn (tối thiểu 5 ký tự).', 'error');
+      return { success: false, message: 'Nội dung không hợp lệ' };
+    }
+
+    const lowerComment = commentText.toLowerCase();
+    const hasBannedWord = bannedWords.some((word) => lowerComment.includes(word));
+    if (hasBannedWord) {
+      addToast('Đánh giá chứa từ ngữ không phù hợp hoặc vi phạm tiêu chuẩn cộng đồng!', 'error');
+      return { success: false, message: 'Nội dung chứa từ cấm' };
+    }
+
+    const newReview = {
       id: `REV${String(reviewsList.length + 1).padStart(3, '0')}`,
-      author: newReview.author || currentUser?.name || 'Khách tham quan',
+      author: reviewData.author || currentUser?.name || 'Khách tham quan',
+      authorEmail: currentUser?.email || 'guest@baotang.vn',
       userId: currentUser?.id || null,
-      artifactName: newReview.artifactName || 'Bảo tàng Quốc gia Việt Nam',
-      rating: newReview.rating || 5,
-      comment: newReview.comment,
+      rating: Number(reviewData.rating) || 5,
+      artifactName: reviewData.artifactName || 'Bảo tàng Quốc gia Việt Nam',
+      comment: commentText,
       date: new Date().toISOString().split('T')[0],
     };
 
-    setReviewsList((prev) => [created, ...prev]);
+    setReviewsList((prev) => [newReview, ...prev]);
 
     try {
       await supabase.from('danh_gia').insert([
         {
-          id: created.id,
-          author: created.author,
-          user_id: created.userId,
-          artifact_name: created.artifactName,
-          rating: created.rating,
-          comment: created.comment,
-          date: created.date,
+          id: newReview.id,
+          author: newReview.author,
+          user_id: newReview.userId,
+          artifact_name: newReview.artifactName,
+          rating: newReview.rating,
+          comment: newReview.comment,
+          date: newReview.date,
         },
       ]);
     } catch (e) {
       console.warn('Supabase review insert notice', e);
     }
 
-    addToast('Cảm ơn bạn đã gửi đánh giá và nhận xét!', 'success');
+    addToast('Cảm ơn bạn! Đánh giá đã được gửi thành công.', 'success');
+    logAudit('SUBMIT_REVIEW', `Đánh giá mới từ ${newReview.author} (${newReview.rating} sao)`);
+    return { success: true, review: newReview };
   };
 
   const deleteReview = async (id) => {
@@ -831,7 +670,54 @@ export const AppProvider = ({ children }) => {
     } catch (e) {
       console.warn('Supabase delete review notice', e);
     }
-    addToast('Đã xóa đánh giá thành công!', 'info');
+    addToast('Đã xóa đánh giá thành công.', 'info');
+    logAudit('DELETE_REVIEW', `Xóa đánh giá ID: ${id}`);
+  };
+
+  // 16. Exhibitions
+  const addExhibition = (exhibition) => {
+    const created = {
+      ...exhibition,
+      id: `EX${String(exhibitionsList.length + 1).padStart(3, '0')}`,
+    };
+    setExhibitionsList((prev) => [created, ...prev]);
+    addToast('Đã thêm triển lãm mới thành công!', 'success');
+    return created;
+  };
+
+  const updateExhibition = (id, data) => {
+    setExhibitionsList((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, ...data } : e))
+    );
+    addToast('Đã cập nhật triển lãm thành công!', 'success');
+  };
+
+  const deleteExhibition = (id) => {
+    setExhibitionsList((prev) => prev.filter((e) => e.id !== id));
+    addToast('Đã xóa triển lãm thành công!', 'info');
+  };
+
+  // 17. Tickets Types CRUD
+  const addTicketType = (ticket) => {
+    const created = {
+      ...ticket,
+      id: `TK${String(ticketsList.length + 1).padStart(3, '0')}`,
+    };
+    setTicketsList((prev) => [...prev, created]);
+    addToast('Đã thêm loại vé mới thành công!', 'success');
+    return created;
+  };
+
+  const updateTicketType = (id, data) => {
+    setTicketsList((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, ...data } : t))
+    );
+    addToast('Đã cập nhật loại vé thành công!', 'success');
+  };
+
+  const deleteTicketType = (id) => {
+    setTicketsList((prev) => prev.filter((t) => t.id !== id));
+    addToast('Đã xóa loại vé thành công!', 'info');
   };
 
   return (
@@ -884,13 +770,14 @@ export const AppProvider = ({ children }) => {
         addReview,
         deleteReview,
 
+        // Audit Logs
+        auditLogs: auditLogsList,
+        logAudit,
+
         // Toasts
         toasts,
         addToast,
         removeToast,
-
-        // Refresh
-        refreshData: fetchSupabaseData,
       }}
     >
       {children}
@@ -898,4 +785,10 @@ export const AppProvider = ({ children }) => {
   );
 };
 
-export const useApp = () => useContext(AppContext);
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp must be used within an AppProvider');
+  }
+  return context;
+};

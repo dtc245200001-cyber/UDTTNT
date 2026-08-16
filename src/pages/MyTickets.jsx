@@ -1,146 +1,200 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Ticket, Calendar, Clock, MapPin, User, Phone, Mail, ArrowLeft, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Ticket, Calendar, User, Phone, Mail, QrCode as QrIcon, Printer, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import { Badge } from '@/components/ui/Badge';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCode } from '@/components/ui/QRCode';
+import { exportToPDF } from '@/utils/exportHelpers';
 
 export const MyTickets = () => {
-  const { bookedTickets, currentUser } = useApp();
+  const { currentUser, isAuthenticated, bookedTickets } = useApp();
+  const navigate = useNavigate();
+  const [selectedTicketForPrint, setSelectedTicketForPrint] = useState(null);
 
-  // Filter tickets by current user or show all booked tickets in session
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-4 font-sans animate-fadeIn">
+        <div className="w-16 h-16 bg-amber-50 text-museum-gold rounded-full flex items-center justify-center mx-auto text-2xl shadow-xs">
+          <Ticket className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-extrabold text-museum-brown">VUI LÒNG ĐĂNG NHẬP</h2>
+        <p className="text-sm text-gray-500 max-w-md mx-auto">
+          Bạn cần đăng nhập tài khoản khách để xem danh sách vé điện tử đã mua và mã QR tham quan.
+        </p>
+        <button
+          onClick={() => navigate('/login?redirect=/my-tickets')}
+          className="px-6 py-3 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md transition-colors"
+        >
+          Đăng nhập ngay
+        </button>
+      </div>
+    );
+  }
+
+  // Filter tickets belonging to logged-in user
   const userTickets = (bookedTickets || []).filter(
-    (t) =>
+    (b) =>
       !currentUser ||
-      !t.email ||
-      t.email.toLowerCase() === currentUser.email?.toLowerCase() ||
-      t.userId === currentUser.id
+      !b.email ||
+      (b.userEmail && b.userEmail.toLowerCase() === currentUser.email?.toLowerCase()) ||
+      (b.email && b.email.toLowerCase() === currentUser.email?.toLowerCase()) ||
+      b.userId === currentUser.id
   );
 
-  return (
-    <div className="min-h-screen bg-museum-ivory py-10 px-4 sm:px-6 lg:px-8 font-sans animate-fadeIn">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Top Header */}
-        <div className="flex items-center justify-between">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-museum-brown hover:text-museum-gold transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Quay lại trang chủ</span>
-          </Link>
-          <div className="text-xs font-semibold text-gray-500">
-            Xin chào, <strong className="text-museum-brown">{currentUser?.name || 'Quý khách'}</strong>
-          </div>
+  const handlePrintTicket = (ticket) => {
+    const ticketHtml = `
+      <div style="border: 2px dashed #5C2C16; padding: 20px; border-radius: 12px; max-width: 500px; margin: 0 auto; background: #FFFDF9;">
+        <div style="text-align: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 15px;">
+          <h2 style="color: #5C2C16; margin: 0;">BẢO TÀNG QUỐC GIA VIỆT NAM</h2>
+          <p style="color: #C5A059; margin: 5px 0 0 0; font-size: 13px; font-weight: bold;">VÉ THAM QUAN ĐIỆN TỬ</p>
         </div>
+        <table style="width: 100%; border: none; font-size: 13px;">
+          <tr><td><strong>Mã vé:</strong></td><td style="color: #5C2C16; font-weight: bold;">${ticket.ticketCode}</td></tr>
+          <tr><td><strong>Họ tên:</strong></td><td>${ticket.name}</td></tr>
+          <tr><td><strong>Loại vé:</strong></td><td>${ticket.ticketType}</td></tr>
+          <tr><td><strong>Số lượng:</strong></td><td>${ticket.quantity || 1} vé</td></tr>
+          <tr><td><strong>Tổng tiền:</strong></td><td style="color: #C5A059; font-weight: bold;">${formatCurrency(ticket.totalPrice || ticket.price)}</td></tr>
+          <tr><td><strong>Ngày tham quan:</strong></td><td>${ticket.visitDate}</td></tr>
+          <tr><td><strong>Trạng thái:</strong></td><td style="color: green; font-weight: bold;">${ticket.status}</td></tr>
+        </table>
+        <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd;">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(ticket.qrCode || ticket.ticketCode)}" alt="QR Code" width="140"/>
+          <p style="font-size: 11px; color: #666; margin-top: 5px;">Quét mã QR tại cổng soát vé tự động để vào cổng</p>
+        </div>
+      </div>
+    `;
+    exportToPDF(`Ve_dientu_${ticket.ticketCode}`, ticketHtml);
+  };
 
+  return (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 font-sans animate-fadeIn">
+      {/* Header Breadcrumb & Title */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-museum-brown tracking-tight flex items-center gap-2.5">
+          <button
+            onClick={() => navigate('/')}
+            className="text-xs text-museum-brown hover:text-museum-gold font-semibold flex items-center gap-1 mb-2"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Trang chủ
+          </button>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-museum-brown tracking-tight flex items-center gap-2">
             <Ticket className="w-7 h-7 text-museum-gold" />
-            <span>VÉ THAM QUAN CỦA TÔI</span>
+            VÉ THAM QUAN CỦA TÔI
           </h1>
-          <p className="text-xs sm:text-sm text-gray-600 mt-1">
-            Danh sách vé điện tử đã đặt trực tuyến. Vui lòng xuất trình mã QR tại quầy soát vé khi đến tham quan.
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            Quản lý danh sách vé điện tử đã đặt & mã QR check-in tại cổng bảo tàng.
           </p>
         </div>
 
-        {/* Tickets List */}
-        {userTickets.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-xs space-y-4">
-            <div className="w-16 h-16 rounded-3xl bg-museum-cream flex items-center justify-center text-museum-gold text-2xl mx-auto shadow-xs">
-              🎫
-            </div>
-            <h3 className="font-extrabold text-lg text-museum-brown">Chưa có vé nào được đặt</h3>
-            <p className="text-xs sm:text-sm text-gray-500 max-w-md mx-auto">
-              Bạn chưa có lịch sử đặt vé tham quan nào. Hãy chọn loại vé và ngày tham quan phù hợp để khám phá bảo tàng ngay hôm nay!
-            </p>
-            <Link
-              to="/#tickets"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-md transition-colors"
-            >
-              <Ticket className="w-4 h-4" />
-              <span>Đặt vé tham quan ngay</span>
-            </Link>
+        <button
+          onClick={() => navigate('/#tickets')}
+          className="px-5 py-2.5 bg-museum-gold hover:bg-museum-gold-lt text-white font-bold text-xs rounded-xl shadow-md transition-colors w-fit cursor-pointer"
+        >
+          + Đặt thêm vé mới
+        </button>
+      </div>
+
+      {/* Ticket List / Empty state */}
+      {userTickets.length === 0 ? (
+        <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-xs space-y-4">
+          <div className="w-20 h-20 bg-museum-cream rounded-2xl flex items-center justify-center text-museum-brown mx-auto">
+            <Ticket className="w-10 h-10" />
           </div>
-        ) : (
-          <div className="space-y-6">
-            {userTickets.map((ticket) => (
-              <div
-                key={ticket.id || ticket.ticketCode}
-                className="bg-white rounded-3xl border border-museum-gold/30 shadow-md overflow-hidden flex flex-col md:flex-row hover:shadow-lg transition-all"
-              >
-                {/* Left Ticket Details */}
-                <div className="flex-1 p-6 space-y-4">
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-gray-400">Mã vé:</span>
-                      <span className="font-black text-sm text-museum-brown tracking-wider bg-museum-cream px-2.5 py-0.5 rounded-lg border border-museum-gold/30">
-                        {ticket.ticketCode || ticket.id}
-                      </span>
-                    </div>
-                    <Badge variant="emerald">{ticket.status || 'Đã xác nhận'}</Badge>
-                  </div>
+          <h3 className="text-lg font-bold text-museum-brown">Bạn chưa có vé điện tử nào</h3>
+          <p className="text-xs text-gray-500 max-w-sm mx-auto">
+            Hãy đặt vé trực tuyến ngay để trải nghiệm quy trình tham quan nhanh chóng, không phải chờ đợi tại quầy vé!
+          </p>
+          <button
+            onClick={() => navigate('/#tickets')}
+            className="px-6 py-3 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-md transition-colors"
+          >
+            Đặt vé tham quan ngay
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {userTickets.map((t) => (
+            <div
+              key={t.id}
+              className="bg-white rounded-3xl border border-museum-gold/30 shadow-md hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between relative group"
+            >
+              {/* Top Accent Bar */}
+              <div className="bg-museum-brown text-white p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Ticket className="w-5 h-5 text-museum-gold-lt" />
+                  <span className="font-extrabold text-sm tracking-wider">{t.ticketCode}</span>
+                </div>
+                <Badge variant="emerald" className="bg-emerald-500 text-white font-bold text-[10px]">
+                  ✓ {t.status}
+                </Badge>
+              </div>
 
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-black text-museum-brown">{ticket.ticketType || 'Vé tham quan'}</h3>
-                    <p className="text-xs text-gray-500">Bảo tàng Lịch sử Quốc gia Việt Nam</p>
-                  </div>
+              {/* Main Ticket Body */}
+              <div className="p-5 space-y-4 flex-1">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+                  <div className="sm:col-span-7 space-y-2 text-xs">
+                    <div>
+                      <span className="text-[11px] text-gray-400 font-semibold block uppercase">Loại vé</span>
+                      <strong className="text-sm font-bold text-museum-brown">{t.ticketType}</strong>
+                    </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-gray-600 bg-museum-ivory/50 p-4 rounded-2xl border border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-museum-gold shrink-0" />
-                      <span>Người nhận: <strong>{ticket.name}</strong></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-museum-gold shrink-0" />
-                      <span>Ngày tham quan: <strong>{ticket.visitDate}</strong></span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-museum-gold shrink-0" />
-                      <span>SĐT: {ticket.phone || 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-museum-gold shrink-0" />
-                      <span className="truncate">Email: {ticket.email || 'N/A'}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="text-xs text-gray-500">
-                      Số lượng: <strong className="text-museum-brown">{ticket.quantity || 1} vé</strong> · {ticket.paymentMethod || 'Thanh toán tại quầy'}
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs text-gray-400 font-medium">Tổng tiền</div>
-                      <div className="text-lg font-black text-museum-gold">
-                        {formatCurrency((ticket.price || 50000) * (ticket.quantity || 1))}
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div>
+                        <span className="text-[10px] text-gray-400 block">Số lượng</span>
+                        <span className="font-bold text-gray-800">{t.quantity || 1} vé</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-gray-400 block">Tổng tiền</span>
+                        <span className="font-bold text-museum-gold">
+                          {formatCurrency(t.totalPrice || t.price)}
+                        </span>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Right QR Code Stub */}
-                <div className="bg-museum-cream/60 p-6 md:w-56 flex flex-col items-center justify-center text-center border-t md:border-t-0 md:border-l border-dashed border-museum-gold/50 space-y-3">
-                  <div className="bg-white p-3 rounded-2xl shadow-xs border border-gray-200">
-                    <QRCodeSVG
-                      value={`MUSEUM-TICKET:${ticket.ticketCode || ticket.id}|DATE:${ticket.visitDate}|USER:${ticket.name}`}
-                      size={110}
-                      level="M"
-                      includeMargin={false}
-                    />
+                    <div className="pt-1">
+                      <span className="text-[10px] text-gray-400 block">Ngày tham quan dự kiến</span>
+                      <span className="font-semibold text-emerald-700 flex items-center gap-1 mt-0.5">
+                        <Calendar className="w-3.5 h-3.5" />
+                        {t.visitDate}
+                      </span>
+                    </div>
+
+                    <div className="pt-1 border-t border-gray-100 text-[11px] text-gray-500 space-y-0.5">
+                      <div>Người nhận: <strong>{t.name}</strong></div>
+                      <div>Email: {t.email}</div>
+                      <div>Thanh toán: <span className="font-semibold text-museum-brown">{t.paymentMethod || 'Tại quầy'}</span></div>
+                    </div>
                   </div>
-                  <div className="text-[11px] font-bold text-museum-brown tracking-wider">
-                    MÃ QR CHECK-IN
-                  </div>
-                  <div className="text-[10px] text-gray-400">
-                    Quét tại cửa soát vé
+
+                  {/* QR Code Section */}
+                  <div className="sm:col-span-5 flex flex-col items-center justify-center p-3 bg-museum-ivory/60 rounded-2xl border border-museum-cream text-center">
+                    <QRCode value={t.qrCode || t.ticketCode} size={110} />
+                    <span className="text-[10px] text-gray-500 font-medium mt-1.5 flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      Mã QR hợp lệ
+                    </span>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+
+              {/* Bottom Action Footer */}
+              <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                <span className="text-[11px] text-gray-400">
+                  Ngày đặt: {t.createdAt}
+                </span>
+                <button
+                  onClick={() => handlePrintTicket(t)}
+                  className="px-4 py-1.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5 text-museum-gold-lt" />
+                  <span>In / Tải vé PDF</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
