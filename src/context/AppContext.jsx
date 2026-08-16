@@ -5,6 +5,8 @@ import { events as initialEvents } from '../data/events';
 import { ticketTypes as initialTickets, ticketStats as initialTicketStats } from '../data/tickets';
 import { categories as initialCategories } from '../data/categories';
 import { users as initialUsers } from '../data/users';
+import { reviews as initialReviews } from '../data/reviews';
+import { getAuditLogs, logAction as createAuditLog } from '../utils/auditLogger';
 
 const AppContext = createContext();
 
@@ -15,6 +17,15 @@ export const AppProvider = ({ children }) => {
   const [ticketsList, setTicketsList] = useState(initialTickets);
   const [ticketStatsState] = useState(initialTicketStats);
   const [categoriesList] = useState(initialCategories);
+
+  // Audit Logs State
+  const [auditLogsList, setAuditLogsList] = useState(getAuditLogs);
+
+  const logAudit = (action, description) => {
+    const entry = createAuditLog(currentUser, action, description);
+    setAuditLogsList(getAuditLogs());
+    return entry;
+  };
 
   // User list state with LocalStorage persistence & auto-merge initial users
   const [usersList, setUsersList] = useState(() => {
@@ -56,6 +67,24 @@ export const AppProvider = ({ children }) => {
     return null;
   });
 
+  // Reviews list state with LocalStorage persistence
+  const [reviewsList, setReviewsList] = useState(() => {
+    const saved = localStorage.getItem('museum_reviews');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse museum_reviews from localStorage', e);
+      }
+    }
+    return initialReviews;
+  });
+
+  // Sync reviews to localStorage
+  useEffect(() => {
+    localStorage.setItem('museum_reviews', JSON.stringify(reviewsList));
+  }, [reviewsList]);
+
   // Sync usersList changes to localStorage
   useEffect(() => {
     localStorage.setItem('museum_users', JSON.stringify(usersList));
@@ -78,7 +107,7 @@ export const AppProvider = ({ children }) => {
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
       removeToast(id);
-    }, 3000);
+    }, 3500);
   };
 
   const removeToast = (id) => {
@@ -100,6 +129,7 @@ export const AppProvider = ({ children }) => {
 
       setCurrentUser(foundUser);
       addToast(`Xin chào mừng, ${foundUser.name}!`, 'success');
+      logAudit('LOGIN', `Người dùng ${foundUser.email} đăng nhập hệ thống (${foundUser.roleLabel})`);
       return { success: true, user: foundUser };
     } else {
       addToast('Email hoặc mật khẩu không chính xác!', 'error');
@@ -131,10 +161,14 @@ export const AppProvider = ({ children }) => {
     setUsersList((prev) => [...prev, newUser]);
     setCurrentUser(newUser);
     addToast('Đăng ký tài khoản thành công! Tự động đăng nhập.', 'success');
+    logAudit('REGISTER', `Tài khoản mới đăng ký: ${newUser.email}`);
     return { success: true, user: newUser };
   };
 
   const logout = () => {
+    if (currentUser) {
+      logAudit('LOGOUT', `Người dùng ${currentUser.email} đã đăng xuất`);
+    }
     setCurrentUser(null);
     addToast('Đã đăng xuất khỏi hệ thống thành công.', 'info');
   };
@@ -156,6 +190,7 @@ export const AppProvider = ({ children }) => {
     };
     setArtifactsList((prev) => [created, ...prev]);
     addToast(`Đã thêm hiện vật "${created.name}" thành công!`, 'success');
+    logAudit('CREATE_ARTIFACT', `Thêm hiện vật mới: ${created.name} (${created.id})`);
     return created;
   };
 
@@ -164,12 +199,14 @@ export const AppProvider = ({ children }) => {
       prev.map((item) => (item.id === id ? { ...item, ...updatedData } : item))
     );
     addToast('Đã cập nhật thông tin hiện vật thành công!', 'success');
+    logAudit('UPDATE_ARTIFACT', `Cập nhật hiện vật mã: ${id}`);
   };
 
   const deleteArtifact = (id) => {
     const item = artifactsList.find((a) => a.id === id);
     setArtifactsList((prev) => prev.filter((a) => a.id !== id));
     addToast(`Đã xóa hiện vật "${item?.name || id}" thành công!`, 'error');
+    logAudit('DELETE_ARTIFACT', `Xóa hiện vật: ${item?.name || id}`);
   };
 
   const updateUserRole = (userId, newRole) => {
@@ -201,6 +238,7 @@ export const AppProvider = ({ children }) => {
       }!`,
       'success'
     );
+    logAudit('UPDATE_USER_ROLE', `Thay đổi quyền người dùng ${targetUser?.email} sang ${newRole}`);
     return { success: true };
   };
 
@@ -221,6 +259,7 @@ export const AppProvider = ({ children }) => {
     setUsersList(updatedUsers);
     localStorage.setItem('museum_users', JSON.stringify(updatedUsers));
     addToast(`Đã tạo tài khoản "${createdUser.name}" (${createdUser.roleLabel}) thành công!`, 'success');
+    logAudit('CREATE_USER', `Tạo tài khoản người dùng: ${createdUser.email}`);
     return { success: true, user: createdUser };
   };
 
@@ -283,6 +322,7 @@ export const AppProvider = ({ children }) => {
 
     const safeTitle = (registrationData?.eventTitle || ev.title || '').replace(/"/g, '”');
     addToast(`✓ Đăng ký thành công sự kiện "${safeTitle}"! Vui lòng kiểm tra email của bạn.`, 'success');
+    logAudit('EVENT_REGISTER', `Khách hàng ${newRecord.email} đăng ký sự kiện: ${ev.title}`);
     return { success: true, event: ev, registration: newRecord };
   };
 
@@ -302,40 +342,101 @@ export const AppProvider = ({ children }) => {
         ticketCode: 'TK-2026-001',
         name: 'Nguyễn Văn Anh',
         phone: '0912345678',
-        email: 'nguyenvana@gmail.com',
+        email: 'admin@gmail.com',
         ticketType: 'Vé Người lớn',
         price: 50000,
         visitDate: '2026-08-20',
-        quantity: 1,
-        paymentMethod: 'Thanh toán tại quầy',
-        status: 'Đã xác nhận',
+        quantity: 2,
+        totalPrice: 100000,
+        paymentMethod: 'VNPay',
+        status: 'Đã thanh toán',
         createdAt: '2026-08-15',
+        qrCode: 'TK-2026-001-ADMIN-100K',
+        userEmail: 'admin@gmail.com',
       },
     ];
   });
 
   const bookTicket = (bookingData) => {
+    const qty = Number(bookingData.quantity) || 1;
+    const unitPrice = Number(bookingData.price) || 50000;
+    const total = qty * unitPrice;
+    const ticketCode = `TK-2026-${String(bookedTicketsList.length + 1).padStart(3, '0')}`;
+
     const newBooking = {
-      id: `TK-2026-${String(bookedTicketsList.length + 1).padStart(3, '0')}`,
-      ticketCode: `TK-2026-${String(bookedTicketsList.length + 1).padStart(3, '0')}`,
+      id: ticketCode,
+      ticketCode: ticketCode,
       name: bookingData.name.trim(),
       phone: bookingData.phone.trim(),
       email: bookingData.email.trim(),
       ticketType: bookingData.ticketType || 'Vé Người lớn',
-      price: bookingData.price || 50000,
+      price: unitPrice,
+      quantity: qty,
+      totalPrice: total,
       visitDate: bookingData.visitDate,
-      quantity: bookingData.quantity || 1,
-      paymentMethod: 'Thanh toán tại quầy',
-      status: 'Đã xác nhận',
+      paymentMethod: bookingData.paymentMethod || 'VNPay',
+      status: bookingData.status || 'Đã thanh toán',
       createdAt: new Date().toISOString().split('T')[0],
+      qrCode: `${ticketCode}-${bookingData.email.trim()}-${total}VND`,
+      userEmail: currentUser?.email || bookingData.email.trim(),
     };
 
     const updated = [newBooking, ...bookedTicketsList];
     setBookedTicketsList(updated);
     localStorage.setItem('museum_booked_tickets', JSON.stringify(updated));
 
-    addToast('Đặt vé thành công! Vui lòng kiểm tra email của bạn.', 'success');
+    addToast(`🎫 Đặt vé thành công (${ticketCode})! Vé điện tử đã lưu vào mục "Vé của tôi".`, 'success');
+    logAudit('BOOK_TICKET', `Đặt vé thành công: ${ticketCode} - ${newBooking.ticketType} (${qty} vé)`);
     return { success: true, booking: newBooking };
+  };
+
+  // Review Validation & Banned Words Check
+  const bannedWords = ['spam', 'lừa đảo', 'xúc phạm', 'bậy bạ', 'đồi trụy', 'fuck', 'shit', 'clmm', 'dmm', 'buôn bán'];
+
+  const addReview = (reviewData) => {
+    if (!currentUser) {
+      addToast('Bạn cần đăng nhập tài khoản để gửi đánh giá!', 'error');
+      return { success: false, message: 'Yêu cầu đăng nhập' };
+    }
+
+    const commentText = (reviewData.comment || '').trim();
+    if (!commentText || commentText.length < 5) {
+      addToast('Nội dung đánh giá quá ngắn (tối thiểu 5 ký tự).', 'error');
+      return { success: false, message: 'Nội dung không hợp lệ' };
+    }
+
+    // Check for spam & banned words
+    const lowerComment = commentText.toLowerCase();
+    const hasBannedWord = bannedWords.some((word) => lowerComment.includes(word));
+    if (hasBannedWord) {
+      addToast('Đánh giá chứa từ ngữ không phù hợp hoặc vi phạm tiêu chuẩn cộng đồng!', 'error');
+      return { success: false, message: 'Nội dung chứa từ cấm' };
+    }
+
+    const newReview = {
+      id: `REV${String(reviewsList.length + 1).padStart(3, '0')}`,
+      author: currentUser.name || 'Khách tham quan',
+      authorEmail: currentUser.email,
+      rating: Number(reviewData.rating) || 5,
+      artifactName: reviewData.artifactName || 'Bảo tàng Lịch sử Quốc gia',
+      comment: commentText,
+      date: new Date().toISOString().split('T')[0],
+    };
+
+    const updatedReviews = [newReview, ...reviewsList];
+    setReviewsList(updatedReviews);
+    localStorage.setItem('museum_reviews', JSON.stringify(updatedReviews));
+
+    addToast('Cảm ơn bạn! Đánh giá đã được đăng công khai thành công.', 'success');
+    logAudit('SUBMIT_REVIEW', `Đánh giá mới từ ${currentUser.email} (${newReview.rating} sao)`);
+    return { success: true, review: newReview };
+  };
+
+  const deleteReview = (id) => {
+    const updated = reviewsList.filter((r) => r.id !== id);
+    setReviewsList(updated);
+    addToast('Đã xóa đánh giá thành công.', 'info');
+    logAudit('DELETE_REVIEW', `Xóa đánh giá ID: ${id}`);
   };
 
   return (
@@ -361,6 +462,11 @@ export const AppProvider = ({ children }) => {
         addArtifact,
         updateArtifact,
         deleteArtifact,
+        reviews: reviewsList,
+        addReview,
+        deleteReview,
+        auditLogs: auditLogsList,
+        logAudit,
         isMobileSidebarOpen,
         setIsMobileSidebarOpen,
         globalSearch,

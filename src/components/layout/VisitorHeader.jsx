@@ -14,16 +14,24 @@ import {
 
 export const VisitorHeader = () => {
   const navigate = useNavigate();
-  const { currentUser, isAuthenticated, logout } = useApp();
+  const { currentUser, isAuthenticated, logout, bookedTickets } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const userTicketsCount = isAuthenticated
+    ? (bookedTickets || []).filter(
+        (b) =>
+          (b.userEmail && b.userEmail.toLowerCase() === currentUser?.email?.toLowerCase()) ||
+          (b.email && b.email.toLowerCase() === currentUser?.email?.toLowerCase())
+      ).length
+    : 0;
+
   const navLinks = [
-    { name: 'Trang chủ', href: '#hero' },
-    { name: 'Hiện vật nổi bật', href: '#artifacts' },
-    { name: 'Triển lãm', href: '#exhibitions' },
-    { name: 'Sự kiện', href: '#events' },
-    { name: 'Vé tham quan', href: '#tickets' },
-    { name: 'Bài viết', href: '#articles' },
+    { name: 'Trang chủ', to: '/' },
+    { name: 'Hiện vật', to: '/artifacts' },
+    { name: 'Triển lãm', to: '/exhibitions' },
+    { name: 'Sự kiện', to: '/events' },
+    { name: 'Đánh giá', to: '/reviews' },
+    { name: 'Trợ lý AI', to: '/ai-assistant' },
   ];
 
   return (
@@ -47,52 +55,65 @@ export const VisitorHeader = () => {
         {/* Desktop Horizontal Navigation Links */}
         <nav className="hidden md:flex items-center gap-6 text-xs sm:text-sm font-bold text-gray-700">
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.name}
-              href={link.href}
+              to={link.to}
               className="hover:text-museum-gold transition-colors py-1 relative group"
             >
               {link.name}
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-museum-gold transition-all duration-200 group-hover:w-full" />
-            </a>
+            </Link>
           ))}
         </nav>
 
-        {/* Right Auth / Profile Buttons */}
+        {/* Right Auth / Profile / Ticket Buttons */}
         <div className="hidden md:flex items-center gap-3">
           {isAuthenticated ? (
-            <div className="flex items-center gap-3 bg-museum-cream/60 p-1.5 pr-3 rounded-full border border-museum-gold/30">
-              <img
-                src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
-                alt={currentUser?.name}
-                className="w-9 h-9 rounded-full object-cover border-2 border-museum-gold shadow-xs"
-              />
-              <div className="text-left leading-tight">
-                <div className="font-bold text-xs text-museum-brown">{currentUser?.name}</div>
-                <div className="text-[10px] text-museum-gold font-semibold uppercase">
-                  {currentUser?.roleLabel || currentUser?.role}
-                </div>
-              </div>
-
-              {/* Admin Jump Button */}
-              {currentUser?.role === 'admin' && (
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="px-3 py-1 bg-museum-gold text-white text-xs font-bold rounded-full hover:bg-museum-gold-lt transition-colors flex items-center gap-1 shadow-xs ml-1"
-                  title="Chuyển tới Trang Quản trị Dashboard"
-                >
-                  <LayoutDashboard className="w-3.5 h-3.5" />
-                  <span>Admin &rarr;</span>
-                </button>
-              )}
-
-              <button
-                onClick={logout}
-                className="p-1.5 text-gray-400 hover:text-danger hover:bg-rose-50 rounded-full transition-colors ml-1"
-                title="Đăng xuất"
+            <div className="flex items-center gap-2">
+              <Link
+                to="/my-tickets"
+                className="px-3 py-1.5 bg-museum-gold hover:bg-museum-gold-lt text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                title="Xem danh sách vé điện tử đã mua"
               >
-                <LogOut className="w-4 h-4" />
-              </button>
+                <span>Vé của tôi</span>
+                <span className="bg-white text-museum-brown font-black px-1.5 py-0.5 rounded-full text-[10px]">
+                  {userTicketsCount}
+                </span>
+              </Link>
+
+              <div className="flex items-center gap-2.5 bg-museum-cream/60 p-1.5 pr-3 rounded-full border border-museum-gold/30">
+                <img
+                  src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
+                  alt={currentUser?.name}
+                  className="w-8 h-8 rounded-full object-cover border-2 border-museum-gold shadow-xs"
+                />
+                <div className="text-left leading-tight">
+                  <div className="font-bold text-xs text-museum-brown line-clamp-1 max-w-[100px]">{currentUser?.name}</div>
+                  <div className="text-[10px] text-museum-gold font-semibold uppercase">
+                    {currentUser?.roleLabel || currentUser?.role}
+                  </div>
+                </div>
+
+                {/* Admin Jump Button */}
+                {currentUser?.role === 'admin' && (
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className="px-2.5 py-1 bg-museum-brown text-white text-xs font-bold rounded-full hover:bg-museum-brown-dk transition-colors flex items-center gap-1 shadow-xs ml-1"
+                    title="Chuyển tới Trang Quản trị Dashboard"
+                  >
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    <span>Admin</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={logout}
+                  className="p-1.5 text-gray-400 hover:text-danger hover:bg-rose-50 rounded-full transition-colors ml-0.5"
+                  title="Đăng xuất"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ) : (
             <div className="flex items-center gap-2">

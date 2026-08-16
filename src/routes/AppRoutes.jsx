@@ -21,6 +21,7 @@ import { Galleries } from '@/pages/Galleries';
 import { Exhibitions } from '@/pages/Exhibitions';
 import { Events } from '@/pages/Events';
 import { AiAssistant } from '@/pages/AiAssistant';
+import { MyTickets } from '@/pages/MyTickets';
 
 // Protected Admin Pages (Admin Login Required)
 import { Dashboard } from '@/pages/Dashboard';
@@ -51,6 +52,8 @@ export const AppRoutes = () => {
         <Route path="/exhibitions" element={<Exhibitions />} />
         <Route path="/events" element={<Events />} />
         <Route path="/ai-assistant" element={<AiAssistant />} />
+        <Route path="/my-tickets" element={<MyTickets />} />
+        <Route path="/reviews" element={<Reviews />} />
       </Route>
 
       {/* 3. Protected Admin Dashboard Routes (Requires Admin Login) */}

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { Mail, Lock, LogIn } from 'lucide-react';
 
 export const Login = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTarget = searchParams.get('redirect');
   const { login, registerForEvent } = useApp();
 
   const [email, setEmail] = useState('');
@@ -48,7 +50,9 @@ export const Login = () => {
         }
       }
 
-      if (result.user.role === 'admin') {
+      if (redirectTarget) {
+        navigate(redirectTarget);
+      } else if (result.user.role === 'admin') {
         navigate('/dashboard');
       } else {
         navigate('/');

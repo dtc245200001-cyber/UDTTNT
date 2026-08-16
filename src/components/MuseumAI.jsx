@@ -6,7 +6,7 @@ import { Bot, Sparkles, X, Send, Eye, Calendar, MapPin, RefreshCw, MessageSquare
 
 export const MuseumAI = () => {
   const navigate = useNavigate();
-  const { artifacts } = useApp();
+  const { artifacts, events, tickets } = useApp();
 
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
@@ -16,8 +16,8 @@ export const MuseumAI = () => {
   const suggestedPrompts = [
     'Trống đồng Cảnh Thịnh là gì?',
     'Cho tôi biết về các hiện vật thời Tây Sơn',
-    'Hiện vật này được trưng bày ở đâu?',
-    'Có những hiện vật nào liên quan đến Điện Biên Phủ?',
+    'Giá vé tham quan và giờ mở cửa bảo tàng bao nhiêu?',
+    'Sự kiện tọa đàm văn hóa sắp tới?',
   ];
 
   // Initial welcome message (Public)
@@ -25,7 +25,7 @@ export const MuseumAI = () => {
     {
       id: 1,
       sender: 'ai',
-      text: 'Xin chào! Tôi có thể giúp bạn tìm hiểu về các hiện vật trong bảo tàng. Hãy nhập câu hỏi hoặc chọn một gợi ý bên dưới!',
+      text: 'Xin chào! Tôi là Trợ lý AI Bảo tàng. Tôi có thể giải đáp các thắc mắc về hiện vật, giá vé, triển lãm và sự kiện bảo tàng. Hãy nhập câu hỏi của bạn!',
       artifacts: [],
     },
   ]);
@@ -41,7 +41,7 @@ export const MuseumAI = () => {
 
   const handleSendMessage = (queryText) => {
     const textToSend = queryText || inputText;
-    if (!textToSend.trim() || isSearching) return;
+    if (!textToSend || !textToSend.trim() || isSearching) return;
 
     // User message
     const userMsg = {
@@ -55,9 +55,9 @@ export const MuseumAI = () => {
     if (!queryText) setInputText('');
     setIsSearching(true);
 
-    // Simulate search & response without ANY auth requirement
+    // Query RAG AI Assistant
     setTimeout(() => {
-      const searchResult = searchArtifacts(artifacts, textToSend);
+      const searchResult = searchArtifacts(artifacts, textToSend, { events, tickets });
 
       const aiMsg = {
         id: Date.now() + 1,
