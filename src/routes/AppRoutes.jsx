@@ -15,15 +15,17 @@ import { Register } from '@/pages/Register';
 
 // Visitor Public Pages (No Login Required)
 import { VisitorHome } from '@/pages/VisitorHome';
-import { Artifacts } from '@/pages/Artifacts';
+import { ExploreArtifacts } from '@/pages/ExploreArtifacts';
 import { ArtifactDetail } from '@/pages/ArtifactDetail';
 import { Galleries } from '@/pages/Galleries';
 import { Exhibitions } from '@/pages/Exhibitions';
 import { Events } from '@/pages/Events';
 import { AiAssistant } from '@/pages/AiAssistant';
+import { MyTickets } from '@/pages/MyTickets';
 
 // Protected Admin Pages (Admin Login Required)
 import { Dashboard } from '@/pages/Dashboard';
+import { Artifacts } from '@/pages/Artifacts';
 import { Categories } from '@/pages/Categories';
 import { Tickets } from '@/pages/Tickets';
 import { UsersPage } from '@/pages/Users';
@@ -42,21 +44,25 @@ export const AppRoutes = () => {
         <Route path="/register" element={<Register />} />
       </Route>
 
-      {/* 2. Public Visitor Site Routes (VisitorLayout - Public for ALL visitors without login) */}
+      {/* 2. Public Visitor Site Routes (VisitorLayout) */}
       <Route element={<VisitorLayout />}>
         <Route path="/" element={<VisitorHome />} />
-        <Route path="/artifacts" element={<Artifacts />} />
+        {/* Public Explore Artifacts */}
+        <Route path="/artifacts" element={<ExploreArtifacts />} />
         <Route path="/artifacts/:id" element={<ArtifactDetail />} />
         <Route path="/galleries" element={<Galleries />} />
         <Route path="/exhibitions" element={<Exhibitions />} />
         <Route path="/events" element={<Events />} />
         <Route path="/ai-assistant" element={<AiAssistant />} />
+        {/* Visitor My Tickets page */}
+        <Route path="/my-tickets" element={<MyTickets />} />
       </Route>
 
       {/* 3. Protected Admin Dashboard Routes (Requires Admin Login) */}
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/admin/artifacts" element={<Artifacts />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/tickets" element={<Tickets />} />
           <Route path="/users" element={<UsersPage />} />

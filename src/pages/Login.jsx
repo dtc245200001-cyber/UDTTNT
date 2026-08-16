@@ -29,12 +29,21 @@ export const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
-    const result = login(email, password);
-    if (result.success) {
+    const result = await login(email, password);
+    if (result && result.success) {
+      // Check pending ticket booking
+      const pendingTicket = localStorage.getItem('pending_ticket_booking');
+      if (pendingTicket) {
+        localStorage.removeItem('pending_ticket_booking');
+        navigate('/#tickets');
+        return;
+      }
+
+      // Check pending event registration
       const pendingReg = localStorage.getItem('pending_event_registration');
       if (pendingReg) {
         try {
@@ -48,7 +57,7 @@ export const Login = () => {
         }
       }
 
-      if (result.user.role === 'admin') {
+      if (result.user?.role === 'admin') {
         navigate('/dashboard');
       } else {
         navigate('/');

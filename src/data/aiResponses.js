@@ -1,8 +1,11 @@
 import { artifacts } from './artifacts';
 import { exhibitions } from './exhibitions';
+import { categories } from './categories';
+import { events } from './events';
+import { ticketTypes } from './tickets';
 
 /**
- * Hàm loại bỏ dấu Tiếng Việt giúp so sánh linh hoạt hơn
+ * Hàm loại bỏ dấu Tiếng Việt giúp so sánh linh hoạt
  */
 const removeVietnameseTones = (str) => {
   if (!str) return '';
@@ -15,39 +18,64 @@ const removeVietnameseTones = (str) => {
 };
 
 /**
- * Logic trả lời giả lập cho Trợ lý AI Bảo Tàng
+ * Tra cứu thông minh RAG trên 270 hiện vật và kho dữ liệu bảo tàng
  */
 export const getMockAIResponse = (question) => {
-  const normalized = removeVietnameseTones(question || '');
-
-  if (normalized.includes('thoi ly') || normalized.includes('ly')) {
-    const lyArtifacts = artifacts.filter(a => removeVietnameseTones(a.culture).includes('ly') || removeVietnameseTones(a.period).includes('ly'));
-    const names = lyArtifacts.map(a => `• ${a.name} (${a.period}): ${a.location}`).join('\n');
-    return `Bảo tàng hiện đang lưu giữ các hiện vật thời Lý tiêu biểu sau:\n\n${names}\n\nBạn có thể đến Phòng trưng bày B để chiêm ngưỡng trực tiếp!`;
+  if (!question || !question.trim()) {
+    return 'Xin chào! Bạn có thể đặt câu hỏi về hiện vật, danh mục di sản, triển lãm, giá vé hoặc sự kiện tại Bảo tàng Quốc gia Việt Nam.';
   }
 
-  if (normalized.includes('trien lam') || normalized.includes('su kien')) {
-    const activeExhibitions = exhibitions.filter(e => e.status === 'Đang diễn ra');
-    const list = activeExhibitions.map(e => `• ${e.name} (Địa điểm: ${e.location}, Thời gian: ${e.startDate} - ${e.endDate})`).join('\n');
-    return `Hiện tại bảo tàng đang tổ chức các triển lãm nổi bật sau:\n\n${list}\n\nRất hân hạnh được đón tiếp bạn tham quan!`;
+  const raw = question.trim();
+  const normalized = removeVietnameseTones(raw);
+
+  // 1. Giờ mở cửa & địa chỉ
+  if (normalized.includes('gio mo cua') || normalized.includes('gio lam viec') || normalized.includes('dia chi') || normalized.includes('o dau')) {
+    return `🏛️ **BẢO TÀNG QUỐC GIA VIỆT NAM**
+• **Giờ mở cửa:** 08:00 – 17:00 (Từ Thứ Ba đến Chủ Nhật hàng tuần, đóng cửa Thứ Hai bảo trì).
+• **Địa chỉ:** Số 1 Tràng Tiền / 216 Trần Quang Khải, Hoàn Kiếm, Hà Nội.
+• **Trợ lý AI:** Sẵn sàng hướng dẫn thông tin hiện vật & lộ trình 24/7!`;
   }
 
-  if (normalized.includes('gio mo cua') || normalized.includes('gio lam viec') || normalized.includes('mo cua')) {
-    return 'Bảo tàng Bảo Tàng Việt Nam mở cửa phục vụ du khách từ 8:00 - 17:00 các ngày trong tuần (từ Thứ Ba đến Chủ Nhật). Bảo tàng đóng cửa bảo trì vào Thứ Hai hàng tuần.';
+  // 2. Giá vé & Đặt vé
+  if (normalized.includes('gia ve') || normalized.includes('ve tham quan') || (normalized.includes('ve') && normalized.includes('bao nhieu'))) {
+    const list = ticketTypes.map((t) => `• **${t.name}**: ${t.price.toLocaleString('vi-VN')} VNĐ (${t.description})`).join('\n');
+    return `🎫 **BẢNG GIÁ VÉ THAM QUAN BẢO TÀNG:**\n\n${list}\n\n👉 Bạn có thể đặt vé trực tuyến ngay tại mục **"Vé tham quan"** trên hệ thống và quét mã QR khi tới cửa soát vé!`;
   }
 
-  if (normalized.includes('gioi thieu') || normalized.includes('bao tang') || normalized.includes('thong tin')) {
-    return 'Bảo tàng Việt Nam là trung tâm lưu giữ và tôn vinh hơn 100.000 tài liệu, hiện vật lịch sử văn hóa vô giá của dân tộc từ thời tiền sử đến hiện đại. Hệ thống tích hợp Trợ lý AI sẵn sàng hỗ trợ bạn tra cứu hiện vật, lộ trình tham quan và thông tin vé nhanh chóng!';
+  // 3. Triển lãm & Sự kiện
+  if (normalized.includes('trien lam') || normalized.includes('su kien') || normalized.includes('toa dam')) {
+    const activeEx = exhibitions.filter((e) => e.status === 'Đang diễn ra');
+    const exList = activeEx.map((e) => `• **${e.name}** (${e.startDate} → ${e.endDate} tại ${e.location}): ${e.description}`).join('\n\n');
+    const evList = events.map((ev) => `• **${ev.title}** (${ev.date} lúc ${ev.time} tại ${ev.location})`).join('\n');
+
+    return `🏛️ **TRIỂN LÃM & SỰ KIỆN NỔI BẬT:**\n\n**Các Triển lãm đang mở cửa:**\n${exList}\n\n**Sự kiện & Tọa đàm sắp diễn ra:**\n${evList}`;
   }
 
-  if (normalized.includes('ve') || normalized.includes('gia ve') || normalized.includes('ve tham quan')) {
-    return 'Giá vé tham quan bảo tàng như sau:\n• Vé Người lớn: 50.000 VNĐ/lượt\n• Vé Học sinh - Sinh viên: 20.000 VNĐ/lượt\n• Trẻ em dưới 6 tuổi & Người cao tuổi (>60t): Miễn phí.\nBạn có thể đặt vé trực tiếp tại quầy hoặc qua mục Vé Tham Quan trên hệ thống!';
+  // 4. Danh mục di sản
+  if (normalized.includes('danh muc') || normalized.includes('loai hien vat') || normalized.includes('co nhung gi')) {
+    const catList = categories.map((c) => `• **${c.name}** (${c.count} hiện vật): ${c.description}`).join('\n');
+    return `📦 **BẢO TÀNG HIỆN LƯU GIỮ 270 HIỆN VẬT THEO ${categories.length} DANH MỤC:**\n\n${catList}\n\n👉 Bạn có thể xem chi tiết từng danh mục tại trang **"Khám phá hiện vật"**!`;
   }
 
-  if (normalized.includes('trong dong') || normalized.includes('dong son')) {
-    const artifact = artifacts.find(a => a.id === 'AV001');
-    return `Trống đồng Đông Sơn (Mã: AV001) thuộc Văn hóa Đông Sơn (1200 - 200 TCN). Hiện đang được trưng bày tại ${artifact?.location}. Đây là Bảo vật Quốc gia đại diện cho nghệ thuật đúc đồng đỉnh cao của người Việt cổ.`;
+  // 5. Tìm kiếm trực tiếp hiện vật theo từ khóa trên toàn bộ 270 hiện vật
+  const keywords = normalized.split(/\s+/).filter((w) => w.length > 1);
+  const matchedArtifacts = artifacts.filter((a) => {
+    const aText = removeVietnameseTones(`${a.name} ${a.description} ${a.culture} ${a.category} ${a.period}`);
+    return keywords.some((kw) => aText.includes(kw));
+  });
+
+  if (matchedArtifacts.length > 0) {
+    const topMatches = matchedArtifacts.slice(0, 3);
+    const details = topMatches
+      .map(
+        (a, i) =>
+          `**${i + 1}. ${a.name}** (Mã: \`${a.id}\` · ${a.category})\n• **Văn hóa/Niên đại:** ${a.culture || 'Lịch sử Việt Nam'} · ${a.period || 'Hiện đại'}\n• **Vị trí:** ${a.location || 'Phòng trưng bày'}\n• **Tóm tắt:** ${a.description.slice(0, 220)}...`
+      )
+      .join('\n\n');
+
+    return `🔎 **KẾT QUẢ TRA CỨU DI SẢN (Tìm thấy ${matchedArtifacts.length} hiện vật liên quan):**\n\n${details}\n\n👉 Bạn có thể bấm vào trang **"Khám phá hiện vật"** hoặc tìm kiếm mã \`${topMatches[0].id}\` để xem hình ảnh sắc nét và thuyết minh đầy đủ!`;
   }
 
-  return 'Xin lỗi, tôi chưa có thông tin chi tiết về câu hỏi này. Bạn có thể thử các câu hỏi gợi ý như: "Hiện vật thời Lý", "Triển lãm đang diễn ra", "Giờ mở cửa bảo tàng" hoặc "Giá vé tham quan".';
+  // Fallback
+  return `Xin lỗi, tôi chưa tìm thấy hiện vật nào khớp chính xác với từ khóa "${raw}".\n\n💡 **Gợi ý bạn có thể hỏi:**\n• "Tìm hiện vật Đồ đồng" hoặc "Trống đồng"\n• "Các bảo vật thời Lý / thời Trần"\n• "Giá vé tham quan và giờ mở cửa"\n• "Triển lãm đang diễn ra"`;
 };

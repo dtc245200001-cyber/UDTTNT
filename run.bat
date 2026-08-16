@@ -7,18 +7,23 @@ echo ===================================================
 echo   BAO TANG QUOC GIA VIET NAM - MUSEUM MANAGEMENT
 echo ===================================================
 echo.
-echo Dang khoi dong he thong va mo Google Chrome...
-echo.
+echo [1/3] Dang giai phong cong mang 5173 cu neu co...
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue | ForEach-Object { if ($_.OwningProcess -gt 0) { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } }" >nul 2>&1
 
-:: Chạy Dev Server trong một cửa sổ Command Prompt riêng biệt
-start "Museum_Server" cmd /k "cd /d "%~dp0" && npm.cmd run dev"
+echo [2/3] Dang khoi dong may chu Dev Server (port 5173)...
+start "Museum_Server" cmd /c "cd /d "%~dp0" && npm run dev"
 
-:: Chờ 3 giây bằng lệnh ping an toàn (không bao giờ bị crash)
-ping 127.0.0.1 -n 4 >nul
+echo [3/3] Dang cho he thong san sang va mo trinh duyet...
+powershell -NoProfile -Command "Start-Sleep -Seconds 3" >nul 2>&1
 
-:: Mở Google Chrome trực tiếp tới địa chỉ 127.0.0.1:5173
+:: Mo trinh duyet mac dinh
 start "" "http://127.0.0.1:5173/"
 
-echo He thong da khoi chay thanh cong!
-ping 127.0.0.1 -n 2 >nul
+echo.
+echo ===================================================
+echo   He thong da khoi chay thanh cong tai:
+echo   http://127.0.0.1:5173/
+echo ===================================================
+powershell -NoProfile -Command "Start-Sleep -Seconds 2" >nul 2>&1
 exit
+

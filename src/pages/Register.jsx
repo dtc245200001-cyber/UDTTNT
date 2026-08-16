@@ -50,17 +50,24 @@ export const Register = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
-    const result = register({
+    const result = await register({
       name: formData.name,
       email: formData.email,
       password: formData.password,
     });
 
-    if (result.success) {
+    if (result && result.success) {
+      const pendingTicket = localStorage.getItem('pending_ticket_booking');
+      if (pendingTicket) {
+        localStorage.removeItem('pending_ticket_booking');
+        navigate('/#tickets');
+        return;
+      }
+
       const pendingReg = localStorage.getItem('pending_event_registration');
       if (pendingReg) {
         try {
@@ -73,7 +80,12 @@ export const Register = () => {
           console.error('Failed to parse pending event registration', err);
         }
       }
-      navigate('/');
+
+      if (result.user?.role === 'admin') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
     }
   };
 

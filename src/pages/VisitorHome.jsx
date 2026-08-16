@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import {
@@ -24,9 +24,10 @@ import { ArtifactCard } from '@/components/cards/ArtifactCard';
 
 export const VisitorHome = () => {
   const navigate = useNavigate();
-  const { artifacts, exhibitions, events, tickets, addToast, isAuthenticated, currentUser, registerForEvent, bookTicket } = useApp();
+  const { artifacts, exhibitions, events, tickets, categories, addToast, isAuthenticated, currentUser, registerForEvent, bookTicket } = useApp();
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [pendingAuthTicket, setPendingAuthTicket] = useState(null);
   const [pendingAuthEvent, setPendingAuthEvent] = useState(null);
   const [activeRegisterEvent, setActiveRegisterEvent] = useState(null);
   const [selectedArtifact, setSelectedArtifact] = useState(null);
@@ -39,6 +40,19 @@ export const VisitorHome = () => {
   });
   const [bookingErrors, setBookingErrors] = useState({});
 
+  // Auto pre-fill user info if logged in or check pending ticket booking
+  useEffect(() => {
+    if (isAuthenticated && currentUser) {
+      setBookingFormData((prev) => ({
+        ...prev,
+        name: currentUser.name || '',
+        email: currentUser.email || '',
+        phone: currentUser.phone || prev.phone || '',
+        visitDate: prev.visitDate || new Date().toISOString().split('T')[0],
+      }));
+    }
+  }, [isAuthenticated, currentUser]);
+
   const handleEventRegistration = (ev) => {
     setActiveRegisterEvent(ev);
   };
@@ -47,7 +61,18 @@ export const VisitorHome = () => {
   const activeExhibitions = exhibitions;
 
   const handleBookTicket = (ticket) => {
+    if (!isAuthenticated) {
+      setPendingAuthTicket(ticket);
+      return;
+    }
+
     setSelectedTicket(ticket);
+    setBookingFormData({
+      name: currentUser?.name || '',
+      phone: currentUser?.phone || '',
+      email: currentUser?.email || '',
+      visitDate: new Date().toISOString().split('T')[0],
+    });
     setBookingErrors({});
     setTicketModalOpen(true);
   };
@@ -70,11 +95,11 @@ export const VisitorHome = () => {
     return Object.keys(errors).length === 0;
   };
 
-  const confirmBooking = (e) => {
+  const confirmBooking = async (e) => {
     e.preventDefault();
     if (!validateBooking()) return;
 
-    bookTicket({
+    await bookTicket({
       name: bookingFormData.name,
       phone: bookingFormData.phone,
       email: bookingFormData.email,
@@ -86,6 +111,7 @@ export const VisitorHome = () => {
     setTicketModalOpen(false);
     setBookingFormData({ name: '', phone: '', email: '', visitDate: '' });
     setBookingErrors({});
+    navigate('/my-tickets');
   };
 
   return (
@@ -110,12 +136,12 @@ export const VisitorHome = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <a
-              href="#artifacts"
-              className="w-full sm:w-auto px-8 py-3.5 bg-museum-gold hover:bg-museum-gold-lt text-white font-extrabold text-sm rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5"
+            <button
+              onClick={() => navigate('/artifacts')}
+              className="w-full sm:w-auto px-8 py-3.5 bg-museum-gold hover:bg-museum-gold-lt text-white font-extrabold text-sm rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 cursor-pointer"
             >
-              Khám phá hiện vật nổi bật
-            </a>
+              Khám phá toàn bộ 270 hiện vật &rarr;
+            </button>
             <a
               href="#tickets"
               className="w-full sm:w-auto px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 font-extrabold text-sm rounded-xl backdrop-blur-sm transition-all"
@@ -129,16 +155,25 @@ export const VisitorHome = () => {
 
       {/* Section 1: Hiện vật nổi bật */}
       <section id="artifacts" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="text-center space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-museum-gold">
-            BỘ SƯU TẬP QUỐC GIA
-          </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-museum-brown">
-            HIỆN VẬT TIÊU BIỂU
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-500 max-w-xl mx-auto">
-            Các bảo vật quốc gia mang giá trị lịch sử và nghệ thuật đặc sắc hàng đầu
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-widest text-museum-gold">
+              BỘ SƯU TẬP QUỐC GIA
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-museum-brown mt-1">
+              HIỆN VẬT TIÊU BIỂU
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 max-w-xl mt-1">
+              Các bảo vật quốc gia mang giá trị lịch sử và nghệ thuật đặc sắc hàng đầu
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/artifacts')}
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-extrabold text-museum-gold hover:text-museum-brown transition-colors cursor-pointer"
+          >
+            <span>Xem tất cả {artifacts.length} hiện vật</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -149,6 +184,16 @@ export const VisitorHome = () => {
               onClick={setSelectedArtifact}
             />
           ))}
+        </div>
+
+        <div className="text-center pt-2">
+          <button
+            onClick={() => navigate('/artifacts')}
+            className="inline-flex items-center gap-2 px-8 py-3 bg-white hover:bg-museum-cream text-museum-brown font-extrabold text-xs sm:text-sm rounded-xl border-2 border-museum-gold/40 shadow-xs hover:shadow-md transition-all cursor-pointer"
+          >
+            <span>Xem thêm kho tàng 270 hiện vật theo {categories.length} danh mục</span>
+            <ChevronRight className="w-4 h-4 text-museum-gold" />
+          </button>
         </div>
       </section>
 
@@ -391,6 +436,51 @@ export const VisitorHome = () => {
             Xác nhận đặt vé
           </button>
         </form>
+      </Modal>
+
+      {/* Auth Required Modal for Ticket Booking */}
+      <Modal
+        isOpen={!!pendingAuthTicket}
+        onClose={() => setPendingAuthTicket(null)}
+        title="🔐 Yêu cầu đăng nhập để mua vé"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4 text-center py-2 font-sans">
+          <div className="w-14 h-14 rounded-2xl bg-museum-cream text-museum-brown flex items-center justify-center mx-auto text-2xl shadow-xs border border-museum-gold/30">
+            🎫
+          </div>
+          <div className="space-y-1">
+            <h4 className="font-extrabold text-base text-museum-brown">
+              Bạn cần đăng nhập để đặt vé
+            </h4>
+            <p className="text-xs text-gray-600 leading-relaxed max-w-sm mx-auto">
+              Đăng nhập tài khoản giúp hệ thống tạo vé điện tử kèm mã QR check-in và lưu vào mục <strong>"Vé của tôi"</strong> cho bạn.
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
+            <button
+              onClick={() => {
+                if (pendingAuthTicket) {
+                  localStorage.setItem('pending_ticket_booking', JSON.stringify(pendingAuthTicket));
+                }
+                setPendingAuthTicket(null);
+                navigate('/login');
+              }}
+              className="w-full sm:w-auto px-5 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-md transition-colors cursor-pointer"
+            >
+              Đăng nhập ngay
+            </button>
+            <button
+              onClick={() => {
+                setPendingAuthTicket(null);
+                navigate('/register');
+              }}
+              className="w-full sm:w-auto px-5 py-2.5 bg-museum-cream hover:bg-museum-gold/20 text-museum-brown font-bold text-xs rounded-xl border border-museum-gold/40 transition-colors cursor-pointer"
+            >
+              Đăng ký tài khoản
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* Auth Required Modal for Event Registration */}

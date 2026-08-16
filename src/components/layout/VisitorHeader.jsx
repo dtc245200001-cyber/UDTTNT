@@ -10,6 +10,8 @@ import {
   LogOut,
   LayoutDashboard,
   Sparkles,
+  Ticket,
+  Compass,
 } from 'lucide-react';
 
 export const VisitorHeader = () => {
@@ -18,16 +20,16 @@ export const VisitorHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { name: 'Trang chủ', href: '#hero' },
-    { name: 'Hiện vật nổi bật', href: '#artifacts' },
-    { name: 'Triển lãm', href: '#exhibitions' },
-    { name: 'Sự kiện', href: '#events' },
-    { name: 'Vé tham quan', href: '#tickets' },
-    { name: 'Bài viết', href: '#articles' },
+    { name: 'Trang chủ', path: '/' },
+    { name: 'Khám phá hiện vật', path: '/artifacts' },
+    { name: 'Triển lãm', path: '/#exhibitions' },
+    { name: 'Sự kiện', path: '/#events' },
+    { name: 'Vé tham quan', path: '/#tickets' },
+    { name: 'Trợ lý AI', path: '/ai-assistant' },
   ];
 
   return (
-    <header className="bg-white border-b border-gray-200/80 sticky top-0 z-40 shadow-xs">
+    <header className="bg-white border-b border-gray-200/80 sticky top-0 z-40 shadow-xs font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-3 group">
@@ -44,24 +46,39 @@ export const VisitorHeader = () => {
           </div>
         </Link>
 
-        {/* Desktop Horizontal Navigation Links */}
-        <nav className="hidden md:flex items-center gap-6 text-xs sm:text-sm font-bold text-gray-700">
-          {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className="hover:text-museum-gold transition-colors py-1 relative group"
-            >
-              {link.name}
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-museum-gold transition-all duration-200 group-hover:w-full" />
-            </a>
-          ))}
+        {/* Desktop Navigation */}
+        <nav className="hidden lg:flex items-center gap-5 text-xs sm:text-sm font-bold text-gray-700">
+          {navLinks.map((link) => {
+            const isInternal = link.path.startsWith('/') && !link.path.includes('#');
+            return isInternal ? (
+              <Link
+                key={link.name}
+                to={link.path}
+                className="hover:text-museum-gold transition-colors py-1 relative group flex items-center gap-1"
+              >
+                {link.name === 'Khám phá hiện vật' && (
+                  <Compass className="w-3.5 h-3.5 text-museum-gold inline" />
+                )}
+                <span>{link.name}</span>
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-museum-gold transition-all duration-200 group-hover:w-full" />
+              </Link>
+            ) : (
+              <a
+                key={link.name}
+                href={link.path}
+                className="hover:text-museum-gold transition-colors py-1 relative group"
+              >
+                {link.name}
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-museum-gold transition-all duration-200 group-hover:w-full" />
+              </a>
+            );
+          })}
         </nav>
 
         {/* Right Auth / Profile Buttons */}
         <div className="hidden md:flex items-center gap-3">
           {isAuthenticated ? (
-            <div className="flex items-center gap-3 bg-museum-cream/60 p-1.5 pr-3 rounded-full border border-museum-gold/30">
+            <div className="flex items-center gap-2 bg-museum-cream/60 p-1.5 pr-3 rounded-full border border-museum-gold/30">
               <img
                 src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
                 alt={currentUser?.name}
@@ -74,6 +91,16 @@ export const VisitorHeader = () => {
                 </div>
               </div>
 
+              {/* My Tickets Button */}
+              <Link
+                to="/my-tickets"
+                className="px-3 py-1 bg-white hover:bg-museum-cream text-museum-brown text-xs font-bold rounded-full border border-museum-gold/40 transition-colors flex items-center gap-1 shadow-xs ml-1"
+                title="Xem vé đã đặt"
+              >
+                <Ticket className="w-3.5 h-3.5 text-museum-gold" />
+                <span>Vé của tôi</span>
+              </Link>
+
               {/* Admin Jump Button */}
               {currentUser?.role === 'admin' && (
                 <button
@@ -82,7 +109,7 @@ export const VisitorHeader = () => {
                   title="Chuyển tới Trang Quản trị Dashboard"
                 >
                   <LayoutDashboard className="w-3.5 h-3.5" />
-                  <span>Admin &rarr;</span>
+                  <span>Admin</span>
                 </button>
               )}
 
@@ -117,7 +144,7 @@ export const VisitorHeader = () => {
         {/* Mobile Hamburger Toggle */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2 text-museum-brown hover:bg-museum-cream rounded-xl transition-colors"
+          className="lg:hidden p-2 text-museum-brown hover:bg-museum-cream rounded-xl transition-colors"
         >
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -125,49 +152,77 @@ export const VisitorHeader = () => {
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-gray-200 px-4 py-4 space-y-3 animate-fadeIn">
+        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-4 space-y-3 animate-fadeIn">
           <div className="flex flex-col gap-2 font-bold text-sm text-gray-700">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg hover:bg-museum-cream hover:text-museum-brown transition-colors"
-              >
-                {link.name}
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const isInternal = link.path.startsWith('/') && !link.path.includes('#');
+              return isInternal ? (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-lg hover:bg-museum-cream hover:text-museum-brown transition-colors flex items-center justify-between"
+                >
+                  <span>{link.name}</span>
+                  {link.name === 'Khám phá hiện vật' && <Compass className="w-4 h-4 text-museum-gold" />}
+                </Link>
+              ) : (
+                <a
+                  key={link.name}
+                  href={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2 rounded-lg hover:bg-museum-cream hover:text-museum-brown transition-colors"
+                >
+                  {link.name}
+                </a>
+              );
+            })}
           </div>
+
           <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
             {isAuthenticated ? (
-              <div className="flex items-center justify-between p-2 bg-museum-cream rounded-xl">
-                <div className="flex items-center gap-2">
+              <div className="p-3 bg-museum-cream rounded-2xl space-y-2">
+                <div className="flex items-center gap-2.5">
                   <img
-                    src={currentUser?.avatar}
+                    src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
                     alt={currentUser?.name}
-                    className="w-8 h-8 rounded-full object-cover"
+                    className="w-9 h-9 rounded-full object-cover border border-museum-gold"
                   />
                   <div>
                     <div className="font-bold text-xs text-museum-brown">{currentUser?.name}</div>
                     <div className="text-[10px] text-gray-500">{currentUser?.roleLabel}</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <Link
+                    to="/my-tickets"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="py-2 text-center bg-white text-museum-brown font-bold text-xs rounded-xl border border-museum-gold/40 flex items-center justify-center gap-1"
+                  >
+                    <Ticket className="w-3.5 h-3.5 text-museum-gold" />
+                    <span>Vé của tôi</span>
+                  </Link>
                   {currentUser?.role === 'admin' && (
                     <button
-                      onClick={() => navigate('/dashboard')}
-                      className="px-2.5 py-1 bg-museum-gold text-white text-xs font-bold rounded-lg"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate('/dashboard');
+                      }}
+                      className="py-2 text-center bg-museum-gold text-white font-bold text-xs rounded-xl"
                     >
                       Admin
                     </button>
                   )}
-                  <button
-                    onClick={logout}
-                    className="p-1.5 text-danger hover:bg-rose-50 rounded-lg"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
                 </div>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logout();
+                  }}
+                  className="w-full py-1.5 text-center text-danger hover:bg-rose-50 rounded-xl text-xs font-semibold"
+                >
+                  Đăng xuất
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2 pt-1">
