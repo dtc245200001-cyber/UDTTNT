@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { Star, MessageSquare, Plus, Trash2, ShieldCheck, User } from 'lucide-react';
+import { Star, MessageSquare, Plus, Trash2, ShieldCheck, User, LogIn, AlertCircle } from 'lucide-react';
 import { ReviewFormModal } from '@/components/reviews/ReviewFormModal';
+import { Modal } from '@/components/ui/Modal';
 
 export const Reviews = () => {
+  const navigate = useNavigate();
   const { reviews, currentUser, isAuthenticated, deleteReview } = useApp();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAuthPromptOpen, setIsAuthPromptOpen] = useState(false);
   const [filterRating, setFilterRating] = useState('ALL');
 
   const filteredReviews = reviews.filter((r) => {
@@ -13,8 +18,17 @@ export const Reviews = () => {
     return r.rating === Number(filterRating);
   });
 
+  const handleOpenCreateReview = () => {
+    if (!isAuthenticated) {
+      setIsAuthPromptOpen(true);
+    } else {
+      setIsModalOpen(true);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn font-sans max-w-7xl mx-auto px-4 py-6">
+      {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
         <div>
           <div className="text-xs font-semibold text-gray-400 mb-1">
@@ -30,7 +44,7 @@ export const Reviews = () => {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenCreateReview}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-md transition-colors cursor-pointer w-fit"
         >
           <Plus className="w-4 h-4" />
@@ -67,7 +81,7 @@ export const Reviews = () => {
         ))}
       </div>
 
-      {/* Reviews Grid */}
+      {/* Public Reviews Grid */}
       {filteredReviews.length === 0 ? (
         <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 text-gray-400 text-xs font-medium">
           Chưa có đánh giá nào phù hợp với bộ lọc này.
@@ -125,7 +139,48 @@ export const Reviews = () => {
         </div>
       )}
 
-      {/* Review Form Modal */}
+      {/* Auth Prompt Modal (Shown when unauthenticated user clicks "+ Gửi đánh giá mới") */}
+      <Modal
+        isOpen={isAuthPromptOpen}
+        onClose={() => setIsAuthPromptOpen(false)}
+        title="🔐 Yêu cầu đăng nhập"
+        maxWidth="max-w-md"
+      >
+        <div className="space-y-4 text-center py-2 font-sans">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
+            <AlertCircle className="w-7 h-7" />
+          </div>
+
+          <div>
+            <h3 className="text-base font-bold text-museum-brown">Bạn cần đăng nhập để gửi đánh giá.</h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Vui lòng đăng nhập tài khoản của bạn để viết nhận xét và chia sẻ cảm nhận với cộng đồng.
+            </p>
+          </div>
+
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => {
+                setIsAuthPromptOpen(false);
+                navigate('/login?redirect=/reviews');
+              }}
+              className="px-6 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-md transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Đăng nhập</span>
+            </button>
+
+            <button
+              onClick={() => setIsAuthPromptOpen(false)}
+              className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-xl transition-colors cursor-pointer"
+            >
+              Để sau
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Review Form Modal (Opened when authenticated user clicks "+ Gửi đánh giá mới") */}
       <ReviewFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );

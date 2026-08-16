@@ -31,7 +31,6 @@ export const VisitorHeader = () => {
     { name: 'Triển lãm', to: '/exhibitions' },
     { name: 'Sự kiện', to: '/events' },
     { name: 'Đánh giá', to: '/reviews' },
-    { name: 'Trợ lý AI', to: '/ai-assistant' },
   ];
 
   return (
@@ -149,14 +148,14 @@ export const VisitorHeader = () => {
         <div className="md:hidden bg-white border-b border-gray-200 px-4 py-4 space-y-3 animate-fadeIn">
           <div className="flex flex-col gap-2 font-bold text-sm text-gray-700">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.name}
-                href={link.href}
+                to={link.to}
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-3 py-2 rounded-lg hover:bg-museum-cream hover:text-museum-brown transition-colors"
               >
                 {link.name}
-              </a>
+              </Link>
             ))}
           </div>
           <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
