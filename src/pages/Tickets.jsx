@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Ticket, Plus, TrendingUp, Pencil, Trash2, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Ticket, Plus, TrendingUp, Pencil, Trash2, X, AlertTriangle, CheckCircle2, QrCode, ShoppingCart } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
 import { Badge } from '@/components/ui/Badge';
+import { TicketBookingModal } from '@/components/tickets/TicketBookingModal';
 
 const EMPTY_TICKET = { name: '', description: '', price: '', active: true };
 
@@ -10,6 +11,7 @@ export const Tickets = () => {
   const { tickets, ticketStats, bookedTickets, addTicketType, updateTicketType, deleteTicketType } = useApp();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [editingTicket, setEditingTicket] = useState(null);
   const [formData, setFormData] = useState(EMPTY_TICKET);
   const [errors, setErrors] = useState({});
@@ -66,13 +68,22 @@ export const Tickets = () => {
           </div>
           <h2 className="text-2xl font-extrabold text-museum-brown tracking-tight">QUẢN LÝ VÉ THAM QUAN</h2>
         </div>
-        <button
-          onClick={openAdd}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md transition-colors cursor-pointer"
-        >
-          <Plus className="w-5 h-5" />
-          <span>+ Thêm loại vé</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsBookingModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-museum-gold hover:bg-museum-gold-lt text-white font-bold text-sm rounded-xl shadow-md transition-colors cursor-pointer"
+          >
+            <QrCode className="w-4 h-4" />
+            <span>+ Đặt vé & Thanh toán QR</span>
+          </button>
+          <button
+            onClick={openAdd}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md transition-colors cursor-pointer"
+          >
+            <Plus className="w-5 h-5" />
+            <span>+ Thêm loại vé</span>
+          </button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -136,20 +147,20 @@ export const Tickets = () => {
       {/* Booked Tickets List */}
       <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden space-y-2">
         <div className="p-4 bg-museum-ivory border-b border-gray-200 font-bold text-sm text-museum-brown flex items-center justify-between">
-          <span>DANH SÁCH VÉ ĐẶT TRỰC TUYẾN</span>
-          <span className="text-xs font-normal text-gray-500">Tổng cộng: {bookedTickets?.length || 0} vé</span>
+          <span>DANH SÁCH VÉ ĐẶT TRỰC TUYẾN & GIAO DỊCH QR</span>
+          <span className="text-xs font-normal text-gray-500">Tổng cộng: {bookedTickets?.length || 0} đơn vé</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[700px]">
+          <table className="w-full text-left border-collapse min-w-[750px]">
             <thead>
               <tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-100">
-                <th className="py-3 px-4">Mã vé</th>
-                <th className="py-3 px-4">Họ tên</th>
-                <th className="py-3 px-4">SĐT</th>
-                <th className="py-3 px-4">Email</th>
+                <th className="py-3 px-4">Mã đơn / Mã vé</th>
+                <th className="py-3 px-4">Họ tên khách</th>
+                <th className="py-3 px-4">Liên hệ</th>
                 <th className="py-3 px-4">Loại vé</th>
                 <th className="py-3 px-4">Ngày tham quan</th>
-                <th className="py-3 px-4">Giá vé</th>
+                <th className="py-3 px-4">Thanh toán</th>
+                <th className="py-3 px-4">Tổng tiền</th>
                 <th className="py-3 px-4">Trạng thái</th>
               </tr>
             </thead>
@@ -159,14 +170,36 @@ export const Tickets = () => {
               ) : (
                 bookedTickets.map((b) => (
                   <tr key={b.id} className="hover:bg-museum-cream/30 transition-colors">
-                    <td className="py-3 px-4 font-bold text-museum-brown">{b.ticketCode}</td>
+                    <td className="py-3 px-4 font-bold text-museum-brown">
+                      <div>{b.orderCode || b.ticketCode}</div>
+                      {b.ticketCode !== b.orderCode && <div className="text-[10px] text-gray-400 font-mono">Vé: {b.ticketCode}</div>}
+                    </td>
                     <td className="py-3 px-4 font-semibold">{b.name}</td>
-                    <td className="py-3 px-4 text-gray-600">{b.phone}</td>
-                    <td className="py-3 px-4 text-museum-gold font-medium">{b.email}</td>
-                    <td className="py-3 px-4">{b.ticketType}</td>
+                    <td className="py-3 px-4 text-gray-600">
+                      <div>{b.phone}</div>
+                      <div className="text-[10px] text-museum-gold">{b.email}</div>
+                    </td>
+                    <td className="py-3 px-4">{b.ticketType} ({b.quantity || 1} vé)</td>
                     <td className="py-3 px-4 font-medium">{b.visitDate}</td>
-                    <td className="py-3 px-4 font-bold text-museum-brown">{formatCurrency(b.price * (b.quantity || 1))}</td>
-                    <td className="py-3 px-4"><Badge variant="emerald">{b.status}</Badge></td>
+                    <td className="py-3 px-4 font-semibold text-museum-brown">{b.paymentMethod || 'VNPay'}</td>
+                    <td className="py-3 px-4 font-extrabold text-museum-gold">
+                      {formatCurrency(b.totalPrice || (b.price * (b.quantity || 1)))}
+                    </td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          b.status === 'Đã thanh toán' || b.paymentStatus === 'Đã thanh toán' || b.status === 'Đã xác nhận'
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : b.status === 'Đang kiểm tra thanh toán' || b.paymentStatus === 'Đang kiểm tra thanh toán'
+                            ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                            : b.status === 'Thanh toán thất bại'
+                            ? 'bg-red-100 text-red-800 border border-red-300'
+                            : 'bg-amber-100 text-amber-800 border border-amber-300'
+                        }`}
+                      >
+                        {b.status || b.paymentStatus || 'Chờ thanh toán'}
+                      </span>
+                    </td>
                   </tr>
                 ))
               )}
@@ -174,6 +207,13 @@ export const Tickets = () => {
           </table>
         </div>
       </div>
+
+      {/* Ticket Booking Modal */}
+      <TicketBookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+      />
+
 
       {/* ===== TICKET FORM MODAL ===== */}
       {isFormOpen && (

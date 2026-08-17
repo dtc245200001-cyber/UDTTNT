@@ -8,6 +8,21 @@ import { categories as initialCategories } from '../data/categories';
 import { users as initialUsers } from '../data/users';
 import { reviews as initialReviews } from '../data/reviews';
 import { getAuditLogs, logAction as createAuditLog } from '../utils/auditLogger';
+import { formatCurrency } from '@/utils/formatters';
+import {
+  calculateHMACSHA256,
+  generateSecureQRPayload,
+  verifySecureQRPayload,
+  parseQRPayload,
+} from '@/services/qrSecurityService';
+import { sendTicketConfirmationEmail } from '@/services/emailService';
+import {
+  PAYMENT_STATUS,
+  getPaymentConfig,
+  generatePaymentQRUrl,
+  generateOrderCode,
+  verifyPayment,
+} from '@/services/paymentService';
 
 const AppContext = createContext();
 
@@ -233,6 +248,11 @@ export const AppProvider = ({ children }) => {
           ticketType: b.ticket_type || b.ticketType,
           visitDate: b.visit_date || b.visitDate,
           paymentMethod: b.payment_method || b.paymentMethod,
+          paymentStatus: b.payment_status || b.paymentStatus || b.status,
+          orderCode: b.payment_ref || b.orderCode || b.ticket_code || b.ticketCode,
+          totalPrice: b.total_price || b.totalPrice || (b.price * (b.quantity || 1)),
+          qrCode: b.qr_code || b.qrCode,
+          paidAt: b.paid_at || b.paidAt,
         }));
         setBookedTicketsList(mappedBooks);
       }
@@ -557,16 +577,94 @@ export const AppProvider = ({ children }) => {
     return { success: true, event: ev, registration: newRecord };
   };
 
-  // 14. Ticket Booking
+  // 14. Ticket Booking & Payment Verification
   const bookTicket = async (bookingData) => {
+    const isCounterType = bookingData.paymentMethod === 'Thanh toán tại quầy' || bookingData.paymentOption === 'COUNTER' || bookingData.paymentMethod === 'counter';
+    const datePrefix = (bookingData.visitDate || new Date().toISOString().split('T')[0]).replace(/-/g, '');
+    const randSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const orderCode = isCounterType
+      ? `MTQ-${datePrefix}-${randSuffix}`
+      : generateOrderCode();
+
     const ticketCode = `TK-${Date.now().toString().slice(-6)}`;
-    const unitPrice = bookingData.price || 50000;
+
+    // Explicitly check unitPrice from ticketsList or bookingData.price
+    let unitPrice = typeof bookingData.price === 'number' ? bookingData.price : 50000;
+    const matchedType = ticketsList.find(
+      (t) => t.name.toLowerCase() === (bookingData.ticketType || '').toLowerCase()
+    );
+    if (matchedType) {
+      unitPrice = Number(matchedType.price);
+    } else if (
+      bookingData.ticketType?.includes('Miễn phí') ||
+      bookingData.ticketType?.includes('Trẻ em') ||
+      bookingData.ticketType?.includes('Người cao tuổi')
+    ) {
+      unitPrice = 0;
+    }
+
     const qty = bookingData.quantity || 1;
     const total = unitPrice * qty;
+    const isFree = total === 0;
+    const isCounter = !isFree && isCounterType;
+    const isOnlinePayment = !isFree && !isCounter;
+
+    const initialStatus = isFree
+      ? 'Đã xác nhận'
+      : isCounter
+      ? 'Chờ thanh toán tại quầy'
+      : PAYMENT_STATUS.PENDING;
+
+    const initialPaymentStatus = isFree
+      ? 'Miễn phí'
+      : isCounter
+      ? 'pending'
+      : PAYMENT_STATUS.PENDING;
+
+    const paymentMethodLabel = isFree
+      ? 'Miễn phí'
+      : isCounter
+      ? 'counter'
+      : (bookingData.paymentMethod || 'online_qr');
+
+    const paymentConfig = getPaymentConfig();
+    const paymentQRUrl = isOnlinePayment
+      ? generatePaymentQRUrl({
+          amount: total,
+          transferContent: orderCode,
+        })
+      : null;
+
+    // HMAC Signature calculation for QR code security
+    const qrSig = calculateHMACSHA256(orderCode);
+    const qrSecurePayload = generateSecureQRPayload(orderCode);
+
+    const ticketQRData = isFree
+      ? JSON.stringify({
+          ticketId: `BK-${Date.now()}`,
+          bookingId: `BK-${Date.now()}`,
+          orderCode: orderCode,
+          ticketCode: ticketCode,
+          visitDate: bookingData.visitDate,
+          ticketType: bookingData.ticketType || 'Vé Trẻ em / Người cao tuổi – Miễn phí',
+          name: bookingData.name.trim(),
+          quantity: qty,
+          totalPrice: 0,
+          status: 'Vé Miễn Phí',
+        })
+      : isCounter
+      ? qrSecurePayload
+      : null;
+
+    const expireAt = bookingData.visitDate
+      ? `${bookingData.visitDate}T23:59:59Z`
+      : new Date(Date.now() + 86400000).toISOString();
 
     const newBooking = {
       id: `BK-${Date.now()}`,
       ticketCode,
+      orderCode,
+      order_code: orderCode,
       userId: currentUser?.id || null,
       name: bookingData.name.trim(),
       phone: bookingData.phone.trim(),
@@ -576,21 +674,34 @@ export const AppProvider = ({ children }) => {
       quantity: qty,
       totalPrice: total,
       visitDate: bookingData.visitDate,
-      paymentMethod: bookingData.paymentMethod || 'Tại quầy',
-      status: 'Đã xác nhận',
+      visit_date: bookingData.visitDate,
+      paymentMethod: paymentMethodLabel,
+      payment_method: paymentMethodLabel,
+      paymentStatus: initialPaymentStatus,
+      payment_status: initialPaymentStatus,
+      checkinStatus: 'not_checked_in',
+      checkin_status: 'not_checked_in',
+      status: initialStatus,
+      paymentQRUrl,
+      paymentConfig,
       createdAt: new Date().toISOString().split('T')[0],
-      qrCode: `${ticketCode}-${bookingData.email.trim()}-${total}VND`,
+      qrCode: ticketQRData,
+      qrSignature: qrSig,
+      qr_signature: qrSig,
+      qrExpireAt: expireAt,
+      qr_expire_at: expireAt,
       userEmail: currentUser?.email || bookingData.email.trim(),
     };
 
-    const updated = [newBooking, ...bookedTicketsList];
-    setBookedTicketsList(updated);
+    setBookedTicketsList((prev) => [newBooking, ...prev]);
 
     try {
       await supabase.from('dat_ve').insert([
         {
           id: newBooking.id,
           ticket_code: newBooking.ticketCode,
+          order_code: newBooking.orderCode,
+          payment_ref: newBooking.orderCode,
           user_id: newBooking.userId,
           name: newBooking.name,
           phone: newBooking.phone,
@@ -598,19 +709,313 @@ export const AppProvider = ({ children }) => {
           ticket_type: newBooking.ticketType,
           price: newBooking.price,
           quantity: newBooking.quantity,
+          total_price: newBooking.totalPrice,
           visit_date: newBooking.visitDate,
           payment_method: newBooking.paymentMethod,
+          payment_status: newBooking.paymentStatus,
+          checkin_status: newBooking.checkinStatus,
           status: newBooking.status,
+          qr_code: newBooking.qrCode,
+          qr_signature: newBooking.qrSignature,
+          qr_expire_at: newBooking.qrExpireAt,
         },
       ]);
+
+      if (isOnlinePayment) {
+        await supabase.from('thanh_toan').insert([
+          {
+            id: `PAY-${Date.now()}`,
+            booking_id: newBooking.id,
+            order_code: newBooking.orderCode,
+            amount: newBooking.totalPrice,
+            payment_method: newBooking.paymentMethod,
+            bank_id: paymentConfig.bankId,
+            account_no: paymentConfig.accountNo,
+            account_name: paymentConfig.accountName,
+            transfer_content: newBooking.orderCode,
+            status: newBooking.paymentStatus,
+          },
+        ]);
+      }
     } catch (e) {
       console.warn('Supabase book ticket notice', e);
     }
 
-    addToast(`🎫 Đặt vé thành công (${ticketCode})! Đã lưu vào mục "Vé của tôi".`, 'success');
-    logAudit('BOOK_TICKET', `Đặt vé thành công: ${ticketCode} - ${newBooking.ticketType} (${qty} vé)`);
+    // Simulate sending ticket confirmation email
+    sendTicketConfirmationEmail(newBooking);
+
+    if (isFree) {
+      addToast(`🎉 Đặt vé miễn phí thành công (${ticketCode})! Đã lưu vào mục "Vé của tôi".`, 'success');
+      logAudit('BOOK_FREE_TICKET', `Vé miễn phí được cấp: ${orderCode} - ${newBooking.ticketType} (${qty} vé)`);
+    } else if (isCounter) {
+      addToast(`🏛️ Đặt vé thành công! Vui lòng thanh toán ${formatCurrency(total)} tại quầy vé khi đến.`, 'info');
+      logAudit('BOOK_COUNTER_TICKET', `Đặt vé thanh toán tại quầy: ${orderCode} - ${newBooking.ticketType} (${qty} vé)`);
+    } else {
+      logAudit('BOOK_TICKET', `Khởi tạo đơn đặt vé online: ${orderCode} - ${newBooking.ticketType} (${qty} vé)`);
+    }
     return { success: true, booking: newBooking };
   };
+
+  // Staff Checkin API endpoint logic: POST /api/staff/orders/checkin
+  const confirmStaffCounterCheckin = async (rawInput, staffUser) => {
+    const parsed = parseQRPayload(rawInput);
+    const searchCode = (parsed?.orderCode || rawInput || '').trim();
+    const sigInput = parsed?.sig || '';
+
+    const order = bookedTicketsList.find(
+      (b) =>
+        (b.orderCode && b.orderCode.toLowerCase() === searchCode.toLowerCase()) ||
+        (b.order_code && b.order_code.toLowerCase() === searchCode.toLowerCase()) ||
+        (b.ticketCode && b.ticketCode.toLowerCase() === searchCode.toLowerCase()) ||
+        (b.id && b.id.toLowerCase() === searchCode.toLowerCase())
+    );
+
+    if (!order) {
+      return {
+        success: false,
+        error: 'Mã đơn / Vé không tồn tại trong hệ thống bảo tàng!',
+      };
+    }
+
+    // Security signature check if sig was provided or order has qrSignature
+    if (sigInput && (order.qrSignature || order.qr_signature)) {
+      const expectedSig = order.qrSignature || order.qr_signature;
+      const isValidSig = verifySecureQRPayload(order.orderCode || order.ticketCode, sigInput) || sigInput === expectedSig;
+      if (!isValidSig) {
+        return {
+          success: false,
+          error: '🔴 CẢNH BÁO BẢO MẬT: Mã QR có dấu hiệu bị làm giả hoặc chữ ký mã hóa không hợp lệ!',
+        };
+      }
+    }
+
+    // Check if already checked in
+    if (order.checkin_status === 'checked_in' || order.checkinStatus === 'checked_in') {
+      const time = order.checkin_at || order.checkinAt || 'trước đó';
+      const staff = order.checked_in_by || order.checkedInBy || 'Nhân viên hệ thống';
+      return {
+        success: false,
+        alreadyCheckedIn: true,
+        order,
+        error: `⚠️ ĐƠN VÉ NÀY ĐÃ ĐƯỢC CHECK-IN VÀO LÚC ${time} BỞI NHÂN VIÊN "${staff}". KHÔNG THỂ QUÉT LẠI!`,
+      };
+    }
+
+    // Check if expired
+    const todayStr = new Date().toISOString().split('T')[0];
+    const visitDateStr = order.visitDate || order.visit_date;
+    if (visitDateStr && visitDateStr < todayStr) {
+      return {
+        success: false,
+        expired: true,
+        order,
+        error: `⚠️ RẤT TIẾC: Đơn vé đã quá hạn sử dụng (Ngày tham quan dự kiến: ${visitDateStr}).`,
+      };
+    }
+
+    const nowIso = new Date().toISOString();
+    const staffName = staffUser?.name || staffUser?.email || staffUser?.id || 'Nhân viên quầy vé';
+
+    const updatedOrder = {
+      ...order,
+      paymentMethod: order.paymentMethod === 'Miễn phí' ? 'Miễn phí' : 'counter',
+      payment_method: order.payment_method || 'counter',
+      paymentStatus: 'paid',
+      payment_status: 'paid',
+      status: 'Đã thanh toán – Đã check-in',
+      checkinStatus: 'checked_in',
+      checkin_status: 'checked_in',
+      checkinAt: nowIso,
+      checkin_at: nowIso,
+      checkedInBy: staffName,
+      checked_in_by: staffName,
+      paidAt: nowIso,
+      paid_at: nowIso,
+      confirmedBy: staffName,
+      confirmed_by: staffName,
+    };
+
+    setBookedTicketsList((prev) =>
+      prev.map((b) => (b.id === order.id ? updatedOrder : b))
+    );
+
+    try {
+      await supabase
+        .from('dat_ve')
+        .update({
+          payment_status: 'paid',
+          checkin_status: 'checked_in',
+          status: 'Đã thanh toán – Đã check-in',
+          paid_at: nowIso,
+          confirmed_by: staffName,
+          checkin_at: nowIso,
+          checked_in_by: staffName,
+        })
+        .eq('id', order.id);
+    } catch (e) {
+      console.warn('Supabase confirm staff checkin notice:', e);
+    }
+
+    addToast(`✅ Đã thu tiền & Check-in thành công đơn vé ${order.orderCode || order.ticketCode}!`, 'success');
+    logAudit('STAFF_COUNTER_CHECKIN', `Nhân viên ${staffName} đã thu tiền & check-in vé ${order.orderCode || order.ticketCode}`);
+
+    return {
+      success: true,
+      order: updatedOrder,
+      message: 'Xác nhận đã thu tiền & Check-in vé thành công!',
+    };
+  };
+
+  const resendTicketEmail = async (orderCode) => {
+    const order = bookedTicketsList.find(
+      (b) => b.orderCode === orderCode || b.order_code === orderCode || b.ticketCode === orderCode || b.id === orderCode
+    );
+    if (!order) {
+      addToast('Không tìm thấy thông tin đơn vé!', 'error');
+      return { success: false };
+    }
+    const res = await sendTicketConfirmationEmail(order);
+    addToast(`📧 ${res.message}`, 'success');
+    return res;
+  };
+
+  const getOrderDetailsByCode = (code) => {
+    if (!code) return null;
+    return bookedTicketsList.find(
+      (b) =>
+        (b.orderCode && b.orderCode.toLowerCase() === code.toLowerCase()) ||
+        (b.order_code && b.order_code.toLowerCase() === code.toLowerCase()) ||
+        (b.ticketCode && b.ticketCode.toLowerCase() === code.toLowerCase()) ||
+        (b.id && b.id.toLowerCase() === code.toLowerCase())
+    ) || null;
+  };
+
+  const confirmCounterPayment = async (bookingId) => {
+    return confirmStaffCounterCheckin(bookingId, currentUser);
+  };
+
+
+  const verifyBookingPayment = async (bookingId, simulateFailure = false) => {
+    // 1. Mark status as CHECKING in state
+    setBookedTicketsList((prev) =>
+      prev.map((b) =>
+        b.id === bookingId || b.ticketCode === bookingId || b.orderCode === bookingId
+          ? { ...b, paymentStatus: PAYMENT_STATUS.CHECKING, status: PAYMENT_STATUS.CHECKING }
+          : b
+      )
+    );
+
+    const currentBooking = bookedTicketsList.find(
+      (b) => b.id === bookingId || b.ticketCode === bookingId || b.orderCode === bookingId
+    );
+
+    const orderCode = currentBooking?.orderCode || currentBooking?.ticketCode || bookingId;
+    const amount = currentBooking?.totalPrice || 100000;
+
+    // 2. Call payment service verification
+    const result = await verifyPayment({ orderCode, amount, simulateFailure });
+
+    if (result.success) {
+      const paidAt = result.paidAt || new Date().toISOString();
+      const ticketQR = JSON.stringify({
+        ticketId: currentBooking?.id || bookingId,
+        bookingId: currentBooking?.id || bookingId,
+        orderCode: orderCode,
+        ticketCode: currentBooking?.ticketCode || orderCode,
+        visitDate: currentBooking?.visitDate,
+        ticketType: currentBooking?.ticketType,
+        name: currentBooking?.name,
+        quantity: currentBooking?.quantity || 1,
+        totalPrice: amount,
+        status: 'Đã thanh toán',
+      });
+
+      let updatedBooking = null;
+
+      setBookedTicketsList((prev) =>
+        prev.map((b) => {
+          if (b.id === bookingId || b.ticketCode === bookingId || b.orderCode === bookingId) {
+            updatedBooking = {
+              ...b,
+              paymentStatus: PAYMENT_STATUS.SUCCESS,
+              status: 'Đã thanh toán',
+              paidAt,
+              transactionRef: result.transactionRef,
+              qrCode: ticketQR,
+            };
+            return updatedBooking;
+          }
+          return b;
+        })
+      );
+
+      // Sync Supabase
+      try {
+        await supabase
+          .from('dat_ve')
+          .update({
+            payment_status: PAYMENT_STATUS.SUCCESS,
+            status: 'Đã thanh toán',
+            paid_at: paidAt,
+            qr_code: ticketQR,
+          })
+          .eq('id', currentBooking?.id || bookingId);
+
+        await supabase
+          .from('thanh_toan')
+          .update({
+            status: PAYMENT_STATUS.SUCCESS,
+            transaction_ref: result.transactionRef,
+            paid_at: paidAt,
+          })
+          .eq('booking_id', currentBooking?.id || bookingId);
+
+        await supabase.from('ve_dientu').insert([
+          {
+            id: `TKT-${Date.now()}`,
+            booking_id: currentBooking?.id || bookingId,
+            ticket_code: currentBooking?.ticketCode || orderCode,
+            ticket_type: currentBooking?.ticketType || 'Vé tham quan',
+            visit_date: currentBooking?.visitDate || new Date().toISOString().split('T')[0],
+            visitor_name: currentBooking?.name || 'Khách',
+            status: 'Có hiệu lực',
+            qr_ticket_data: ticketQR,
+          },
+        ]);
+      } catch (e) {
+        console.warn('Supabase verify payment update notice', e);
+      }
+
+      addToast(`🎉 Thanh toán thành công đơn hàng ${orderCode}! Vé điện tử QR đã được tạo.`, 'success');
+      logAudit('PAYMENT_SUCCESS', `Thanh toán thành công đơn hàng: ${orderCode} (${result.transactionRef})`);
+      return { success: true, booking: updatedBooking, result };
+    } else {
+      setBookedTicketsList((prev) =>
+        prev.map((b) =>
+          b.id === bookingId || b.ticketCode === bookingId || b.orderCode === bookingId
+            ? { ...b, paymentStatus: PAYMENT_STATUS.FAILED, status: 'Thanh toán thất bại' }
+            : b
+        )
+      );
+
+      try {
+        await supabase
+          .from('dat_ve')
+          .update({
+            payment_status: PAYMENT_STATUS.FAILED,
+            status: 'Thanh toán thất bại',
+          })
+          .eq('id', currentBooking?.id || bookingId);
+      } catch (e) {
+        console.warn('Supabase verify payment failure update notice', e);
+      }
+
+      addToast(result.message || 'Thanh toán thất bại!', 'error');
+      logAudit('PAYMENT_FAILED', `Thanh toán thất bại đơn hàng: ${orderCode}`);
+      return { success: false, message: result.message, result };
+    }
+  };
+
 
   // 15. Reviews
   const bannedWords = ['spam', 'lừa đảo', 'xúc phạm', 'bậy bạ', 'đồi trụy', 'fuck', 'shit'];
@@ -763,6 +1168,11 @@ export const AppProvider = ({ children }) => {
         deleteTicketType,
         bookedTickets: bookedTicketsList,
         bookTicket,
+        verifyBookingPayment,
+        confirmCounterPayment,
+        confirmStaffCounterCheckin,
+        getOrderDetailsByCode,
+        resendTicketEmail,
         ticketStats: ticketStatsState,
 
         // Reviews

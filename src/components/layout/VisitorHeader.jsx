@@ -13,6 +13,7 @@ import {
   X,
   Sparkles,
   MessageSquareHeart,
+  QrCode,
 } from 'lucide-react';
 
 export const VisitorHeader = () => {
@@ -118,6 +119,18 @@ export const VisitorHeader = () => {
                   </span>
                 )}
               </Link>
+
+              {/* Staff Check-in link if user is staff or admin */}
+              {(currentUser?.role === 'staff' || currentUser?.role === 'admin') && (
+                <Link
+                  to="/staff/checkin"
+                  className="px-3 py-1 bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold rounded-full transition-colors flex items-center gap-1 shadow-xs"
+                  title="Cổng soát vé & thu tiền tại quầy"
+                >
+                  <QrCode className="w-3.5 h-3.5 text-amber-200" />
+                  <span>Soát vé Quầy</span>
+                </Link>
+              )}
 
               {/* Admin Dashboard link if user is admin */}
               {currentUser?.role === 'admin' && (

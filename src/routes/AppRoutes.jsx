@@ -35,6 +35,9 @@ import { Reports } from '@/pages/Reports';
 import { Settings } from '@/pages/Settings';
 import { NotFound } from '@/pages/NotFound';
 
+// Staff Checkin Page
+import { StaffCheckin } from '@/pages/StaffCheckin';
+
 export const AppRoutes = () => {
   return (
     <Routes>
@@ -59,7 +62,14 @@ export const AppRoutes = () => {
         <Route path="/visitor-reviews" element={<Reviews />} />
       </Route>
 
-      {/* 3. Protected Admin Dashboard Routes (Requires Admin Login) */}
+      {/* 3. Protected Staff & Admin Check-in Route */}
+      <Route element={<ProtectedRoute allowedRoles={['staff', 'admin']} />}>
+        <Route element={<VisitorLayout />}>
+          <Route path="/staff/checkin" element={<StaffCheckin />} />
+        </Route>
+      </Route>
+
+      {/* 4. Protected Admin Dashboard Routes (Requires Admin Login) */}
       <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />

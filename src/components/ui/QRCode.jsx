@@ -2,29 +2,26 @@ import React from 'react';
 
 /**
  * Clean QR Code generator component for e-tickets.
- * Generates dynamic QR code via QRServer API with fallback SVG renderer.
+ * Generates dynamic QR code via QRServer API with quiet zone and clean white container.
  */
-export const QRCode = ({ value, size = 140, className = '' }) => {
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(
-    value || 'MUSEUM-TICKET-2026'
+export const QRCode = ({ value, size = 180, className = '' }) => {
+  const qrData = value || 'MUSEUM-TICKET-2026';
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=8&data=${encodeURIComponent(
+    qrData
   )}`;
 
   return (
-    <div className={`inline-flex flex-col items-center justify-center p-2 bg-white rounded-xl border border-gray-200 shadow-xs ${className}`}>
+    <div className={`inline-flex items-center justify-center p-3.5 bg-white rounded-2xl border border-museum-gold/30 shadow-xs ${className}`}>
       <img
         src={qrUrl}
-        alt={`Mã QR: ${value}`}
+        alt="Mã QR Vé Điện Tử"
         width={size}
         height={size}
-        className="rounded-lg object-contain"
+        className="rounded-xl object-contain"
         onError={(e) => {
-          // Fallback SVG representation if API fails offline
-          e.target.style.display = 'none';
+          e.target.onerror = null;
         }}
       />
-      <div className="text-[10px] font-mono font-bold text-museum-brown mt-1 tracking-wider">
-        {value}
-      </div>
     </div>
   );
 };
