@@ -288,12 +288,6 @@ export const VisitorHome = () => {
                   <MapPin className="w-4 h-4 text-museum-brown" />
                   <span>{ev.location}</span>
                 </div>
-                <button
-                  onClick={() => handleEventRegistration(ev)}
-                  className="w-full mt-2 py-2 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold rounded-xl text-xs transition-colors shadow-xs cursor-pointer"
-                >
-                  Đăng ký tham dự miễn phí
-                </button>
               </div>
             </div>
           ))}
