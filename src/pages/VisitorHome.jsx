@@ -22,6 +22,7 @@ import { EventRegistrationModal } from '@/components/events/EventRegistrationMod
 import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal';
 import { ArtifactCard } from '@/components/cards/ArtifactCard';
 import { TicketBookingModal } from '@/components/tickets/TicketBookingModal';
+import { VirtualTour3DSection } from '@/components/tours/VirtualTour3DSection';
 
 export const VisitorHome = () => {
   const navigate = useNavigate();
@@ -293,6 +294,9 @@ export const VisitorHome = () => {
           ))}
         </div>
       </section>
+
+      {/* Section: Khám phá Tour Bảo tàng 3D */}
+      <VirtualTour3DSection />
 
       {/* Section 4: Vé tham quan & Giá niêm yết */}
       <section id="tickets" className="bg-museum-brown text-white py-14">
