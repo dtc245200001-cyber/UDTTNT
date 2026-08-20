@@ -46,13 +46,13 @@ export const ArtifactCard = ({ artifact, onClick }) => {
         </div>
 
         <div className="p-4 space-y-1.5">
-          <h4 className="font-bold text-base text-museum-brown group-hover:text-museum-gold transition-colors line-clamp-1">
+          <h4 className="card-title font-bold text-base text-museum-brown group-hover:text-museum-gold transition-colors line-clamp-1">
             {artifact.name}
           </h4>
           {artifact.date && (
             <p className="text-xs font-semibold text-museum-gold">Niên đại: {artifact.date}</p>
           )}
-          <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed font-normal">
+          <p className="card-description text-xs text-gray-500 line-clamp-2 leading-relaxed font-normal">
             {artifact.description}
           </p>
         </div>

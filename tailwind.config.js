@@ -20,7 +20,8 @@ export default {
         warning: '#D97706',
       },
       fontFamily: {
-        sans: ['"Be Vietnam Pro"', 'Inter', 'sans-serif'],
+        sans: ['"Be Vietnam Pro"', 'Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+        serif: ['"Playfair Display"', '"Be Vietnam Pro"', 'Georgia', '"Times New Roman"', 'serif'],
       },
     },
   },

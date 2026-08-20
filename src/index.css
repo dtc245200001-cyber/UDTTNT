@@ -3,11 +3,34 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+  html, body {
+    font-family: 'Be Vietnam Pro', 'Inter', 'Segoe UI', Arial, sans-serif;
     background-color: #FBF8F1;
     color: #2D241E;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "kern" 1, "liga" 1;
+    letter-spacing: normal;
+    word-spacing: normal;
   }
+}
+
+/* Card titles and headings - Reset letter-spacing and word-spacing for natural Vietnamese text */
+.card-title,
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: normal;
+  word-spacing: normal;
+  line-height: 1.35;
+  font-weight: 700;
+  text-rendering: optimizeLegibility;
+}
+
+/* Card descriptions and body copy */
+.card-description,
+p, span, a, button {
+  letter-spacing: normal;
+  word-spacing: normal;
 }
 
 /* Smooth transitions */

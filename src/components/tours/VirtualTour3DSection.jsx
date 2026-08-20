@@ -109,7 +109,7 @@ export const VirtualTour3DSection = () => {
           </div>
 
           {/* Tiêu đề chính */}
-          <h2 className="text-3xl sm:text-4xl font-serif font-bold text-[#3E2712] tracking-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#3E2712] tracking-normal mb-4 font-sans card-title">
             Khám phá Bảo tàng 3D
           </h2>
 
@@ -121,7 +121,7 @@ export const VirtualTour3DSection = () => {
           </div>
 
           {/* Mô tả ngắn */}
-          <p className="text-base sm:text-lg text-[#5B3A1F]/80 leading-relaxed font-sans">
+          <p className="text-base sm:text-lg text-[#5B3A1F]/80 leading-relaxed font-sans card-description">
             Trải nghiệm tham quan ảo 360° các không gian trưng bày của Bảo tàng Lịch sử Quốc gia.
           </p>
         </div>
@@ -181,10 +181,10 @@ export const VirtualTour3DSection = () => {
               {/* Nội dung thông tin thẻ */}
               <div className="p-5 flex-1 flex flex-col justify-between bg-gradient-to-b from-white to-[#FBF8F1]">
                 <div>
-                  <h3 className="text-lg font-serif font-bold text-[#3E2712] group-hover:text-[#B8860B] transition-colors duration-300 line-clamp-2 min-h-[3.5rem] mb-2 leading-snug">
+                  <h3 className="card-title text-lg font-bold text-[#3E2712] group-hover:text-[#B8860B] transition-colors duration-300 line-clamp-2 min-h-[3.5rem] mb-2 leading-snug font-sans tracking-normal">
                     {tour.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#5B3A1F]/70 line-clamp-2 mb-5 font-sans leading-relaxed">
+                  <p className="card-description text-xs sm:text-sm text-[#5B3A1F]/70 line-clamp-2 mb-5 font-sans leading-relaxed tracking-normal">
                     {tour.description}
                   </p>
                 </div>
@@ -195,7 +195,7 @@ export const VirtualTour3DSection = () => {
                     <button
                       type="button"
                       onClick={() => setActive3DModalTour(tour)}
-                      className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#B8860B] hover:bg-[#D9A441] text-white text-sm font-semibold tracking-wide shadow-md hover:shadow-lg transition-all duration-300 group/btn cursor-pointer"
+                      className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#B8860B] hover:bg-[#D9A441] text-white text-sm font-semibold tracking-normal shadow-md hover:shadow-lg transition-all duration-300 group/btn cursor-pointer"
                     >
                       <span>Trải nghiệm 360° tại web</span>
                       <svg
@@ -214,7 +214,7 @@ export const VirtualTour3DSection = () => {
                       href={tour.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#5B3A1F] hover:bg-[#B8860B] active:bg-[#3E2712] text-[#FBF8F1] hover:text-white text-sm font-medium tracking-wide shadow transition-all duration-300 group/btn focus:outline-none focus:ring-2 focus:ring-[#B8860B] focus:ring-offset-2"
+                      className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#5B3A1F] hover:bg-[#B8860B] active:bg-[#3E2712] text-[#FBF8F1] hover:text-white text-sm font-medium tracking-normal shadow transition-all duration-300 group/btn focus:outline-none focus:ring-2 focus:ring-[#B8860B] focus:ring-offset-2"
                       title={`Mở tour 3D: ${tour.title}`}
                     >
                       <span>Xem tour 3D</span>
