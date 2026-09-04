@@ -1,0 +1,32 @@
+[
+  {
+    "id": "FAQ_01",
+    "category": "Hỏi đáp (FAQ)",
+    "title": "Bảo tàng có chỗ gửi xe ô tô và xe máy không?",
+    "content": "Bảo tàng có khuôn viên bãi đỗ xe rộng rãi, an toàn dành cho cả xe máy, xe đạp và xe ô tô du lịch từ 4 đến 45 chỗ ngay trong khuôn viên cả 2 cơ sở (Số 1 Tràng Tiền và 216 Trần Quang Khải). Du khách và các đoàn xe tham quan khi đến cổng bảo tàng sẽ được đội ngũ nhân viên bảo vệ hướng dẫn đỗ xe đúng vị trí quy định."
+  },
+  {
+    "id": "FAQ_02",
+    "category": "Hỏi đáp (FAQ)",
+    "title": "Có được chụp ảnh trong bảo tàng không?",
+    "content": "Du khách ĐƯỢC PHÉP chụp ảnh lưu niệm tự do bằng điện thoại di động và máy ảnh cá nhân tại các khu vực trưng bày, tuy nhiên KHÔNG ĐƯỢC bật đèn flash (đèn flash có thể gây tổn hại đến các hiện vật nhạy cảm ánh sáng như vải, giấy dó, tranh vẽ cổ). Việc quay phim thương mại, dựng chân máy cồng kềnh hoặc chụp ảnh thời trang cần liên hệ trước với Ban quản lý bảo tàng."
+  },
+  {
+    "id": "FAQ_03",
+    "category": "Hỏi đáp (FAQ)",
+    "title": "Đặt tour thuyết minh cho đoàn tham quan như thế nào?",
+    "content": "Đối với các đoàn khách tham quan từ 10 người trở lên hoặc các trường học, quý khách nên đăng ký dịch vụ thuyết minh trước tối thiểu 1 - 2 ngày qua hotline của bảo tàng hoặc chức năng đặt vé trên website để bảo tàng sắp xếp thuyết minh viên đón tiếp chu đáo nhất."
+  },
+  {
+    "id": "FAQ_04",
+    "category": "Hỏi đáp (FAQ)",
+    "title": "Bảo tàng có hỗ trợ người sử dụng xe lăn không?",
+    "content": "Bảo tàng Lịch sử Quốc gia có thiết kế đường dốc dành cho xe lăn tại lối vào chính, nhà vệ sinh tiện ích cho người khuyết tật và có sẵn xe lăn miễn phí tại quầy lễ tân để phục vụ du khách cao tuổi hoặc người đi lại khó khăn khi có nhu cầu."
+  },
+  {
+    "id": "FAQ_05",
+    "category": "Hỏi đáp (FAQ)",
+    "title": "Có thể mua vé tham quan trực tuyến (Online) không?",
+    "content": "Có. Quý du khách có thể dễ dàng đặt vé tham quan trực tuyến ngay trên website này của Bảo tàng Lịch sử Quốc gia và thanh toán nhanh chóng qua quét mã VietQR ngân hàng. Sau khi thanh toán thành công, hệ thống sẽ tự động cấp mã vé điện tử QR Code để du khách quét mã vào cổng nhanh chóng mà không cần xếp hàng mua vé giấy tại quầy."
+  }
+]
