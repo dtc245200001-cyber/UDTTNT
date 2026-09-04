@@ -2,7 +2,24 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { searchArtifacts } from '@/utils/artifactSearch';
-import { Bot, Sparkles, X, Send, Eye, Calendar, MapPin, RefreshCw, MessageSquare } from 'lucide-react';
+import { sendChatQuery } from '@/services/aiChatService';
+import { MarkdownMessage } from '@/components/ai/MarkdownMessage';
+import {
+  Bot,
+  Sparkles,
+  X,
+  Send,
+  Eye,
+  RefreshCw,
+  Copy,
+  Check,
+  RotateCcw,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  User,
+  Compass
+} from 'lucide-react';
 
 export const MuseumAI = () => {
   const navigate = useNavigate();
@@ -11,64 +28,113 @@ export const MuseumAI = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
+  const [expandedSources, setExpandedSources] = useState({});
 
-  // 100% Public Suggested Questions for all visitors
+  // Gợi ý câu hỏi tiêu biểu, gần gũi và thú vị
   const suggestedPrompts = [
-    'Trống đồng Cảnh Thịnh là gì?',
-    'Cho tôi biết về các hiện vật thời Tây Sơn',
-    'Giá vé tham quan và giờ mở cửa bảo tàng bao nhiêu?',
-    'Sự kiện tọa đàm văn hóa sắp tới?',
+    'Gợi ý lộ trình tham quan 1 ngày thú vị',
+    'Trống đồng Cảnh Thịnh được đúc năm nào?',
+    'Kể câu chuyện về cuốn sách Đường Kách mệnh',
+    'Giá vé & giờ mở cửa đón khách',
   ];
 
-  // Initial welcome message (Public)
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'ai',
-      text: 'Xin chào! Tôi là Trợ lý AI Bảo tàng. Tôi có thể giải đáp các thắc mắc về hiện vật, giá vé, triển lãm và sự kiện bảo tàng. Hãy nhập câu hỏi của bạn!',
-      artifacts: [],
-    },
-  ]);
+  // Tin nhắn chào mừng ban đầu thân thiện, tự nhiên
+  const initialWelcomeMessage = {
+    id: 'welcome-1',
+    sender: 'ai',
+    text: `Xin chào bạn! Mình là **Trợ lý AI của Bảo tàng Lịch sử Quốc gia Việt Nam** 🏛️✨\n\nMình rất vui được đồng hành cùng bạn khám phá dòng chảy lịch sử và những bảo vật vô giá của dân tộc. Bạn có thể:\n- 💬 Trò chuyện, hỏi han lịch sử hoặc nhờ mình gợi ý lộ trình tham quan phù hợp.\n- 🏺 Khám phá chi tiết các **Bảo vật Quốc gia** (Trống đồng Đông Sơn, Cảnh Thịnh, Ấn vàng triều Nguyễn...).\n- 🎫 Tra cứu giờ mở cửa, giá vé và các sự kiện triển lãm nổi bật.\n\nHôm nay bạn muốn tìm hiểu điều gì, hay cần mình gợi ý một góc trưng bày thú vị nhé? 😊`,
+    sources: [],
+    artifacts: [],
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+  };
 
+  const [messages, setMessages] = useState([initialWelcomeMessage]);
   const chatEndRef = useRef(null);
+  const inputRef = useRef(null);
 
-  // Auto-scroll chat area
+  // Auto scroll xuống tin nhắn mới nhất
   useEffect(() => {
     if (isOpen) {
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isOpen, isSearching]);
 
-  const handleSendMessage = (queryText) => {
-    const textToSend = queryText || inputText;
-    if (!textToSend || !textToSend.trim() || isSearching) return;
+  // Focus ô nhập khi mở widget
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 200);
+    }
+  }, [isOpen]);
 
-    // User message
+  // Xử lý gửi tin nhắn kèm lịch sử hội thoại
+  const handleSendMessage = async (queryText) => {
+    const textToSend = (queryText || inputText).trim();
+    if (!textToSend || isSearching) return;
+
+    const userMsgId = `user-${Date.now()}`;
     const userMsg = {
-      id: Date.now(),
+      id: userMsgId,
       sender: 'user',
       text: textToSend,
+      sources: [],
       artifacts: [],
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const currentHistory = [...messages, userMsg];
+    setMessages(currentHistory);
     if (!queryText) setInputText('');
     setIsSearching(true);
 
-    // Query RAG AI Assistant
-    setTimeout(() => {
-      const searchResult = searchArtifacts(artifacts, textToSend, { events, tickets });
+    try {
+      // 1. Gửi tin nhắn kèm lịch sử hội thoại lên FastAPI RAG Backend
+      const res = await sendChatQuery(textToSend, messages);
 
-      const aiMsg = {
-        id: Date.now() + 1,
+      if (res.success && res.answer) {
+        const aiMsg = {
+          id: `ai-${Date.now()}`,
+          sender: 'ai',
+          text: res.answer,
+          sources: res.sources || [],
+          artifacts: [],
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+      } else {
+        // Fallback sang tra cứu local nếu backend chưa bật
+        const localResult = searchArtifacts(artifacts, textToSend, { events, tickets });
+        const aiMsg = {
+          id: `ai-${Date.now()}`,
+          sender: 'ai',
+          text: localResult.message,
+          sources: (localResult.matchedArtifacts || []).map((art) => ({
+            title: art.name,
+            category: art.period || 'Hiện vật bảo tàng',
+            snippet: art.description,
+            period: art.period || '',
+          })),
+          artifacts: localResult.matchedArtifacts || [],
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+      }
+    } catch (err) {
+      console.error('Chat error:', err);
+      const errorMsg = {
+        id: `ai-${Date.now()}`,
         sender: 'ai',
-        text: searchResult.message,
-        artifacts: searchResult.matchedArtifacts || [],
+        text: 'Rất tiếc, đã có chút gián đoạn kết nối. Bạn vui lòng thử lại sau giây lát nhé! 🏛️',
+        sources: [],
+        artifacts: [],
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
-
-      setMessages((prev) => [...prev, aiMsg]);
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
       setIsSearching(false);
-    }, 500);
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -78,166 +144,297 @@ export const MuseumAI = () => {
     }
   };
 
+  // Nút New Chat: Làm mới phiên trò chuyện
+  const handleNewChat = () => {
+    setMessages([
+      {
+        ...initialWelcomeMessage,
+        id: `welcome-${Date.now()}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ]);
+    setInputText('');
+  };
+
+  // Nút Copy câu trả lời
+  const handleCopy = (msgId, text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMessageId(msgId);
+    setTimeout(() => {
+      setCopiedMessageId(null);
+    }, 2000);
+  };
+
+  // Ẩn/Hiện nguồn RAG
+  const toggleSourceExpand = (msgId) => {
+    setExpandedSources((prev) => ({
+      ...prev,
+      [msgId]: !prev[msgId],
+    }));
+  };
+
   const handleViewArtifactDetail = (artifact) => {
     setIsOpen(false);
     navigate(`/artifacts/${artifact.id}`);
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 select-none font-sans">
-      {/* 1. FLOATING AI BUTTON (Visible to ALL visitors without login) */}
+    <div className="fixed bottom-5 right-5 z-50 font-sans select-none">
+      {/* 1. NÚT NỔI "TRỢ LÝ AI" Ở GÓC PHẢI MÀN HÌNH */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-2.5 px-4 py-3 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold rounded-2xl shadow-2xl border border-museum-gold/40 transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
-          title="Mở Trợ lý AI Bảo tàng (Công khai 24/7)"
+          className="group relative flex items-center gap-3 px-4 py-3 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold rounded-2xl shadow-2xl border border-museum-gold/50 transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
+          title="Mở Trợ lý AI - Khám phá bảo tàng (24/7)"
         >
           <div className="relative">
-            <div className="w-9 h-9 rounded-xl bg-museum-gold flex items-center justify-center text-white shadow-xs group-hover:rotate-12 transition-transform">
-              <Bot className="w-5.5 h-5.5" />
+            <div className="w-10 h-10 rounded-xl bg-museum-gold flex items-center justify-center text-white shadow-md group-hover:rotate-12 transition-transform duration-300">
+              <Bot className="w-6 h-6" />
             </div>
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-museum-gold-lt opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-museum-gold"></span>
+              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-museum-gold-lt border-2 border-museum-brown"></span>
             </span>
           </div>
 
           <div className="text-left hidden sm:block">
             <div className="text-xs font-extrabold text-museum-gold-lt uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" /> Trợ lý AI
+              <Sparkles className="w-3.5 h-3.5" /> TRỢ LÝ AI
             </div>
             <div className="text-[11px] text-museum-cream/90 font-medium">Khám phá bảo tàng</div>
           </div>
         </button>
       )}
 
-      {/* 2. CHAT WINDOW (Public Q&A) */}
+      {/* 2. CỬA SỔ CHATBOT DẠNG FLOATING WIDGET (380px x 600px) */}
       {isOpen && (
-        <div className="w-[calc(100vw-2.5rem)] sm:w-[380px] h-[520px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-museum-gold/30 flex flex-col overflow-hidden animate-fadeIn">
-          {/* Header */}
-          <div className="bg-museum-brown text-white p-4 flex items-center justify-between shadow-md relative">
+        <div className="w-[calc(100vw-2.5rem)] sm:w-[380px] h-[600px] max-h-[88vh] bg-white rounded-3xl shadow-2xl border border-museum-gold/40 flex flex-col overflow-hidden animate-fadeIn transition-all duration-300 ease-out">
+          {/* HEADER CHATBOT */}
+          <div className="bg-museum-brown text-white px-4 py-3.5 flex items-center justify-between shadow-md relative border-b border-museum-gold/30">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-museum-gold flex items-center justify-center text-white shadow-xs">
-                <Bot className="w-5.5 h-5.5" />
+              <div className="w-10 h-10 rounded-xl bg-museum-gold flex items-center justify-center text-white shadow-xs">
+                <Bot className="w-6 h-6" />
               </div>
-              <div>
-                <h3 className="font-extrabold text-sm text-white tracking-wide flex items-center gap-1.5">
-                  🤖 Trợ lý Bảo tàng
-                  <Sparkles className="w-3.5 h-3.5 text-museum-gold-lt" />
-                </h3>
-                <p className="text-[11px] text-museum-cream/80 font-normal">
-                  Hỏi tôi về các hiện vật và lịch sử (Miễn phí & Công khai)
+              <div className="text-left">
+                <div className="flex items-center gap-1.5">
+                  <h3 className="font-extrabold text-sm text-white tracking-wide">Trợ lý AI</h3>
+                  <span className="bg-museum-gold/30 text-museum-gold-lt text-[10px] font-bold px-1.5 py-0.2 rounded-md border border-museum-gold/40 flex items-center gap-0.5">
+                    <Sparkles className="w-2.5 h-2.5" /> RAG
+                  </span>
+                </div>
+                <p className="text-[11px] text-museum-cream/90 font-normal">
+                  Bảo tàng Quốc gia Việt Nam
                 </p>
               </div>
             </div>
 
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1.5 hover:bg-white/10 rounded-xl text-museum-cream hover:text-white transition-colors cursor-pointer"
-              title="Đóng chat"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              {/* Nút New Chat */}
+              <button
+                onClick={handleNewChat}
+                className="p-1.5 hover:bg-white/15 rounded-xl text-museum-cream hover:text-white transition-colors cursor-pointer"
+                title="Bắt đầu cuộc trò chuyện mới"
+              >
+                <RotateCcw className="w-4.5 h-4.5" />
+              </button>
+
+              {/* Nút Đóng */}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1.5 hover:bg-white/15 rounded-xl text-museum-cream hover:text-white transition-colors cursor-pointer"
+                title="Đóng cửa sổ chat"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
-          {/* Messages Area */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-museum-ivory/50">
+          {/* VÙNG DANH SÁCH TIN NHẮN (MESSAGES CONTAINER) */}
+          <div className="flex-1 p-3.5 overflow-y-auto space-y-3.5 bg-museum-ivory/60">
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
               >
-                {/* Message Bubble */}
-                <div
-                  className={`max-w-[88%] p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed ${
-                    msg.sender === 'user'
-                      ? 'bg-museum-brown text-white rounded-tr-none shadow-xs font-medium'
-                      : 'bg-white text-gray-800 rounded-tl-none border border-gray-100 shadow-xs'
-                  }`}
-                >
-                  <p>{msg.text}</p>
+                <div className="flex items-start gap-2 max-w-[92%]">
+                  {msg.sender === 'ai' && (
+                    <div className="w-7 h-7 rounded-lg bg-museum-brown flex items-center justify-center text-museum-gold-lt flex-shrink-0 mt-0.5 shadow-2xs">
+                      <Bot className="w-4 h-4" />
+                    </div>
+                  )}
 
-                  {/* Render Matched Artifact Cards */}
-                  {msg.artifacts && msg.artifacts.length > 0 && (
-                    <div className="mt-3 space-y-3 pt-2 border-t border-gray-100">
-                      {msg.artifacts.map((art) => (
-                        <div
-                          key={art.id}
-                          className="bg-museum-ivory rounded-xl p-3 border border-museum-gold/30 space-y-2 text-left shadow-xs"
-                        >
-                          <div className="aspect-[16/9] w-full rounded-lg overflow-hidden bg-gray-100 relative">
-                            <img
-                              src={art.image || './images/museum-hero.jpg'}
-                              alt={art.name}
-                              onError={(e) => {
-                                e.target.src = './images/museum-hero.jpg';
-                              }}
-                              className="w-full h-full object-cover"
-                            />
-                            {art.period && (
-                              <span className="absolute top-2 left-2 bg-museum-brown/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                {art.period}
-                              </span>
-                            )}
-                          </div>
+                  <div className="flex flex-col flex-1 min-w-0">
+                    {/* KHỐI NỘI DUNG TIN NHẮN */}
+                    <div
+                      className={`p-3.5 rounded-2xl text-xs sm:text-[13px] leading-relaxed shadow-2xs relative group ${
+                        msg.sender === 'user'
+                          ? 'bg-museum-brown text-white rounded-tr-none font-medium ml-auto'
+                          : 'bg-white text-gray-800 rounded-tl-none border border-museum-gold/20 font-normal'
+                      }`}
+                    >
+                      {msg.sender === 'user' ? (
+                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                      ) : (
+                        <MarkdownMessage content={msg.text} />
+                      )}
 
-                          <div>
-                            <h4 className="font-bold text-xs text-museum-brown line-clamp-1">
-                              {art.name}
-                            </h4>
-                            {art.date && (
-                              <div className="text-[11px] text-museum-gold font-semibold flex items-center gap-1 mt-0.5">
-                                <Calendar className="w-3 h-3" /> Niên đại: {art.date}
-                              </div>
-                            )}
-                            {art.location && (
-                              <div className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1 mt-0.5">
-                                <MapPin className="w-3 h-3" /> Nơi trưng bày: {art.location}
-                              </div>
-                            )}
-                            <p className="text-[11px] text-gray-600 line-clamp-2 mt-1 font-normal">
-                              {art.description}
-                            </p>
-                          </div>
-
+                      {/* NÚT COPY CÂU TRẢ LỜI CHO TIN NHẮN AI */}
+                      {msg.sender === 'ai' && (
+                        <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
+                          <span className="text-[10px] text-gray-400">{msg.timestamp}</span>
                           <button
-                            onClick={() => handleViewArtifactDetail(art)}
-                            className="w-full py-1.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-[11px] rounded-lg transition-colors flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+                            onClick={() => handleCopy(msg.id, msg.text)}
+                            className="flex items-center gap-1 text-[11px] font-semibold text-museum-brown hover:text-museum-gold transition-colors px-2 py-0.5 rounded-md hover:bg-museum-cream/50 cursor-pointer"
+                            title="Sao chép câu trả lời"
                           >
-                            <Eye className="w-3.5 h-3.5 text-museum-gold-lt" />
-                            <span>Xem chi tiết hiện vật</span>
+                            {copiedMessageId === msg.id ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                <span className="text-emerald-600">Đã sao chép</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5 text-museum-gold" />
+                                <span>Sao chép</span>
+                              </>
+                            )}
                           </button>
                         </div>
-                      ))}
+                      )}
+                    </div>
+
+                    {/* HIỂN THỊ NGUỒN RAG (SOURCE CITATIONS) */}
+                    {msg.sender === 'ai' && msg.sources && msg.sources.length > 0 && (
+                      <div className="mt-2 bg-museum-cream/50 border border-museum-gold/30 rounded-xl p-2.5 text-left text-xs">
+                        <button
+                          onClick={() => toggleSourceExpand(msg.id)}
+                          className="w-full flex items-center justify-between font-bold text-[11px] text-museum-brown hover:text-museum-gold transition-colors cursor-pointer"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <BookOpen className="w-3.5 h-3.5 text-museum-gold" />
+                            <span>Tài liệu tham khảo RAG ({msg.sources.length})</span>
+                          </span>
+                          {expandedSources[msg.id] ? (
+                            <ChevronUp className="w-3.5 h-3.5 text-museum-gold" />
+                          ) : (
+                            <ChevronDown className="w-3.5 h-3.5 text-museum-gold" />
+                          )}
+                        </button>
+
+                        {/* Chi tiết các nguồn RAG */}
+                        {expandedSources[msg.id] && (
+                          <div className="mt-2 space-y-2 pt-2 border-t border-museum-gold/20">
+                            {msg.sources.map((src, sIdx) => (
+                              <div
+                                key={sIdx}
+                                className="bg-white p-2 rounded-lg border border-museum-gold/20 text-[11px]"
+                              >
+                                <div className="flex items-center justify-between font-bold text-museum-brown">
+                                  <span className="truncate flex-1">{src.title}</span>
+                                  {src.relevance && (
+                                    <span className="text-[10px] text-emerald-700 font-semibold ml-2 bg-emerald-50 px-1.5 py-0.5 rounded">
+                                      {src.relevance}% khớp
+                                    </span>
+                                  )}
+                                </div>
+                                {src.category && (
+                                  <div className="text-[10px] text-museum-gold font-medium mt-0.5">
+                                    Phân loại: {src.category} {src.period ? `• ${src.period}` : ''}
+                                  </div>
+                                )}
+                                {src.snippet && (
+                                  <p className="text-[10px] text-gray-600 line-clamp-2 mt-1 italic">
+                                    "{src.snippet}"
+                                  </p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* HIỂN THỊ CARD HIỆN VẬT LIÊN QUAN (NẾU CÓ) */}
+                    {msg.artifacts && msg.artifacts.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {msg.artifacts.map((art) => (
+                          <div
+                            key={art.id}
+                            className="bg-white rounded-xl p-2.5 border border-museum-gold/30 shadow-2xs text-left"
+                          >
+                            <div className="flex gap-2.5">
+                              <img
+                                src={art.image || './images/museum-hero.jpg'}
+                                alt={art.name}
+                                onError={(e) => {
+                                  e.target.src = './images/museum-hero.jpg';
+                                }}
+                                className="w-14 h-14 object-cover rounded-lg flex-shrink-0 bg-gray-100"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-bold text-xs text-museum-brown truncate">
+                                  {art.name}
+                                </h4>
+                                {art.period && (
+                                  <div className="text-[10px] text-museum-gold font-semibold truncate">
+                                    {art.period}
+                                  </div>
+                                )}
+                                <p className="text-[10px] text-gray-500 line-clamp-1 mt-0.5">
+                                  {art.description}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleViewArtifactDetail(art)}
+                              className="mt-2 w-full py-1 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-[10px] rounded-md transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <Eye className="w-3 h-3 text-museum-gold-lt" />
+                              <span>Xem chi tiết</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {msg.sender === 'user' && (
+                    <div className="w-7 h-7 rounded-lg bg-museum-gold flex items-center justify-center text-white flex-shrink-0 mt-0.5 shadow-2xs">
+                      <User className="w-4 h-4" />
                     </div>
                   )}
                 </div>
               </div>
             ))}
 
-            {/* AI Searching Status */}
+            {/* LOADING ANIMATION (KHI AI ĐANG SUY NGHĨ / TÌM KIẾM RAG) */}
             {isSearching && (
-              <div className="flex items-center gap-2 text-xs font-semibold text-museum-brown italic bg-white p-3 rounded-2xl border border-museum-cream shadow-2xs w-fit">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-museum-gold" />
-                <span>Đang tìm kiếm thông tin hiện vật...</span>
+              <div className="flex items-center gap-2 max-w-[85%]">
+                <div className="w-7 h-7 rounded-lg bg-museum-brown flex items-center justify-center text-museum-gold-lt flex-shrink-0 shadow-2xs">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div className="bg-white p-3 rounded-2xl rounded-tl-none border border-museum-gold/30 shadow-2xs flex items-center gap-2 text-xs font-semibold text-museum-brown">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-museum-gold" />
+                  <span>Trợ lý AI đang suy nghĩ và tra cứu tư liệu...</span>
+                </div>
               </div>
             )}
 
             <div ref={chatEndRef} />
           </div>
 
-          {/* Suggested Prompts (Shown if <= 2 messages) */}
+          {/* GỢI Ý CÂU HỎI NHANH (KHI VỪA MỞ HOẶC ÍT HƠN 3 TIN NHẮN) */}
           {messages.length <= 2 && !isSearching && (
             <div className="px-3 py-2 bg-white border-t border-gray-100">
               <div className="text-[10px] font-extrabold text-museum-gold uppercase mb-1.5 px-1 flex items-center gap-1">
-                <MessageSquare className="w-3 h-3" /> Gợi ý câu hỏi:
+                <Compass className="w-3 h-3" /> Gợi ý cùng bạn khám phá:
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {suggestedPrompts.map((prompt, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSendMessage(prompt)}
-                    className="text-[11px] font-medium bg-museum-cream hover:bg-museum-gold hover:text-white text-museum-brown px-2.5 py-1 rounded-lg transition-colors text-left cursor-pointer"
+                    className="text-[11px] font-medium bg-museum-cream hover:bg-museum-gold hover:text-white text-museum-brown px-2.5 py-1 rounded-lg transition-colors text-left cursor-pointer border border-museum-gold/20 truncate max-w-full"
                   >
                     {prompt}
                   </button>
@@ -246,29 +443,34 @@ export const MuseumAI = () => {
             </div>
           )}
 
-          {/* Public Input Form */}
+          {/* KHUNG NHẬP CÂU HỎI & NÚT GỬI */}
           <div className="p-3 bg-white border-t border-gray-100">
-            <div className="flex items-center gap-2 bg-gray-50 rounded-2xl p-1.5 border border-gray-200 focus-within:border-museum-gold focus-within:bg-white transition-all">
+            <div className="flex items-center gap-2 bg-gray-50 rounded-2xl p-1.5 border border-gray-200 focus-within:border-museum-gold focus-within:bg-white focus-within:ring-2 focus-within:ring-museum-gold/20 transition-all">
               <input
+                ref={inputRef}
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Hỏi về hiện vật..."
+                placeholder="Trò chuyện, hỏi về hiện vật, lịch sử, giờ mở cửa..."
                 className="w-full px-3 py-1.5 bg-transparent text-xs text-gray-800 focus:outline-none"
+                disabled={isSearching}
               />
               <button
                 onClick={() => handleSendMessage()}
                 disabled={!inputText.trim() || isSearching}
-                className={`p-2 rounded-xl text-white font-bold transition-colors cursor-pointer ${
+                className={`p-2.5 rounded-xl text-white font-bold transition-all cursor-pointer flex-shrink-0 ${
                   !inputText.trim() || isSearching
-                    ? 'bg-gray-300 cursor-not-allowed'
-                    : 'bg-museum-brown hover:bg-museum-brown-dk shadow-xs'
+                    ? 'bg-gray-300 cursor-not-allowed text-gray-400'
+                    : 'bg-museum-brown hover:bg-museum-brown-dk active:scale-95 shadow-md text-museum-gold-lt'
                 }`}
-                title="Gửi câu hỏi"
+                title="Gửi câu hỏi (Enter)"
               >
                 <Send className="w-4 h-4" />
               </button>
+            </div>
+            <div className="text-[9px] text-gray-400 text-center mt-1.5 font-medium">
+              Trợ lý AI Bảo tàng Quốc gia • Tích hợp RAG & Google Gemini
             </div>
           </div>
         </div>
