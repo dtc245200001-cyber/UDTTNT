@@ -1,3 +1,17 @@
-﻿node_modules/
+node_modules/
 dist/
 backend/venv/
+
+# Environment Variables & Secrets
+.env
+.env.*
+!backend/.env.example
+backend/.env
+
+# Python Cache
+backend/__pycache__/
+**/__pycache__/
+*.pyc
+
+# Vite Temporary Files
+vite.config.js.timestamp-*
