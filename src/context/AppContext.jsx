@@ -96,6 +96,65 @@ export const AppProvider = ({ children }) => {
     return initialUsers;
   });
 
+  const [usersLoading, setUsersLoading] = useState(false);
+
+  // Hàm đọc dữ liệu người dùng từ Supabase và map chuẩn camelCase
+  const fetchUsersFromSupabase = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('nguoi_dung')
+        .select('*')
+        .order('joined_at', { ascending: false });
+
+      if (userError) {
+        console.error('Lỗi khi tải bảng nguoi_dung từ Supabase:', userError);
+        addToast(`Không thể tải người dùng từ Supabase: ${userError.message}`, 'error');
+        return false;
+      }
+
+      if (userData) {
+        const mappedUsers = userData.map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          roleLabel:
+            u.role_label ||
+            (u.role === 'admin'
+              ? 'Quản trị viên'
+              : u.role === 'staff'
+              ? 'Nhân viên'
+              : 'Khách tham quan'),
+          role_label: u.role_label,
+          status: u.status || 'Hoạt động',
+          avatar: u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+          auth_user_id: u.auth_user_id,
+          joinedAt: u.joined_at,
+          joined_at: u.joined_at,
+        }));
+
+        setUsersList(mappedUsers);
+        localStorage.setItem('museum_users', JSON.stringify(mappedUsers));
+        return true;
+      }
+    } catch (err) {
+      console.error('Lỗi ngoại lệ khi fetch users từ Supabase:', err);
+      addToast(`Lỗi kết nối khi tải danh sách người dùng: ${err.message}`, 'error');
+      return false;
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  const refreshUsers = useCallback(async () => {
+    return await fetchUsersFromSupabase();
+  }, [fetchUsersFromSupabase]);
+
+  useEffect(() => {
+    fetchUsersFromSupabase();
+  }, [fetchUsersFromSupabase]);
+
   // 4. Current User State
   const [currentUser, setCurrentUser] = useState(() => {
     const savedCurrentUser = localStorage.getItem('museum_current_user');
@@ -589,14 +648,8 @@ export const AppProvider = ({ children }) => {
         return { success: false, message: updateError.message };
       }
 
-      // 2. Cập nhật state UI chỉ khi Supabase trả về thành công
-      const updatedUsers = usersList.map((u) => {
-        if (u.id === userId) {
-          return { ...u, role: newRole, roleLabel };
-        }
-        return u;
-      });
-      setUsersList(updatedUsers);
+      // 2. Đồng bộ lại toàn bộ danh sách người dùng thật từ Supabase
+      await refreshUsers();
 
       if (currentUser && currentUser.id === userId) {
         const updatedCurrent = {
@@ -639,14 +692,8 @@ export const AppProvider = ({ children }) => {
         return;
       }
 
-      // 2. Cập nhật UI
-      const updatedUsers = usersList.map((u) => {
-        if (u.id === userId) {
-          return { ...u, status: newStatus };
-        }
-        return u;
-      });
-      setUsersList(updatedUsers);
+      // 2. Đồng bộ lại từ DB
+      await refreshUsers();
       addToast(`Đã chuyển trạng thái tài khoản sang "${newStatus}".`, 'info');
       await logAudit('TOGGLE_USER_STATUS', `Cập nhật trạng thái người dùng ${targetUser.email} thành ${newStatus}`);
     } catch (err) {
@@ -673,8 +720,8 @@ export const AppProvider = ({ children }) => {
         return;
       }
 
-      // 2. Cập nhật UI
-      setUsersList((prev) => prev.filter((u) => u.id !== userId));
+      // 2. Đồng bộ lại từ DB
+      await refreshUsers();
       addToast('Đã xóa hồ sơ người dùng khỏi cơ sở dữ liệu.', 'info');
       await logAudit('DELETE_USER', `Xóa hồ sơ người dùng: ${targetUser?.email || userId}`);
     } catch (err) {
@@ -725,8 +772,7 @@ export const AppProvider = ({ children }) => {
         return { success: false, message: insertError.message };
       }
 
-      const updatedUsers = [createdUser, ...usersList];
-      setUsersList(updatedUsers);
+      await refreshUsers();
       addToast(`Đã tạo hồ sơ "${createdUser.name}" (${createdUser.roleLabel}) thành công!`, 'success');
       await logAudit('CREATE_USER', `Tạo hồ sơ người dùng: ${createdUser.email}`);
       return { success: true, user: createdUser };
@@ -1340,6 +1386,9 @@ export const AppProvider = ({ children }) => {
 
         // Users
         users: usersList,
+        usersLoading,
+        fetchUsersFromSupabase,
+        refreshUsers,
         updateUserRole,
         toggleUserStatus,
         deleteUser,

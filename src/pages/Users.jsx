@@ -7,7 +7,7 @@ import {
 import { Badge } from '@/components/ui/Badge';
 
 export const UsersPage = () => {
-  const { users, currentUser, updateUserRole, addUser, toggleUserStatus, deleteUser } = useApp();
+  const { users, currentUser, usersLoading, updateUserRole, addUser, toggleUserStatus, deleteUser } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -150,110 +150,142 @@ export const UsersPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-xs text-gray-700">
-              {filteredUsers.map((u) => {
-                const isCurrent = currentUser && currentUser.email?.toLowerCase() === u.email?.toLowerCase();
-                const isAdmin = u.role === 'admin';
-                const isLocked = u.status === 'Tạm khóa';
-
-                return (
-                  <tr key={u.id} className="hover:bg-museum-cream/30 transition-colors">
-                    {/* User Info */}
-                    <td className="py-3.5 px-4 font-bold text-museum-brown">
+              {usersLoading ? (
+                Array.from({ length: 4 }).map((_, idx) => (
+                  <tr key={`skeleton-${idx}`} className="animate-pulse">
+                    <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
-                          alt={u.name}
-                          className="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-xs"
-                        />
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-sm text-museum-brown">{u.name}</span>
-                            {isCurrent && (
-                              <span className="px-1.5 py-0.5 bg-museum-gold text-white text-[10px] font-extrabold rounded-md uppercase">Bạn</span>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-gray-400 font-normal">{u.id}</span>
+                        <div className="w-9 h-9 rounded-full bg-gray-200" />
+                        <div className="space-y-1.5">
+                          <div className="h-3.5 w-24 bg-gray-200 rounded" />
+                          <div className="h-2.5 w-12 bg-gray-100 rounded" />
                         </div>
                       </div>
                     </td>
-
-                    {/* Email */}
-                    <td className="py-3.5 px-4 font-medium text-gray-600">{u.email}</td>
-
-                    {/* Current Role Badge */}
                     <td className="py-3.5 px-4">
-                      {isAdmin ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold">
-                          <Shield className="w-3.5 h-3.5 text-amber-600" />Admin
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold">
-                          <User className="w-3.5 h-3.5 text-emerald-600" />Visitor
-                        </span>
-                      )}
+                      <div className="h-3.5 w-32 bg-gray-200 rounded" />
                     </td>
-
-                    {/* Role Switcher — disable on self */}
                     <td className="py-3.5 px-4">
-                      <select
-                        value={u.role}
-                        disabled={isCurrent}
-                        onChange={(e) => handleRoleChange(u, e.target.value)}
-                        className={`px-3 py-1.5 border rounded-xl text-xs font-bold text-museum-brown focus:outline-none focus:ring-2 focus:ring-museum-gold ${isCurrent ? 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-60' : 'bg-gray-50 border-gray-300 cursor-pointer'}`}
-                      >
-                        <option value="admin">👑 Admin</option>
-                        <option value="visitor">👤 Visitor</option>
-                      </select>
+                      <div className="h-5 w-16 bg-gray-200 rounded-lg" />
                     </td>
-
-                    {/* Status */}
                     <td className="py-3.5 px-4">
-                      <Badge variant={isLocked ? 'secondary' : 'success'}>
-                        {u.status || 'Hoạt động'}
-                      </Badge>
+                      <div className="h-7 w-24 bg-gray-200 rounded-xl" />
                     </td>
-
-                    {/* Joined Date */}
-                    <td className="py-3.5 px-4 text-gray-500 font-medium">{u.joinedAt || '—'}</td>
-
-                    {/* Actions */}
+                    <td className="py-3.5 px-4">
+                      <div className="h-5 w-20 bg-gray-200 rounded" />
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="h-3.5 w-20 bg-gray-200 rounded" />
+                    </td>
                     <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => setDetailUser(u)}
-                          className="p-1.5 text-gray-400 hover:text-museum-brown hover:bg-museum-cream rounded-lg transition-colors"
-                          title="Xem chi tiết"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleToggleLock(u)}
-                          disabled={isCurrent}
-                          className={`p-1.5 rounded-lg transition-colors ${isCurrent ? 'opacity-30 cursor-not-allowed' : 'text-gray-400 hover:text-amber-600 hover:bg-amber-50'}`}
-                          title={isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
-                        >
-                          {isLocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(u)}
-                          disabled={isCurrent}
-                          className={`p-1.5 rounded-lg transition-colors ${isCurrent ? 'opacity-30 cursor-not-allowed' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}
-                          title="Xóa tài khoản"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <div className="h-6 w-16 bg-gray-200 rounded ml-auto" />
                     </td>
                   </tr>
-                );
-              })}
-
-              {filteredUsers.length === 0 && (
+                ))
+              ) : filteredUsers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-8 text-gray-400 font-medium">
                     Không tìm thấy tài khoản phù hợp.
                   </td>
                 </tr>
+              ) : (
+                filteredUsers.map((u) => {
+                  const isCurrent = currentUser && currentUser.email?.toLowerCase() === u.email?.toLowerCase();
+                  const isAdmin = u.role === 'admin';
+                  const isLocked = u.status === 'Tạm khóa';
+
+                  return (
+                    <tr key={u.id} className="hover:bg-museum-cream/30 transition-colors">
+                      {/* User Info */}
+                      <td className="py-3.5 px-4 font-bold text-museum-brown">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
+                            alt={u.name}
+                            className="w-9 h-9 rounded-full object-cover border border-gray-200 shadow-xs"
+                          />
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-sm text-museum-brown">{u.name}</span>
+                              {isCurrent && (
+                                <span className="px-1.5 py-0.5 bg-museum-gold text-white text-[10px] font-extrabold rounded-md uppercase">Bạn</span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-400 font-normal">{u.id}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Email */}
+                      <td className="py-3.5 px-4 font-medium text-gray-600">{u.email}</td>
+
+                      {/* Current Role Badge */}
+                      <td className="py-3.5 px-4">
+                        {isAdmin ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold">
+                            <Shield className="w-3.5 h-3.5 text-amber-600" />Admin
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold">
+                            <User className="w-3.5 h-3.5 text-emerald-600" />Visitor
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Role Switcher — disable on self */}
+                      <td className="py-3.5 px-4">
+                        <select
+                          value={u.role}
+                          disabled={isCurrent}
+                          onChange={(e) => handleRoleChange(u, e.target.value)}
+                          className={`px-3 py-1.5 border rounded-xl text-xs font-bold text-museum-brown focus:outline-none focus:ring-2 focus:ring-museum-gold ${isCurrent ? 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-60' : 'bg-gray-50 border-gray-300 cursor-pointer'}`}
+                        >
+                          <option value="admin">👑 Admin</option>
+                          <option value="visitor">👤 Visitor</option>
+                        </select>
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3.5 px-4">
+                        <Badge variant={isLocked ? 'secondary' : 'success'}>
+                          {u.status || 'Hoạt động'}
+                        </Badge>
+                      </td>
+
+                      {/* Joined Date */}
+                      <td className="py-3.5 px-4 text-gray-500 font-medium">{u.joinedAt || '—'}</td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => setDetailUser(u)}
+                            className="p-1.5 text-gray-400 hover:text-museum-brown hover:bg-museum-cream rounded-lg transition-colors"
+                            title="Xem chi tiết"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleToggleLock(u)}
+                            disabled={isCurrent}
+                            className={`p-1.5 rounded-lg transition-colors ${isCurrent ? 'opacity-30 cursor-not-allowed' : 'text-gray-400 hover:text-amber-600 hover:bg-amber-50'}`}
+                            title={isLocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
+                          >
+                            {isLocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(u)}
+                            disabled={isCurrent}
+                            className={`p-1.5 rounded-lg transition-colors ${isCurrent ? 'opacity-30 cursor-not-allowed' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}
+                            title="Xóa tài khoản"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
