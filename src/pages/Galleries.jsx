@@ -552,28 +552,13 @@ export const Galleries = () => {
 
             {/* Modal Scrollable Body */}
             <div className="p-6 sm:p-8 overflow-y-auto space-y-6 flex-1 text-gray-700">
-              {/* Location & Official Source Bar */}
-              <div className="p-4 bg-museum-ivory/80 rounded-2xl border border-museum-gold/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-start gap-2.5 text-xs font-semibold text-museum-brown">
-                  <MapPin className="w-4 h-4 text-museum-gold shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-gray-900 block">Địa điểm trưng bày:</span>
-                    <span>{selectedGallery.location || 'Bảo tàng Lịch sử Quốc gia – Số 1 Tràng Tiền / 216 Trần Quang Khải, Hoàn Kiếm, Hà Nội'}</span>
-                  </div>
+              {/* Location Bar */}
+              <div className="p-4 bg-museum-ivory/80 rounded-2xl border border-museum-gold/30 flex items-start sm:items-center gap-2.5 text-xs font-semibold text-museum-brown">
+                <MapPin className="w-4 h-4 text-museum-gold shrink-0 mt-0.5 sm:mt-0" />
+                <div>
+                  <span className="font-bold text-gray-900 mr-1.5">Địa điểm trưng bày:</span>
+                  <span>{selectedGallery.location || 'Bảo tàng Lịch sử Quốc gia – Số 1 Tràng Tiền / 216 Trần Quang Khải, Hoàn Kiếm, Hà Nội'}</span>
                 </div>
-
-                {selectedGallery.sourceUrl && (
-                  <a
-                    href={selectedGallery.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0 cursor-pointer"
-                  >
-                    <Globe className="w-3.5 h-3.5 text-museum-gold" />
-                    <span>Xem bài gốc tại baotanglichsu.vn</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
               </div>
 
               {/* Detailed Narrative Section */}
