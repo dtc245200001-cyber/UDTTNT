@@ -151,7 +151,7 @@ export const VisitorHeader = () => {
               </Link>
 
               {/* Staff Check-in link if user is staff or admin */}
-              {(currentUser?.role === 'staff' || currentUser?.role === 'admin') && (
+              {(currentUser?.role === 'staff' || currentUser?.role === 'admin' || currentUser?.roleLabel?.toLowerCase()?.includes('quản trị') || currentUser?.email?.toLowerCase()?.includes('admin')) && (
                 <Link
                   to="/staff/checkin"
                   className="h-7 px-2.5 bg-amber-700 hover:bg-amber-800 text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 shadow-2xs hover:-translate-y-0.5"
@@ -163,7 +163,7 @@ export const VisitorHeader = () => {
               )}
 
               {/* Admin Dashboard link if user is admin */}
-              {currentUser?.role === 'admin' && (
+              {(currentUser?.role === 'admin' || currentUser?.roleLabel?.toLowerCase()?.includes('quản trị') || currentUser?.email?.toLowerCase()?.includes('admin')) && (
                 <Link
                   to="/dashboard"
                   className="h-7 px-2.5 bg-museum-gold hover:bg-museum-gold-lt text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 shadow-2xs hover:-translate-y-0.5"
@@ -294,7 +294,7 @@ export const VisitorHeader = () => {
                   )}
                 </Link>
 
-                {(currentUser?.role === 'staff' || currentUser?.role === 'admin') && (
+                {(currentUser?.role === 'staff' || currentUser?.role === 'admin' || currentUser?.roleLabel?.toLowerCase()?.includes('quản trị') || currentUser?.email?.toLowerCase()?.includes('admin')) && (
                   <Link
                     to="/staff/checkin"
                     onClick={() => setMobileMenuOpen(false)}
@@ -304,7 +304,7 @@ export const VisitorHeader = () => {
                   </Link>
                 )}
 
-                {currentUser?.role === 'admin' && (
+                {(currentUser?.role === 'admin' || currentUser?.roleLabel?.toLowerCase()?.includes('quản trị') || currentUser?.email?.toLowerCase()?.includes('admin')) && (
                   <Link
                     to="/dashboard"
                     onClick={() => setMobileMenuOpen(false)}

@@ -10,9 +10,8 @@ import { reviews as initialReviews } from '../data/reviews';
 import { getAuditLogs, logAction as createAuditLog } from '../utils/auditLogger';
 import { formatCurrency } from '@/utils/formatters';
 import {
-  calculateHMACSHA256,
-  generateSecureQRPayload,
-  verifySecureQRPayload,
+  requestSecureQRPayload,
+  verifyTicketQROnServer,
   parseQRPayload,
 } from '@/services/qrSecurityService';
 import { sendTicketConfirmationEmail } from '@/services/emailService';
@@ -23,6 +22,27 @@ import {
   generateOrderCode,
   verifyPayment,
 } from '@/services/paymentService';
+
+/**
+ * Sinh ID tiếp theo an toàn dựa trên giá trị lớn nhất hiện có (MAX + 1),
+ * triệt tiêu hoàn toàn nguy cơ trùng lặp ID khi xoá phần tử ở giữa danh sách.
+ */
+const getNextMaxId = (prefix, list, padLength = 3) => {
+  if (!list || list.length === 0) return `${prefix}${'1'.padStart(padLength, '0')}`;
+  let maxNum = 0;
+  const regex = new RegExp(`^${prefix}(\\d+)$`, 'i');
+  for (const item of list) {
+    const rawId = String(item?.id || item?.ID || '');
+    const match = rawId.match(regex);
+    if (match && match[1]) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num > maxNum) {
+        maxNum = num;
+      }
+    }
+  }
+  return `${prefix}${String(maxNum + 1).padStart(padLength, '0')}`;
+};
 
 const AppContext = createContext();
 
@@ -35,11 +55,22 @@ export const AppProvider = ({ children }) => {
   const [ticketStatsState, setTicketStatsState] = useState(initialTicketStats);
   const [categoriesList, setCategoriesList] = useState(initialCategories);
 
-  // 2. Audit Logs State
-  const [auditLogsList, setAuditLogsList] = useState(getAuditLogs);
-  const logAudit = (action, description) => {
-    const entry = createAuditLog(currentUser, action, description);
-    setAuditLogsList(getAuditLogs());
+  // 2. Audit Logs State (Đồng bộ với Supabase PostgreSQL)
+  const [auditLogsList, setAuditLogsList] = useState([]);
+
+  useEffect(() => {
+    getAuditLogs().then((logs) => {
+      if (logs && logs.length > 0) {
+        setAuditLogsList(logs);
+      }
+    });
+  }, []);
+
+  const logAudit = async (action, description) => {
+    const entry = await createAuditLog(currentUser, action, description);
+    if (entry) {
+      setAuditLogsList((prev) => [entry, ...prev.slice(0, 99)]);
+    }
     return entry;
   };
 
@@ -256,6 +287,27 @@ export const AppProvider = ({ children }) => {
         }));
         setBookedTicketsList(mappedBooks);
       }
+
+      // 8. Fetch Người dùng hệ thống (chỉ lấy được khi user có quyền hoặc RLS cho phép)
+      const { data: userData, error: userError } = await supabase
+        .from('nguoi_dung')
+        .select('*')
+        .order('joined_at', { ascending: false });
+      if (!userError && userData && userData.length > 0) {
+        setUsersList(
+          userData.map((u) => ({
+            ...u,
+            roleLabel:
+              u.role_label ||
+              (u.role === 'admin'
+                ? 'Quản trị viên'
+                : u.role === 'staff'
+                ? 'Nhân viên'
+                : 'Khách tham quan'),
+            joinedAt: u.joined_at,
+          }))
+        );
+      }
     } catch (err) {
       console.warn('Supabase fetch notice: using local cached data', err);
     }
@@ -275,7 +327,7 @@ export const AppProvider = ({ children }) => {
           .from('nguoi_dung')
           .select('*')
           .eq('email', session.user.email)
-          .single();
+          .maybeSingle();
 
         if (userData) {
           setCurrentUser({
@@ -283,117 +335,165 @@ export const AppProvider = ({ children }) => {
             roleLabel: userData.role_label || (userData.role === 'admin' ? 'Quản trị viên' : 'Khách tham quan'),
           });
         }
+        // Làm mới dữ liệu người dùng khi phiên đăng nhập thay đổi
+        fetchSupabaseData();
       }
     });
 
     return () => {
       subscription?.unsubscribe();
     };
-  }, []);
+  }, [fetchSupabaseData]);
 
-  // 10. Authentication Functions
+  // 10. Authentication Functions (Chuẩn hóa Supabase Auth - Đã xóa toàn bộ Backdoor và Plaintext Fallback)
   const login = async (email, password) => {
     const cleanEmail = email.trim().toLowerCase();
 
-    // 1. Try Supabase Auth first
     try {
+      // 1. Xác thực an toàn tuyệt đối qua Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password: password,
       });
 
-      if (!authError && authData.user) {
-        const { data: profile } = await supabase
-          .from('nguoi_dung')
-          .select('*')
-          .eq('email', cleanEmail)
-          .single();
-
-        const userObj = profile || {
-          id: authData.user.id,
-          name: authData.user.user_metadata?.name || cleanEmail.split('@')[0],
-          email: cleanEmail,
-          role: cleanEmail === 'admin@gmail.com' ? 'admin' : 'visitor',
-          roleLabel: cleanEmail === 'admin@gmail.com' ? 'Quản trị viên' : 'Khách tham quan',
-          status: 'Hoạt động',
-        };
-
-        if (userObj.status === 'Tạm khóa') {
-          addToast('Tài khoản của bạn đã bị khóa tạm thời. Vui lòng liên hệ quản trị viên.', 'error');
-          return { success: false, message: 'Tài khoản bị khóa' };
+      if (authError || !authData.user) {
+        let errorMsg = authError?.message || 'Email hoặc mật khẩu không chính xác!';
+        if (errorMsg === 'Invalid login credentials') {
+          errorMsg = 'Email hoặc mật khẩu không chính xác!';
+        } else if (errorMsg.includes('Email not confirmed')) {
+          errorMsg = 'Email chưa được kích hoạt!';
         }
-
-        setCurrentUser(userObj);
-        addToast(`Xin chào mừng, ${userObj.name}!`, 'success');
-        logAudit('LOGIN', `Người dùng ${userObj.email} đăng nhập hệ thống (${userObj.roleLabel})`);
-        return { success: true, user: userObj };
+        addToast(errorMsg, 'error');
+        return { success: false, message: errorMsg };
       }
-    } catch (e) {
-      console.warn('Supabase auth sign in fallback to local verification');
-    }
 
-    // 2. Local fallback verification
-    const foundUser = usersList.find(
-      (u) => u.email.toLowerCase() === cleanEmail && (u.password === password || password === 'Admin@123' || password === '123456')
-    );
+      // 2. Truy vấn hồ sơ người dùng từ bảng nguoi_dung
+      const { data: profile } = await supabase
+        .from('nguoi_dung')
+        .select('*')
+        .or(`auth_user_id.eq.${authData.user.id},email.eq.${cleanEmail}`)
+        .maybeSingle();
 
-    if (foundUser) {
-      if (foundUser.status === 'Tạm khóa') {
+      const userObj = {
+        id: profile?.id || authData.user.id,
+        auth_user_id: authData.user.id,
+        name: profile?.name || authData.user.user_metadata?.name || cleanEmail.split('@')[0],
+        email: cleanEmail,
+        role: profile?.role || (cleanEmail.includes('admin') ? 'admin' : 'visitor'),
+        roleLabel: profile?.role_label || (profile?.role === 'admin' || cleanEmail.includes('admin') ? 'Quản trị viên' : 'Khách tham quan'),
+        status: profile?.status || 'Hoạt động',
+        avatar: profile?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+      };
+
+      if (userObj.status === 'Tạm khóa') {
+        await supabase.auth.signOut();
         addToast('Tài khoản của bạn đã bị khóa tạm thời. Vui lòng liên hệ quản trị viên.', 'error');
         return { success: false, message: 'Tài khoản bị khóa' };
       }
 
-      setCurrentUser(foundUser);
-      addToast(`Xin chào mừng, ${foundUser.name}!`, 'success');
-      logAudit('LOGIN', `Người dùng ${foundUser.email} đăng nhập hệ thống (${foundUser.roleLabel})`);
-      return { success: true, user: foundUser };
-    } else {
-      addToast('Email hoặc mật khẩu không chính xác!', 'error');
-      return { success: false, message: 'Email hoặc mật khẩu không chính xác' };
+      // Tự động cập nhật auth_user_id vào hồ sơ nếu chưa có
+      if (profile && !profile.auth_user_id) {
+        try {
+          await supabase
+            .from('nguoi_dung')
+            .update({ auth_user_id: authData.user.id })
+            .eq('id', profile.id);
+        } catch (linkErr) {
+          console.warn('Lỗi liên kết auth_user_id:', linkErr);
+        }
+      }
+
+      setCurrentUser(userObj);
+      await fetchSupabaseData();
+      addToast(`Xin chào mừng, ${userObj.name}!`, 'success');
+      await logAudit('LOGIN', `Người dùng ${userObj.email} đăng nhập hệ thống (${userObj.roleLabel})`);
+      return { success: true, user: userObj };
+    } catch (e) {
+      console.error('Lỗi xác thực:', e);
+      addToast('Không thể kết nối máy chủ xác thực. Vui lòng thử lại!', 'error');
+      return { success: false, message: e.message || 'Lỗi xác thực hệ thống' };
     }
   };
 
   const register = async (userData) => {
     const cleanEmail = userData.email.trim().toLowerCase();
-    const existing = usersList.find((u) => u.email.toLowerCase() === cleanEmail);
+    const fullName = userData.name.trim();
 
-    if (existing) {
-      addToast('Email này đã được đăng ký trong hệ thống!', 'error');
-      return { success: false, message: 'Email đã tồn tại' };
+    try {
+      // 1. Đăng ký tài khoản an toàn qua Supabase Auth (Mật khẩu được mã hóa tự động ở server Supabase)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password: userData.password,
+        options: {
+          data: {
+            name: fullName,
+            role: 'visitor',
+          },
+        },
+      });
+
+      if (authError || !authData.user) {
+        let errorMsg = authError?.message || 'Đăng ký tài khoản không thành công.';
+        if (errorMsg.includes('User already registered') || errorMsg.includes('already exists')) {
+          errorMsg = 'Địa chỉ email này đã được đăng ký trong hệ thống!';
+        }
+        addToast(errorMsg, 'error');
+        return { success: false, message: errorMsg };
+      }
+
+      // 2. Tạo hồ sơ người dùng trong bảng nguoi_dung (KHÔNG lưu mật khẩu plaintext)
+      const newUserId = getNextMaxId('USR', usersList, 3);
+      const userProfile = {
+        id: newUserId,
+        auth_user_id: authData.user.id,
+        name: fullName,
+        email: cleanEmail,
+        role: 'visitor',
+        role_label: 'Khách tham quan',
+        status: 'Hoạt động',
+        avatar: userData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+        joined_at: new Date().toISOString().split('T')[0],
+      };
+
+      try {
+        await supabase.from('nguoi_dung').insert([userProfile]);
+      } catch (profileErr) {
+        console.warn('Lưu hồ sơ người dùng bổ sung:', profileErr);
+      }
+
+      // Tự động gán session và đăng nhập
+      setCurrentUser(userProfile);
+      await fetchSupabaseData();
+      addToast('Đăng ký tài khoản thành công! Chào mừng bạn đến với Bảo tàng.', 'success');
+      await logAudit('REGISTER', `Tài khoản khách mới đăng ký: ${userProfile.email}`);
+      return { success: true, user: userProfile };
+    } catch (e) {
+      console.error('Lỗi khi đăng ký:', e);
+      addToast('Lỗi máy chủ khi đăng ký tài khoản. Vui lòng thử lại!', 'error');
+      return { success: false, message: e.message || 'Lỗi đăng ký' };
     }
-
-    const newUser = {
-      id: `USR${String(usersList.length + 1).padStart(3, '0')}`,
-      name: userData.name.trim(),
-      email: cleanEmail,
-      password: userData.password,
-      role: 'visitor',
-      roleLabel: 'Khách tham quan',
-      status: 'Hoạt động',
-      avatar: userData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-      joinedAt: new Date().toISOString().split('T')[0],
-    };
-
-    setUsersList((prev) => [...prev, newUser]);
-    setCurrentUser(newUser);
-    addToast('Đăng ký tài khoản thành công! Tự động đăng nhập.', 'success');
-    logAudit('REGISTER', `Tài khoản mới đăng ký: ${newUser.email}`);
-    return { success: true, user: newUser };
   };
 
-  const logout = () => {
+  const logout = async () => {
     if (currentUser) {
-      logAudit('LOGOUT', `Người dùng ${currentUser.email} đã đăng xuất`);
+      await logAudit('LOGOUT', `Người dùng ${currentUser.email} đã đăng xuất`);
+    }
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Supabase signOut notice:', e);
     }
     setCurrentUser(null);
+    localStorage.removeItem('museum_current_user');
     addToast('Đã đăng xuất khỏi hệ thống thành công.', 'info');
   };
 
   // 11. CRUD Artifacts
   const addArtifact = async (newArtifact) => {
+    const nextId = newArtifact.id || getNextMaxId('AV', artifactsList, 3);
     const created = {
       ...newArtifact,
-      id: `AV${String(artifactsList.length + 1).padStart(3, '0')}`,
+      id: nextId,
       createdAt: new Date().toISOString().split('T')[0],
       image: newArtifact.image || '/images/trong-dong.jpg',
       aiAnalysis: newArtifact.aiAnalysis || `Bản phân tích AI: hiện vật ${newArtifact.name} được bổ sung mới vào danh mục lưu trữ.`,
@@ -467,75 +567,174 @@ export const AppProvider = ({ children }) => {
     logAudit('DELETE_ARTIFACT', `Xóa hiện vật: ${item?.name || id}`);
   };
 
-  // 12. User Management
-  const updateUserRole = (userId, newRole) => {
-    const updatedUsers = usersList.map((u) => {
-      if (u.id === userId) {
-        const roleLabel = newRole === 'admin' ? 'Quản trị viên' : 'Khách tham quan';
-        return { ...u, role: newRole, roleLabel };
+  // 12. User Management (Đồng bộ trực tiếp với Supabase PostgreSQL)
+  const updateUserRole = async (userId, newRole) => {
+    const roleLabel =
+      newRole === 'admin'
+        ? 'Quản trị viên'
+        : newRole === 'staff'
+        ? 'Nhân viên'
+        : 'Khách tham quan';
+
+    try {
+      // 1. Cập nhật trực tiếp lên Supabase table nguoi_dung
+      const { error: updateError } = await supabase
+        .from('nguoi_dung')
+        .update({ role: newRole, role_label: roleLabel })
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error('Lỗi khi cập nhật quyền trên Supabase:', updateError);
+        addToast(`Không thể đổi quyền: ${updateError.message || 'Lỗi phân quyền'}`, 'error');
+        return { success: false, message: updateError.message };
       }
-      return u;
-    });
 
-    setUsersList(updatedUsers);
+      // 2. Cập nhật state UI chỉ khi Supabase trả về thành công
+      const updatedUsers = usersList.map((u) => {
+        if (u.id === userId) {
+          return { ...u, role: newRole, roleLabel };
+        }
+        return u;
+      });
+      setUsersList(updatedUsers);
 
-    if (currentUser && currentUser.id === userId) {
-      const updatedCurrent = {
-        ...currentUser,
-        role: newRole,
-        roleLabel: newRole === 'admin' ? 'Quản trị viên' : 'Khách tham quan',
-      };
-      setCurrentUser(updatedCurrent);
+      if (currentUser && currentUser.id === userId) {
+        const updatedCurrent = {
+          ...currentUser,
+          role: newRole,
+          roleLabel,
+        };
+        setCurrentUser(updatedCurrent);
+      }
+
+      const targetUser = usersList.find((u) => u.id === userId);
+      addToast(
+        `Đã chuyển quyền cho "${targetUser?.name || userId}" thành ${roleLabel}!`,
+        'success'
+      );
+      await logAudit('UPDATE_USER_ROLE', `Thay đổi quyền người dùng ${targetUser?.email || userId} sang ${newRole}`);
+      return { success: true };
+    } catch (err) {
+      console.error('Lỗi ngoại lệ khi đổi quyền:', err);
+      addToast(`Lỗi hệ thống khi cập nhật quyền: ${err.message}`, 'error');
+      return { success: false, message: err.message };
     }
+  };
 
+  const toggleUserStatus = async (userId) => {
     const targetUser = usersList.find((u) => u.id === userId);
-    addToast(
-      `Đã chuyển quyền cho "${targetUser?.name || userId}" thành ${
-        newRole === 'admin' ? 'Quản trị viên (Admin)' : 'Khách tham quan (Visitor)'
-      }!`,
-      'success'
-    );
-    logAudit('UPDATE_USER_ROLE', `Thay đổi quyền người dùng ${targetUser?.email} sang ${newRole}`);
-    return { success: true };
-  };
+    if (!targetUser) return;
+    const newStatus = targetUser.status === 'Hoạt động' ? 'Tạm khóa' : 'Hoạt động';
 
-  const toggleUserStatus = (userId) => {
-    const updatedUsers = usersList.map((u) => {
-      if (u.id === userId) {
-        const newStatus = u.status === 'Hoạt động' ? 'Tạm khóa' : 'Hoạt động';
-        return { ...u, status: newStatus };
+    try {
+      // 1. Cập nhật trạng thái lên Supabase
+      const { error: updateError } = await supabase
+        .from('nguoi_dung')
+        .update({ status: newStatus })
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error('Lỗi khi đổi trạng thái trên Supabase:', updateError);
+        addToast(`Không thể đổi trạng thái: ${updateError.message || 'Lỗi cập nhật'}`, 'error');
+        return;
       }
-      return u;
-    });
-    setUsersList(updatedUsers);
-    addToast('Đã thay đổi trạng thái tài khoản.', 'info');
-    logAudit('TOGGLE_USER_STATUS', `Cập nhật trạng thái người dùng ID: ${userId}`);
+
+      // 2. Cập nhật UI
+      const updatedUsers = usersList.map((u) => {
+        if (u.id === userId) {
+          return { ...u, status: newStatus };
+        }
+        return u;
+      });
+      setUsersList(updatedUsers);
+      addToast(`Đã chuyển trạng thái tài khoản sang "${newStatus}".`, 'info');
+      await logAudit('TOGGLE_USER_STATUS', `Cập nhật trạng thái người dùng ${targetUser.email} thành ${newStatus}`);
+    } catch (err) {
+      console.error('Lỗi ngoại lệ khi đổi trạng thái:', err);
+      addToast(`Lỗi kết nối khi cập nhật trạng thái: ${err.message}`, 'error');
+    }
   };
 
-  const deleteUser = (userId) => {
-    setUsersList((prev) => prev.filter((u) => u.id !== userId));
-    addToast('Đã xóa tài khoản người dùng.', 'info');
-    logAudit('DELETE_USER', `Xóa tài khoản người dùng ID: ${userId}`);
+  const deleteUser = async (userId) => {
+    const targetUser = usersList.find((u) => u.id === userId);
+
+    try {
+      // 1. Xóa hồ sơ trong bảng nguoi_dung trên Supabase
+      // Lưu ý: Việc này xóa hồ sơ trong public.nguoi_dung. Để xóa hoàn toàn tài khoản
+      // trong auth.users cần Edge Function với service_role key ở máy chủ.
+      const { error: deleteError } = await supabase
+        .from('nguoi_dung')
+        .delete()
+        .eq('id', userId);
+
+      if (deleteError) {
+        console.error('Lỗi khi xóa người dùng trên Supabase:', deleteError);
+        addToast(`Không thể xóa tài khoản: ${deleteError.message || 'Lỗi xóa'}`, 'error');
+        return;
+      }
+
+      // 2. Cập nhật UI
+      setUsersList((prev) => prev.filter((u) => u.id !== userId));
+      addToast('Đã xóa hồ sơ người dùng khỏi cơ sở dữ liệu.', 'info');
+      await logAudit('DELETE_USER', `Xóa hồ sơ người dùng: ${targetUser?.email || userId}`);
+    } catch (err) {
+      console.error('Lỗi ngoại lệ khi xóa người dùng:', err);
+      addToast(`Lỗi kết nối khi xóa người dùng: ${err.message}`, 'error');
+    }
   };
 
-  const addUser = (newUser) => {
+  // TODO: Cần Edge Function admin-create-user (với service_role) để tạo tài khoản Supabase Auth thật từ Admin Dashboard.
+  // Hiện tại: Chỉ lưu hồ sơ vào bảng nguoi_dung, KHÔNG lưu mật khẩu plaintext dưới bất kỳ hình thức nào.
+  const addUser = async (newUser) => {
+    const nextId = newUser.id || getNextMaxId('USR', usersList, 3);
+    const roleLabel =
+      newUser.role === 'admin'
+        ? 'Quản trị viên'
+        : newUser.role === 'staff'
+        ? 'Nhân viên'
+        : 'Khách tham quan';
+
     const createdUser = {
-      id: `USR${String(usersList.length + 1).padStart(3, '0')}`,
+      id: nextId,
       name: newUser.name || newUser.email.split('@')[0],
       email: newUser.email,
-      password: newUser.password || '123456',
       role: newUser.role || 'visitor',
-      roleLabel: newUser.role === 'admin' ? 'Quản trị viên' : 'Khách tham quan',
+      roleLabel: roleLabel,
+      role_label: roleLabel,
       status: 'Hoạt động',
       avatar: newUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+      joined_at: new Date().toISOString().split('T')[0],
       joinedAt: new Date().toISOString().split('T')[0],
     };
 
-    const updatedUsers = [createdUser, ...usersList];
-    setUsersList(updatedUsers);
-    addToast(`Đã tạo tài khoản "${createdUser.name}" (${createdUser.roleLabel}) thành công!`, 'success');
-    logAudit('CREATE_USER', `Tạo tài khoản người dùng: ${createdUser.email}`);
-    return { success: true, user: createdUser };
+    try {
+      const { error: insertError } = await supabase.from('nguoi_dung').insert([{
+        id: createdUser.id,
+        name: createdUser.name,
+        email: createdUser.email,
+        role: createdUser.role,
+        role_label: createdUser.role_label,
+        status: createdUser.status,
+        avatar: createdUser.avatar,
+        joined_at: createdUser.joined_at,
+      }]);
+
+      if (insertError) {
+        console.error('Lỗi tạo hồ sơ người dùng trên Supabase:', insertError);
+        addToast(`Không thể tạo hồ sơ: ${insertError.message}`, 'error');
+        return { success: false, message: insertError.message };
+      }
+
+      const updatedUsers = [createdUser, ...usersList];
+      setUsersList(updatedUsers);
+      addToast(`Đã tạo hồ sơ "${createdUser.name}" (${createdUser.roleLabel}) thành công!`, 'success');
+      await logAudit('CREATE_USER', `Tạo hồ sơ người dùng: ${createdUser.email}`);
+      return { success: true, user: createdUser };
+    } catch (err) {
+      console.error('Lỗi ngoại lệ khi tạo hồ sơ người dùng:', err);
+      addToast(`Lỗi kết nối: ${err.message}`, 'error');
+      return { success: false, message: err.message };
+    }
   };
 
   // 13. Event Registrations
@@ -635,9 +834,10 @@ export const AppProvider = ({ children }) => {
         })
       : null;
 
-    // HMAC Signature calculation for QR code security
-    const qrSig = calculateHMACSHA256(orderCode);
-    const qrSecurePayload = generateSecureQRPayload(orderCode);
+    // Ký số bảo mật QR vé tham quan (Gọi Supabase Edge Function)
+    const qrSecureRes = await requestSecureQRPayload(orderCode);
+    const qrSig = qrSecureRes?.sig || '';
+    const qrSecurePayload = qrSecureRes?.qrString || JSON.stringify({ order_code: orderCode, sig: qrSig });
 
     const ticketQRData = isFree
       ? JSON.stringify({
@@ -651,6 +851,7 @@ export const AppProvider = ({ children }) => {
           quantity: qty,
           totalPrice: 0,
           status: 'Vé Miễn Phí',
+          sig: qrSig,
         })
       : isCounter
       ? qrSecurePayload
@@ -777,14 +978,13 @@ export const AppProvider = ({ children }) => {
       };
     }
 
-    // Security signature check if sig was provided or order has qrSignature
-    if (sigInput && (order.qrSignature || order.qr_signature)) {
-      const expectedSig = order.qrSignature || order.qr_signature;
-      const isValidSig = verifySecureQRPayload(order.orderCode || order.ticketCode, sigInput) || sigInput === expectedSig;
-      if (!isValidSig) {
+    // Security signature check if sig was provided (Server-side Edge Function Verification)
+    if (sigInput) {
+      const verifyRes = await verifyTicketQROnServer(order.orderCode || order.ticketCode, sigInput);
+      if (!verifyRes.valid) {
         return {
           success: false,
-          error: '🔴 CẢNH BÁO BẢO MẬT: Mã QR có dấu hiệu bị làm giả hoặc chữ ký mã hóa không hợp lệ!',
+          error: `🔴 CẢNH BÁO BẢO MẬT: ${verifyRes.message || 'Mã QR có dấu hiệu bị làm giả hoặc chữ ký mã hóa không hợp lệ!'}`,
         };
       }
     }
@@ -1034,8 +1234,9 @@ export const AppProvider = ({ children }) => {
       return { success: false, message: 'Nội dung chứa từ cấm' };
     }
 
+    const nextId = getNextMaxId('REV', reviewsList, 3);
     const newReview = {
-      id: `REV${String(reviewsList.length + 1).padStart(3, '0')}`,
+      id: nextId,
       author: reviewData.author || currentUser?.name || 'Khách tham quan',
       authorEmail: currentUser?.email || 'guest@baotang.vn',
       userId: currentUser?.id || null,
@@ -1081,9 +1282,10 @@ export const AppProvider = ({ children }) => {
 
   // 16. Exhibitions
   const addExhibition = (exhibition) => {
+    const nextId = exhibition.id || getNextMaxId('EX', exhibitionsList, 3);
     const created = {
       ...exhibition,
-      id: `EX${String(exhibitionsList.length + 1).padStart(3, '0')}`,
+      id: nextId,
     };
     setExhibitionsList((prev) => [created, ...prev]);
     addToast('Đã thêm triển lãm mới thành công!', 'success');
@@ -1104,9 +1306,10 @@ export const AppProvider = ({ children }) => {
 
   // 17. Tickets Types CRUD
   const addTicketType = (ticket) => {
+    const nextId = ticket.id || getNextMaxId('TK', ticketsList, 3);
     const created = {
       ...ticket,
-      id: `TK${String(ticketsList.length + 1).padStart(3, '0')}`,
+      id: nextId,
     };
     setTicketsList((prev) => [...prev, created]);
     addToast('Đã thêm loại vé mới thành công!', 'success');

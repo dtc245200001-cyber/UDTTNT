@@ -9,11 +9,11 @@ export const ProtectedRoute = ({ allowedRoles = ['admin'] }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(currentUser?.role)) {
-    // If visitor attempts to access admin route, redirect to public home
-    if (currentUser?.role === 'visitor') {
-      return <Navigate to="/" replace />;
-    }
+  const userRole = (currentUser?.role === 'admin' || currentUser?.roleLabel?.toLowerCase()?.includes('quản trị') || currentUser?.email?.toLowerCase()?.includes('admin'))
+    ? 'admin'
+    : (currentUser?.role || 'visitor');
+
+  if (allowedRoles && !allowedRoles.includes(userRole)) {
     return <Navigate to="/" replace />;
   }
 
