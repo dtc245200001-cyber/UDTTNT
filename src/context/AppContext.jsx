@@ -345,7 +345,11 @@ export const AppProvider = ({ children }) => {
             status: g.status || 'Đang diễn ra',
             startDate: g.start_date || g.startDate,
             endDate: g.end_date || g.endDate,
+            location: g.location || 'Bảo tàng Lịch sử Quốc gia – Số 1 Tràng Tiền / 216 Trần Quang Khải, Hà Nội',
+            sourceUrl: g.source_url || g.sourceUrl || 'https://baotanglichsu.vn/vi/Articles/4002/chuyen-dje-dja-dien-ra',
+            detailedContent: g.detailed_content || g.detailedContent || g.description,
             image: g.image || '/images/museum-hero.jpg',
+            galleryImages: g.gallery_images || g.galleryImages || (g.image ? [g.image] : ['/images/museum-hero.jpg']),
             highlightArtifacts: g.highlight_artifacts || g.highlightArtifacts || [],
           }))
         );
@@ -1578,6 +1582,10 @@ export const AppProvider = ({ children }) => {
       id: nextId,
       image: gallery.image || '/images/museum-hero.jpg',
       status: gallery.status || 'Đang diễn ra',
+      location: gallery.location || 'Bảo tàng Lịch sử Quốc gia – Số 1 Tràng Tiền / 216 Trần Quang Khải, Hà Nội',
+      sourceUrl: gallery.sourceUrl || 'https://baotanglichsu.vn/vi/Articles/4002/chuyen-dje-dja-dien-ra',
+      detailedContent: gallery.detailedContent || gallery.description,
+      galleryImages: gallery.galleryImages || (gallery.image ? [gallery.image] : ['/images/museum-hero.jpg']),
       highlightArtifacts: gallery.highlightArtifacts || [],
     };
 
@@ -1589,7 +1597,11 @@ export const AppProvider = ({ children }) => {
         status: created.status,
         start_date: created.startDate || created.start_date || null,
         end_date: created.endDate || created.end_date || null,
+        location: created.location,
+        source_url: created.sourceUrl,
+        detailed_content: created.detailedContent,
         image: created.image,
+        gallery_images: created.galleryImages,
         highlight_artifacts: created.highlightArtifacts,
       }]);
 
@@ -1616,7 +1628,11 @@ export const AppProvider = ({ children }) => {
         status: data.status,
         start_date: data.startDate || data.start_date || null,
         end_date: data.endDate || data.end_date || null,
+        location: data.location,
+        source_url: data.sourceUrl || data.source_url,
+        detailed_content: data.detailedContent || data.detailed_content,
         image: data.image,
+        gallery_images: data.galleryImages || data.gallery_images,
         highlight_artifacts: data.highlightArtifacts || data.highlight_artifacts,
       }).eq('id', id);
 
