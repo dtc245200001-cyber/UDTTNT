@@ -81,11 +81,21 @@ export const Register = () => {
         }
       }
 
-      if (result.user?.role === 'admin') {
+      const isAdminUser =
+        result.user?.role === 'admin' ||
+        result.user?.roleLabel?.toLowerCase()?.includes('quản trị') ||
+        formData.email.trim().toLowerCase() === 'admin@gmail.com';
+
+      if (isAdminUser) {
         navigate('/dashboard');
       } else {
         navigate('/');
       }
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        general: result?.message || 'Đăng ký tài khoản không thành công. Vui lòng thử lại!',
+      }));
     }
   };
 
@@ -104,6 +114,12 @@ export const Register = () => {
         {/* Dummy inputs to block Chrome password manager autofill */}
         <input type="text" name="prevent_autofill_username" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
         <input type="password" name="prevent_autofill_password" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
+
+        {errors.general && (
+          <div className="p-3 bg-red-50 text-danger text-xs font-semibold rounded-xl border border-red-200 animate-fadeIn">
+            {errors.general}
+          </div>
+        )}
 
         {/* Họ tên */}
         <div>

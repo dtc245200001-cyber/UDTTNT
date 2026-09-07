@@ -97,7 +97,7 @@ export const Header = () => {
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Link to Visitor Public Site */}
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/public-home')}
           className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 border border-museum-gold/40 text-museum-brown font-semibold text-xs rounded-full hover:bg-museum-cream transition-colors"
           title="Xem giao diện Khách tham quan"
         >

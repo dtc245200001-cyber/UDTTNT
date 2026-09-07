@@ -59,13 +59,26 @@ export const Login = () => {
         }
       }
 
-      if (redirectTarget) {
+      const isAdminUser =
+        result.user?.role === 'admin' ||
+        result.user?.roleLabel?.toLowerCase()?.includes('quản trị') ||
+        email.trim().toLowerCase() === 'admin@gmail.com' ||
+        email.trim().toLowerCase().includes('admin');
+
+      if (redirectTarget && !isAdminUser) {
         navigate(redirectTarget);
-      } else if (result.user?.role === 'admin') {
+      } else if (isAdminUser) {
         navigate('/dashboard');
+      } else if (result.user?.role === 'staff') {
+        navigate('/staff/checkin');
       } else {
         navigate('/');
       }
+    } else {
+      setErrors((prev) => ({
+        ...prev,
+        general: result?.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại!',
+      }));
     }
   };
 
@@ -83,6 +96,12 @@ export const Login = () => {
       <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
         <input type="text" name="fake_email_prevent_autofill" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
         <input type="password" name="fake_password_prevent_autofill" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
+
+        {errors.general && (
+          <div className="p-3 bg-red-50 text-danger text-xs font-semibold rounded-xl border border-red-200 animate-fadeIn">
+            {errors.general}
+          </div>
+        )}
 
         {/* Email Field */}
         <div>
