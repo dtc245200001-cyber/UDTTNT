@@ -12,7 +12,7 @@ Tài liệu theo dõi tiến độ thực hiện theo từng giai đoạn chuẩ
 ---
 
 ### Giai đoạn 2: Lỗi chức năng & Đồng bộ dữ liệu
-- [ ] **2.1 Đồng bộ thật quản lý User lên Supabase (CRUD người dùng qua API)**
+- [x] **2.1 Đồng bộ thật quản lý User lên Supabase (CRUD người dùng qua API)**
 - [ ] **2.2 Sinh ID phía server (Postgres DEFAULT / Sequence thay vì client-side)**
 - [ ] **2.3 Không nuốt lỗi Supabase âm thầm (Xử lý và hiển thị thông báo lỗi rõ ràng)**
 - [ ] **2.4 Chuyển bộ lọc từ cấm lên server (Database Trigger / Constraint)**

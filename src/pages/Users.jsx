@@ -45,12 +45,12 @@ export const UsersPage = () => {
     setConfirmAction({ type: 'delete', user });
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!confirmAction) return;
     const { type, user, newRole } = confirmAction;
-    if (type === 'role') updateUserRole(user.id, newRole);
-    else if (type === 'lock' || type === 'unlock') toggleUserStatus(user.id);
-    else if (type === 'delete') deleteUser(user.id);
+    if (type === 'role') await updateUserRole(user.id, newRole);
+    else if (type === 'lock' || type === 'unlock') await toggleUserStatus(user.id);
+    else if (type === 'delete') await deleteUser(user.id);
     setConfirmAction(null);
   };
 
@@ -65,13 +65,15 @@ export const UsersPage = () => {
     return Object.keys(errs).length === 0;
   };
 
-  const handleCreateUser = (e) => {
+  const handleCreateUser = async (e) => {
     e.preventDefault();
     if (!validateAddUser()) return;
-    addUser(newUserData);
-    setIsAddModalOpen(false);
-    setNewUserData({ name: '', email: '', password: '', role: 'visitor' });
-    setAddErrors({});
+    const res = await addUser(newUserData);
+    if (res && res.success) {
+      setIsAddModalOpen(false);
+      setNewUserData({ name: '', email: '', password: '', role: 'visitor' });
+      setAddErrors({});
+    }
   };
 
   const confirmMessages = {
