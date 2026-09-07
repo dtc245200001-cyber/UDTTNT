@@ -55,7 +55,21 @@ export const AppProvider = ({ children }) => {
     const saved = localStorage.getItem('museum_galleries');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Merge with initialGalleries to ensure updated authentic images and artifacts are always available
+          return initialGalleries.map((init) => {
+            const found = parsed.find((p) => p.id === init.id);
+            if (!found) return init;
+            return {
+              ...init,
+              ...found,
+              image: init.id === 'TBCD01' ? init.image : (found.image || init.image),
+              galleryImages: init.id === 'TBCD01' ? init.galleryImages : (found.galleryImages || init.galleryImages),
+              highlightArtifacts: init.id === 'TBCD01' ? init.highlightArtifacts : (found.highlightArtifacts || init.highlightArtifacts),
+            };
+          });
+        }
       } catch (e) {
         console.error('Failed to parse museum_galleries from localStorage', e);
       }
