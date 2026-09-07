@@ -114,25 +114,37 @@ export const AppProvider = ({ children }) => {
       }
 
       if (userData) {
-        const mappedUsers = userData.map((u) => ({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          role: u.role,
-          roleLabel:
+        const mappedUsers = userData.map((u) => {
+          const rawRole = String(u.role || '').toLowerCase();
+          const normalizedRole =
+            rawRole === 'admin' || rawRole.includes('quản trị') || u.email?.toLowerCase() === 'admin@gmail.com'
+              ? 'admin'
+              : rawRole === 'staff' || rawRole.includes('nhân viên')
+              ? 'staff'
+              : 'visitor';
+
+          const roleLabel =
             u.role_label ||
-            (u.role === 'admin'
+            (normalizedRole === 'admin'
               ? 'Quản trị viên'
-              : u.role === 'staff'
+              : normalizedRole === 'staff'
               ? 'Nhân viên'
-              : 'Khách tham quan'),
-          role_label: u.role_label,
-          status: u.status || 'Hoạt động',
-          avatar: u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-          auth_user_id: u.auth_user_id,
-          joinedAt: u.joined_at,
-          joined_at: u.joined_at,
-        }));
+              : 'Khách tham quan');
+
+          return {
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            role: normalizedRole,
+            roleLabel: roleLabel,
+            role_label: roleLabel,
+            status: u.status || 'Hoạt động',
+            avatar: u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+            auth_user_id: u.auth_user_id,
+            joinedAt: u.joined_at,
+            joined_at: u.joined_at,
+          };
+        });
 
         setUsersList(mappedUsers);
         localStorage.setItem('museum_users', JSON.stringify(mappedUsers));
@@ -1326,50 +1338,152 @@ export const AppProvider = ({ children }) => {
     logAudit('DELETE_REVIEW', `Xóa đánh giá ID: ${id}`);
   };
 
-  // 16. Exhibitions
-  const addExhibition = (exhibition) => {
+  // 16. Exhibitions (Đồng bộ trực tiếp Supabase)
+  const addExhibition = async (exhibition) => {
     const nextId = exhibition.id || getNextMaxId('EX', exhibitionsList, 3);
     const created = {
       ...exhibition,
       id: nextId,
     };
+
+    try {
+      const { error } = await supabase.from('trien_lam').insert([{
+        id: created.id,
+        name: created.name,
+        status: created.status || 'Đang diễn ra',
+        start_date: created.startDate || created.start_date,
+        end_date: created.endDate || created.end_date,
+        location: created.location,
+        image: created.image,
+        description: created.description,
+        artifacts_count: created.artifactsCount || 0,
+        visitors_count: created.visitorsCount || 0,
+      }]);
+
+      if (error) {
+        console.error('Lỗi khi thêm triển lãm lên Supabase:', error);
+        addToast(`Lỗi thêm triển lãm: ${error.message}`, 'error');
+        return null;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối triển lãm:', e);
+    }
+
     setExhibitionsList((prev) => [created, ...prev]);
     addToast('Đã thêm triển lãm mới thành công!', 'success');
     return created;
   };
 
-  const updateExhibition = (id, data) => {
+  const updateExhibition = async (id, data) => {
+    try {
+      const { error } = await supabase.from('trien_lam').update({
+        name: data.name,
+        status: data.status,
+        start_date: data.startDate || data.start_date,
+        end_date: data.endDate || data.end_date,
+        location: data.location,
+        image: data.image,
+        description: data.description,
+      }).eq('id', id);
+
+      if (error) {
+        console.error('Lỗi khi cập nhật triển lãm trên Supabase:', error);
+        addToast(`Lỗi cập nhật: ${error.message}`, 'error');
+        return;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối cập nhật triển lãm:', e);
+    }
+
     setExhibitionsList((prev) =>
       prev.map((e) => (e.id === id ? { ...e, ...data } : e))
     );
     addToast('Đã cập nhật triển lãm thành công!', 'success');
   };
 
-  const deleteExhibition = (id) => {
+  const deleteExhibition = async (id) => {
+    try {
+      const { error } = await supabase.from('trien_lam').delete().eq('id', id);
+      if (error) {
+        console.error('Lỗi khi xóa triển lãm trên Supabase:', error);
+        addToast(`Lỗi xóa triển lãm: ${error.message}`, 'error');
+        return;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối xóa triển lãm:', e);
+    }
+
     setExhibitionsList((prev) => prev.filter((e) => e.id !== id));
     addToast('Đã xóa triển lãm thành công!', 'info');
   };
 
-  // 17. Tickets Types CRUD
-  const addTicketType = (ticket) => {
+  // 17. Tickets Types CRUD (Đồng bộ trực tiếp Supabase)
+  const addTicketType = async (ticket) => {
     const nextId = ticket.id || getNextMaxId('TK', ticketsList, 3);
     const created = {
       ...ticket,
       id: nextId,
     };
+
+    try {
+      const { error } = await supabase.from('ve_tham_quan').insert([{
+        id: created.id,
+        name: created.name,
+        price: created.price || 0,
+        description: created.description,
+        active: created.active !== false,
+      }]);
+
+      if (error) {
+        console.error('Lỗi khi thêm loại vé lên Supabase:', error);
+        addToast(`Lỗi thêm loại vé: ${error.message}`, 'error');
+        return null;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối thêm vé:', e);
+    }
+
     setTicketsList((prev) => [...prev, created]);
     addToast('Đã thêm loại vé mới thành công!', 'success');
     return created;
   };
 
-  const updateTicketType = (id, data) => {
+  const updateTicketType = async (id, data) => {
+    try {
+      const { error } = await supabase.from('ve_tham_quan').update({
+        name: data.name,
+        price: data.price,
+        description: data.description,
+        active: data.active,
+      }).eq('id', id);
+
+      if (error) {
+        console.error('Lỗi khi cập nhật loại vé trên Supabase:', error);
+        addToast(`Lỗi cập nhật: ${error.message}`, 'error');
+        return;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối cập nhật vé:', e);
+    }
+
     setTicketsList((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...data } : t))
     );
     addToast('Đã cập nhật loại vé thành công!', 'success');
   };
 
-  const deleteTicketType = (id) => {
+  const deleteTicketType = async (id) => {
+    try {
+      const { error } = await supabase.from('ve_tham_quan').delete().eq('id', id);
+      if (error) {
+        console.error('Lỗi khi xóa loại vé trên Supabase:', error);
+        addToast(`Lỗi xóa loại vé: ${error.message}`, 'error');
+        return;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối xóa vé:', e);
+    }
+
     setTicketsList((prev) => prev.filter((t) => t.id !== id));
     addToast('Đã xóa loại vé thành công!', 'info');
   };
