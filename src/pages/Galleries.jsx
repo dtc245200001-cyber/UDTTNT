@@ -138,6 +138,23 @@ export const Galleries = () => {
     });
   }, [galleries, activeTab, searchTerm]);
 
+  // ESC and Arrow key navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (previewImage) {
+          setPreviewImage(null);
+        } else if (selectedGallery) {
+          setSelectedGallery(null);
+        } else if (isFormOpen) {
+          setIsFormOpen(false);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [previewImage, selectedGallery, isFormOpen]);
+
   // Handlers
   const openDetail = (item) => {
     setSelectedGallery(item);
@@ -1038,59 +1055,65 @@ export const Galleries = () => {
         />
       )}
 
-      {/* 7. Fullscreen Image Lightbox Preview Modal */}
+      {/* 7. Fullscreen Image Lightbox Preview Modal (Z-[9999] High-Priority Overlay) */}
       {previewImage && (
         <div
           onClick={() => setPreviewImage(null)}
-          className="fixed inset-0 z-60 flex items-center justify-center p-2 sm:p-5 md:p-8 bg-black/92 backdrop-blur-md animate-fadeIn cursor-pointer"
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-between p-3 sm:p-6 bg-black/95 backdrop-blur-md animate-fadeIn cursor-pointer select-none"
         >
+          {/* Top Bar: Title & Big Close Button */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-5xl w-full bg-stone-950 rounded-3xl overflow-hidden shadow-2xl border border-amber-500/20 flex flex-col max-h-[96vh] cursor-default"
+            className="w-full max-w-5xl flex items-center justify-between gap-4 py-2 px-3 bg-black/50 backdrop-blur-md rounded-2xl border border-white/10 shrink-0 z-10"
           >
-            {/* Top Close Button */}
-            <button
-              onClick={() => setPreviewImage(null)}
-              className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/75 hover:bg-red-950 hover:text-red-400 text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-lg border border-white/20"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* High-res Image display */}
-            <div className="flex-1 flex items-center justify-center bg-black/60 min-h-[340px] sm:min-h-[460px] p-3 sm:p-6 overflow-hidden">
-              <img
-                src={previewImage.src}
-                alt={previewImage.title || 'Hiện vật'}
-                loading="lazy"
-                decoding="async"
-                className="max-h-[70vh] w-auto max-w-full object-contain rounded-xl shadow-2xl"
-                onError={(e) => {
-                  e.target.src = '/images/museum-hero.jpg';
-                }}
-              />
-            </div>
-
-            {/* Bottom Info Bar */}
-            <div className="p-5 sm:p-6 bg-stone-900/95 border-t border-stone-800 text-white space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <h4 className="font-extrabold text-base sm:text-xl text-amber-300 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
-                  <span>{previewImage.title || 'Hình ảnh tư liệu'}</span>
-                </h4>
-                {previewImage.period && (
-                  <span className="px-3 py-1 bg-amber-400/20 text-amber-200 border border-amber-400/30 text-xs font-semibold rounded-full shrink-0">
-                    {previewImage.period}
-                  </span>
-                )}
-              </div>
-
-              {previewImage.description && (
-                <p className="text-xs sm:text-sm text-stone-300 leading-relaxed text-justify">
-                  {previewImage.description}
-                </p>
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles className="w-5 h-5 text-amber-400 shrink-0" />
+              <h4 className="font-extrabold text-sm sm:text-base text-amber-300 truncate">
+                {previewImage.title || 'Hình ảnh tư liệu'}
+              </h4>
+              {previewImage.period && (
+                <span className="hidden sm:inline-block px-2.5 py-0.5 bg-amber-400/20 text-amber-200 border border-amber-400/30 text-xs font-semibold rounded-full shrink-0">
+                  {previewImage.period}
+                </span>
               )}
             </div>
+
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-red-600 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-lg border border-white/20 hover:scale-105 active:scale-95"
+              title="Đóng (Phím ESC hoặc bấm ra ngoài)"
+            >
+              <X className="w-4 h-4" />
+              <span>Đóng</span>
+            </button>
           </div>
+
+          {/* Center Image Viewport (Takes full remaining space) */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="flex-1 w-full max-w-6xl flex items-center justify-center p-2 sm:p-4 min-h-0 cursor-default"
+          >
+            <img
+              src={previewImage.src}
+              alt={previewImage.title || 'Hiện vật'}
+              className="max-h-[75vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl drop-shadow-[0_15px_35px_rgba(0,0,0,0.9)] border border-white/10"
+              onError={(e) => {
+                e.target.src = '/images/museum-hero.jpg';
+              }}
+            />
+          </div>
+
+          {/* Bottom Description (if present) */}
+          {previewImage.description ? (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-3xl bg-stone-900/90 backdrop-blur-md border border-white/15 rounded-2xl px-5 py-3 text-stone-200 text-xs sm:text-sm text-center leading-relaxed shrink-0 shadow-2xl"
+            >
+              <p>{previewImage.description}</p>
+            </div>
+          ) : (
+            <div className="h-2 shrink-0" />
+          )}
         </div>
       )}
     </div>
