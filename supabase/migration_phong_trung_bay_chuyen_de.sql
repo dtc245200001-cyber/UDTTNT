@@ -13,6 +13,7 @@ ALTER TABLE public.phong_trung_bay
   ADD COLUMN IF NOT EXISTS end_date DATE,
   ADD COLUMN IF NOT EXISTS location TEXT DEFAULT 'Bảo tàng Lịch sử Quốc gia – Số 1 Tràng Tiền / 216 Trần Quang Khải, Hà Nội',
   ADD COLUMN IF NOT EXISTS source_url TEXT DEFAULT 'https://baotanglichsu.vn/vi/Articles/4002/chuyen-dje-dja-dien-ra',
+  ADD COLUMN IF NOT EXISTS source_note TEXT,
   ADD COLUMN IF NOT EXISTS detailed_content TEXT,
   ADD COLUMN IF NOT EXISTS image TEXT,
   ADD COLUMN IF NOT EXISTS gallery_images JSONB DEFAULT '[]'::jsonb,

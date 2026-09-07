@@ -1,35 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
+  BookOpen,
   Sparkles,
   CalendarDays,
   Plus,
   Pencil,
   Trash2,
   X,
-  AlertTriangle,
   Search,
-  BookOpen,
-  Landmark,
   MapPin,
   ExternalLink,
-  Clock,
-  CheckCircle2,
-  Eye,
-  Layers,
-  ArrowRight,
-  Share2,
-  Image as ImageIcon,
   ChevronRight,
   ChevronLeft,
-  Globe,
+  Share2,
   ZoomIn,
   Maximize2,
-  Grid,
-  LayoutGrid,
+  Eye,
+  Info,
+  Clock,
+  CheckCircle2,
+  Layers,
   FileText,
 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { formatDate } from '@/utils/formatters';
+import { removeVietnameseTones } from '@/utils/artifactSearch';
 
 const EMPTY_GALLERY = {
   name: '',
@@ -40,6 +38,7 @@ const EMPTY_GALLERY = {
   endDate: '',
   location: 'Bảo tàng Lịch sử Quốc gia – Số 1 Tràng Tiền / 216 Trần Quang Khải, Hoàn Kiếm, Hà Nội',
   sourceUrl: 'https://baotanglichsu.vn/vi/Articles/4002/chuyen-dje-dja-dien-ra',
+  sourceNote: '',
   image: '/images/museum-hero.jpg',
   galleryImages: ['/images/museum-hero.jpg'],
   highlightArtifacts: [{ name: '', description: '', image: '', period: '' }],
@@ -49,14 +48,19 @@ export const Galleries = () => {
   const { galleries, addGallery, updateGallery, deleteGallery, currentUser, addToast } = useApp();
   const isAdmin = currentUser?.role === 'admin';
 
-  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'Sắp diễn ra' | 'Đang diễn ra' | 'Đã diễn ra'
+  // Loading state (initial mount)
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Tab & Search state
+  const [activeTab, setActiveTab] = useState('all'); // 'all' | 'Đang diễn ra' | 'Sắp diễn ra' | 'Đã diễn ra'
   const [searchTerm, setSearchTerm] = useState('');
 
   // Selected Detail Modal State
   const [selectedGallery, setSelectedGallery] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [modalTab, setModalTab] = useState('artifacts'); // 'artifacts' | 'overview' | 'photos'
-  const [previewImage, setPreviewImage] = useState(null); // Lightbox { src, title, description }
+
+  // Lightbox Preview State
+  const [previewImage, setPreviewImage] = useState(null);
 
   // Form Modal State (Admin)
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -67,38 +71,77 @@ export const Galleries = () => {
   // Delete Confirm State
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  // Tab counts
-  const counts = {
-    all: galleries.length,
-    'Đang diễn ra': galleries.filter((g) => g.status === 'Đang diễn ra').length,
-    'Sắp diễn ra': galleries.filter((g) => g.status === 'Sắp diễn ra').length,
-    'Đã diễn ra': galleries.filter((g) => g.status === 'Đã diễn ra').length,
+  // Helper: Extract image URL and caption from string or object
+  const parseImage = (item) => {
+    if (!item) return { url: '/images/museum-hero.jpg', caption: '' };
+    if (typeof item === 'string') return { url: item, caption: '' };
+    return {
+      url: item.url || item.image || '/images/museum-hero.jpg',
+      caption: item.caption || item.title || '',
+    };
   };
 
-  // Filtered galleries
-  const filteredGalleries = galleries.filter((g) => {
-    const matchesTab = activeTab === 'all' || g.status === activeTab;
-    const term = searchTerm.toLowerCase().trim();
-    const matchesSearch =
-      !term ||
-      g.name?.toLowerCase().includes(term) ||
-      g.description?.toLowerCase().includes(term) ||
-      g.id?.toLowerCase().includes(term) ||
-      g.location?.toLowerCase().includes(term) ||
-      (g.highlightArtifacts || []).some(
-        (a) =>
-          a.name?.toLowerCase().includes(term) ||
-          a.description?.toLowerCase().includes(term) ||
-          a.period?.toLowerCase().includes(term)
-      );
-    return matchesTab && matchesSearch;
-  });
+  // Helper: Get primary cover image
+  const getCoverImageUrl = (gallery) => {
+    if (gallery.galleryImages && gallery.galleryImages.length > 0) {
+      return parseImage(gallery.galleryImages[0]).url;
+    }
+    return gallery.image || '/images/museum-hero.jpg';
+  };
 
-  // Modal handlers
+  // Memoized Tab Counts
+  const counts = useMemo(() => {
+    return {
+      all: galleries.length,
+      'Đang diễn ra': galleries.filter((g) => g.status === 'Đang diễn ra').length,
+      'Sắp diễn ra': galleries.filter((g) => g.status === 'Sắp diễn ra').length,
+      'Đã diễn ra': galleries.filter((g) => g.status === 'Đã diễn ra').length,
+    };
+  }, [galleries]);
+
+  // Memoized Filtered List (Client-side fast filtering without re-fetch)
+  const filteredGalleries = useMemo(() => {
+    const cleanSearch = removeVietnameseTones(searchTerm.trim().toLowerCase());
+
+    return galleries.filter((g) => {
+      // 1. Filter by Status Tab
+      if (activeTab !== 'all' && g.status !== activeTab) {
+        return false;
+      }
+
+      // 2. Filter by Search keyword
+      if (!cleanSearch) return true;
+
+      const nameClean = removeVietnameseTones(g.name || '');
+      const descClean = removeVietnameseTones(g.description || '');
+      const locClean = removeVietnameseTones(g.location || '');
+      const idClean = (g.id || '').toLowerCase();
+
+      const matchArtifacts = (g.highlightArtifacts || []).some((art) => {
+        const artName = removeVietnameseTones(art.name || '');
+        const artDesc = removeVietnameseTones(art.description || '');
+        const artPeriod = removeVietnameseTones(art.period || '');
+        return (
+          artName.includes(cleanSearch) ||
+          artDesc.includes(cleanSearch) ||
+          artPeriod.includes(cleanSearch)
+        );
+      });
+
+      return (
+        nameClean.includes(cleanSearch) ||
+        descClean.includes(cleanSearch) ||
+        locClean.includes(cleanSearch) ||
+        idClean.includes(cleanSearch) ||
+        matchArtifacts
+      );
+    });
+  }, [galleries, activeTab, searchTerm]);
+
+  // Handlers
   const openDetail = (item) => {
     setSelectedGallery(item);
     setActiveImageIndex(0);
-    setModalTab('artifacts');
   };
 
   const openAdd = () => {
@@ -120,8 +163,12 @@ export const Galleries = () => {
       endDate: item.endDate || '',
       location: item.location || 'Bảo tàng Lịch sử Quốc gia – Số 1 Tràng Tiền, Hà Nội',
       sourceUrl: item.sourceUrl || 'https://baotanglichsu.vn/vi/Articles/4002/chuyen-dje-dja-dien-ra',
+      sourceNote: item.sourceNote || '',
       image: item.image || '/images/museum-hero.jpg',
-      galleryImages: item.galleryImages && item.galleryImages.length > 0 ? item.galleryImages : [item.image || '/images/museum-hero.jpg'],
+      galleryImages:
+        item.galleryImages && item.galleryImages.length > 0
+          ? item.galleryImages
+          : [item.image || '/images/museum-hero.jpg'],
       highlightArtifacts:
         item.highlightArtifacts && item.highlightArtifacts.length > 0
           ? item.highlightArtifacts.map((a) => ({ ...a }))
@@ -146,7 +193,6 @@ export const Galleries = () => {
     e.preventDefault();
     if (!validate()) return;
 
-    // Clean artifacts list
     const cleanedArtifacts = (formData.highlightArtifacts || []).filter(
       (a) => a.name.trim() !== '' || a.description.trim() !== ''
     );
@@ -175,7 +221,10 @@ export const Galleries = () => {
   const addArtifactRow = () => {
     setFormData({
       ...formData,
-      highlightArtifacts: [...formData.highlightArtifacts, { name: '', description: '', image: '', period: '' }],
+      highlightArtifacts: [
+        ...formData.highlightArtifacts,
+        { name: '', description: '', image: '', period: '' },
+      ],
     });
   };
 
@@ -183,45 +232,48 @@ export const Galleries = () => {
     const list = formData.highlightArtifacts.filter((_, idx) => idx !== index);
     setFormData({
       ...formData,
-      highlightArtifacts: list.length > 0 ? list : [{ name: '', description: '', image: '', period: '' }],
+      highlightArtifacts:
+        list.length > 0 ? list : [{ name: '', description: '', image: '', period: '' }],
     });
   };
 
+  // Status Badge UI
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Đang diễn ra':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/90 backdrop-blur-sm text-white text-xs font-extrabold rounded-full shadow-sm">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-full shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             Đang diễn ra
           </span>
         );
       case 'Sắp diễn ra':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/90 backdrop-blur-sm text-white text-xs font-extrabold rounded-full shadow-sm">
-            <Clock className="w-3.5 h-3.5" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold rounded-full shadow-xs">
+            <Clock className="w-3 h-3 text-sky-600" />
             Sắp diễn ra
           </span>
         );
       case 'Đã diễn ra':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-stone-700/85 backdrop-blur-sm text-stone-100 text-xs font-bold rounded-full shadow-sm">
-            <CheckCircle2 className="w-3.5 h-3.5 text-stone-300" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-700 border border-gray-200 text-xs font-bold rounded-full shadow-xs">
+            <CheckCircle2 className="w-3 h-3 text-gray-500" />
             Đã diễn ra
           </span>
         );
     }
   };
 
+  // Format Date Range
   const formatPeriod = (start, end) => {
-    if (!start && !end) return 'Trưng bày thường trực / Lưu trữ lịch sử';
+    if (!start && !end) return 'Trưng bày thường trực / Lưu trữ';
     if (start && end) {
       if (start === end) return `Ngày ${formatDate(start)}`;
       return `${formatDate(start)} – ${formatDate(end)}`;
     }
-    if (start) return `Từ ngày ${formatDate(start)}`;
-    return `Đến ngày ${formatDate(end)}`;
+    if (start) return `Từ ${formatDate(start)}`;
+    return `Đến ${formatDate(end)}`;
   };
 
   const handleShare = (gallery, e) => {
@@ -233,8 +285,8 @@ export const Galleries = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn font-sans">
-      {/* 1. Header Section */}
+    <div className="space-y-6 animate-fadeIn font-sans pb-8">
+      {/* 1. Header Section with Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="text-xs font-semibold text-gray-400 mb-1">
@@ -242,19 +294,19 @@ export const Galleries = () => {
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-museum-brown tracking-tight flex items-center gap-2.5">
             <BookOpen className="w-7 h-7 sm:w-8 sm:h-8 text-museum-gold" />
-            <span>TRƯNG BÀY CHUYÊN ĐỀ LỊCH SỬ</span>
+            <span>TRƯNG BÀY CHUYÊN ĐỀ</span>
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Không gian trưng bày tư liệu, hiện vật và công nghệ số theo từng mốc son lịch sử của Bảo tàng Lịch sử Quốc gia.
+            Không gian giới thiệu các chuyên đề văn hóa, lịch sử và hiện vật tiêu biểu của Bảo tàng.
           </p>
         </div>
 
         {isAdmin && (
           <button
             onClick={openAdd}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md transition-colors shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-colors shrink-0 cursor-pointer"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>+ Thêm chuyên đề mới</span>
           </button>
         )}
@@ -263,7 +315,7 @@ export const Galleries = () => {
       {/* 2. Filter Tabs & Search Bar */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Status Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
           {[
             { key: 'all', label: 'Tất cả' },
             { key: 'Đang diễn ra', label: 'Đang diễn ra' },
@@ -275,15 +327,15 @@ export const Galleries = () => {
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                className={`relative px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-2 ${
                   active
                     ? 'bg-museum-brown text-white shadow-xs'
-                    : 'bg-gray-50 text-gray-600 hover:bg-museum-cream hover:text-museum-brown'
+                    : 'bg-museum-ivory/70 text-gray-600 hover:bg-museum-cream hover:text-museum-brown'
                 }`}
               >
                 <span>{tab.label}</span>
                 <span
-                  className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${
+                  className={`px-2 py-0.5 text-[11px] rounded-full font-bold transition-colors ${
                     active ? 'bg-museum-gold text-white' : 'bg-gray-200 text-gray-600'
                   }`}
                 >
@@ -301,158 +353,119 @@ export const Galleries = () => {
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo tên, hiện vật, mốc lịch sử..."
-            className="w-full pl-10 pr-4 py-2 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold"
+            placeholder="Tìm theo tên chuyên đề, hiện vật..."
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold focus:bg-white transition-all"
           />
         </div>
       </div>
 
-      {/* 3. Thematic Galleries Cards List */}
-      {filteredGalleries.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border border-gray-100 shadow-xs">
-          <div className="w-16 h-16 rounded-full bg-museum-cream text-museum-gold mx-auto flex items-center justify-center mb-3">
-            <BookOpen className="w-8 h-8" />
-          </div>
-          <h3 className="text-base font-bold text-museum-brown">Không tìm thấy chuyên đề trưng bày</h3>
-          <p className="text-xs text-gray-500 mt-1">
-            Không có trưng bày chuyên đề nào phù hợp với từ khóa hoặc bộ lọc đã chọn.
-          </p>
+      {/* 3. Thematic Galleries Cards Grid */}
+      {isLoading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <div key={n} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3 shadow-xs">
+              <Skeleton className="aspect-[4/3] w-full rounded-xl" />
+              <Skeleton className="h-5 w-3/4 rounded" />
+              <Skeleton className="h-4 w-full rounded" />
+              <Skeleton className="h-4 w-2/3 rounded" />
+            </div>
+          ))}
         </div>
+      ) : filteredGalleries.length === 0 ? (
+        <EmptyState
+          title="Chưa có trưng bày chuyên đề nào phù hợp"
+          subtitle="Hiện tại không tìm thấy chuyên đề trưng bày nào theo bộ lọc hoặc từ khóa đã chọn. Vui lòng thử chuyển tab trạng thái khác."
+        />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredGalleries.map((g) => {
-            const hasArtifacts = g.highlightArtifacts && g.highlightArtifacts.length > 0;
+            const coverUrl = getCoverImageUrl(g);
+            const artifactsCount = g.highlightArtifacts?.length || 0;
+            const periodStr = formatPeriod(g.startDate, g.endDate);
+
             return (
               <div
                 key={g.id}
                 onClick={() => openDetail(g)}
-                className="bg-white rounded-3xl overflow-hidden shadow-xs hover:shadow-xl border border-gray-100 hover:border-museum-gold/40 transition-all duration-300 flex flex-col group cursor-pointer"
+                className="bg-white rounded-2xl border border-gray-100 shadow-xs hover:shadow-lg hover:border-museum-gold/40 transition-all duration-300 flex flex-col overflow-hidden group cursor-pointer"
               >
-                {/* Image Banner Header */}
-                <div className="relative h-60 sm:h-68 bg-stone-900 overflow-hidden">
+                {/* Fixed 4:3 Aspect Ratio Image Banner with lazy load */}
+                <div className="relative aspect-[4/3] overflow-hidden bg-museum-cream/30">
                   <img
-                    src={g.image || '/images/museum-hero.jpg'}
+                    src={coverUrl}
                     alt={g.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => {
                       e.target.src = '/images/museum-hero.jpg';
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent opacity-70 group-hover:opacity-85 transition-opacity" />
 
-                  {/* Top Bar on Image: Status Badge & ID */}
-                  <div className="absolute top-4 left-4 right-4 flex items-center justify-between gap-2">
+                  {/* Status Badge floating on top-left corner */}
+                  <div className="absolute top-3 left-3 z-10">
                     {getStatusBadge(g.status)}
-                    <span className="px-2.5 py-1 bg-black/60 backdrop-blur-md text-amber-200 border border-amber-400/30 text-[11px] font-mono font-bold rounded-lg shadow-sm">
-                      {g.id}
-                    </span>
                   </div>
 
-                  {/* Date Period & Location Tag at Bottom of Banner */}
-                  <div className="absolute bottom-4 left-4 right-4 space-y-1">
-                    <div className="flex items-center gap-2 text-white/95 text-xs font-semibold">
-                      <CalendarDays className="w-4 h-4 text-museum-gold shrink-0" />
-                      <span className="truncate">{formatPeriod(g.startDate, g.endDate)}</span>
+                  {/* Highlight Artifacts count badge on top-right corner */}
+                  {artifactsCount > 0 && (
+                    <div className="absolute top-3 right-3 z-10 px-2.5 py-1 bg-black/60 backdrop-blur-md text-amber-200 border border-amber-400/30 text-[11px] font-semibold rounded-lg shadow-xs flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-amber-400" />
+                      <span>{artifactsCount} hiện vật tiêu biểu</span>
                     </div>
-                    {g.location && (
-                      <div className="flex items-center gap-2 text-white/80 text-[11px] font-normal truncate">
-                        <MapPin className="w-3.5 h-3.5 text-museum-gold shrink-0" />
-                        <span className="truncate">{g.location}</span>
-                      </div>
-                    )}
+                  )}
+
+                  {/* Period Text at bottom of cover */}
+                  <div className="absolute bottom-3 left-3 right-3 text-white text-xs flex items-center gap-1.5 font-medium drop-shadow-md z-10">
+                    <CalendarDays className="w-3.5 h-3.5 text-museum-gold shrink-0" />
+                    <span className="truncate">{periodStr}</span>
                   </div>
                 </div>
 
-                {/* Card Content Body */}
-                <div className="p-6 flex-1 flex flex-col justify-between space-y-5">
-                  <div>
-                    {/* Title */}
-                    <h3 className="font-extrabold text-lg sm:text-xl text-museum-brown leading-snug group-hover:text-museum-gold transition-colors">
+                {/* Card Body */}
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+                  <div className="space-y-2">
+                    {/* Title (Truncated 2 lines) */}
+                    <h3 className="font-bold text-base text-museum-brown line-clamp-2 group-hover:text-museum-gold transition-colors leading-snug">
                       {g.name}
                     </h3>
 
-                    {/* Short Description */}
-                    <p className="text-xs sm:text-sm text-gray-600 font-normal mt-2.5 leading-relaxed line-clamp-3 text-justify">
+                    {/* Short Description (Truncated 2-3 lines) */}
+                    <p className="text-xs text-gray-600 line-clamp-2 sm:line-clamp-3 leading-relaxed text-justify">
                       {g.description}
                     </p>
-
-                    {/* Highlight Artifacts Mini Preview */}
-                    {hasArtifacts && (
-                      <div className="mt-4 pt-4 border-t border-gray-100">
-                        <div className="flex items-center justify-between text-xs font-bold text-museum-brown mb-2.5">
-                          <div className="flex items-center gap-1.5">
-                            <Sparkles className="w-4 h-4 text-museum-gold shrink-0" />
-                            <span>HIỆN VẬT ĐẶC BIỆT ({g.highlightArtifacts.length})</span>
-                          </div>
-                          <span className="text-[11px] text-museum-gold font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
-                            Xem chi tiết <ChevronRight className="w-3 h-3" />
-                          </span>
-                        </div>
-
-                        <div className="space-y-1.5 bg-museum-ivory/70 p-3 rounded-2xl border border-museum-gold/20">
-                          {g.highlightArtifacts.slice(0, 3).map((art, idx) => (
-                            <div key={idx} className="text-xs flex items-center gap-2 truncate">
-                              <span className="w-4 h-4 rounded-full bg-museum-gold text-white font-extrabold text-[9px] flex items-center justify-center shrink-0">
-                                {idx + 1}
-                              </span>
-                              <span className="font-bold text-museum-brown truncate">{art.name}</span>
-                              {art.period && (
-                                <span className="text-[10px] text-gray-400 shrink-0">({art.period})</span>
-                              )}
-                            </div>
-                          ))}
-                          {g.highlightArtifacts.length > 3 && (
-                            <div className="text-[11px] text-museum-gold font-bold pl-6 pt-0.5">
-                              + Thêm {g.highlightArtifacts.length - 3} hiện vật quý khác...
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
 
-                  {/* Card Bottom CTA & Admin Actions */}
-                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
-                    <button
-                      onClick={() => openDetail(g)}
-                      className="inline-flex items-center gap-1.5 text-xs font-extrabold text-museum-brown group-hover:text-museum-gold transition-colors"
-                    >
-                      <Eye className="w-4 h-4 text-museum-gold" />
-                      <span>Khám phá chuyên đề</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                    </button>
+                  {/* Card Footer */}
+                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
+                    <span className="text-museum-brown font-bold flex items-center gap-1 group-hover:text-museum-gold transition-colors">
+                      <span>Xem chi tiết</span>
+                      <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </span>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => handleShare(g, e)}
-                        className="p-2 text-gray-400 hover:text-museum-brown hover:bg-museum-cream rounded-xl transition-colors"
-                        title="Chia sẻ liên kết"
-                      >
-                        <Share2 className="w-4 h-4" />
-                      </button>
-
-                      {isAdmin && (
-                        <>
-                          <button
-                            onClick={(e) => openEdit(g, e)}
-                            className="p-2 text-museum-brown hover:bg-museum-gold hover:text-white rounded-xl transition-colors"
-                            title="Sửa chuyên đề"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteTarget(g);
-                            }}
-                            className="p-2 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-colors"
-                            title="Xóa chuyên đề"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    {/* Admin Action Buttons */}
+                    {isAdmin && (
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={(e) => openEdit(g, e)}
+                          className="p-1.5 text-gray-500 hover:text-museum-brown hover:bg-museum-cream rounded-lg transition-colors cursor-pointer"
+                          title="Sửa chuyên đề"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget(g);
+                          }}
+                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          title="Xóa chuyên đề"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -461,473 +474,267 @@ export const Galleries = () => {
         </div>
       )}
 
-      {/* 4. Expansive Ultra-Wide Thematic Exhibition Theater Modal */}
+      {/* 4. Thematic Exhibition Detail Modal */}
       {selectedGallery && (() => {
-        const galleryImages =
+        const rawImages =
           selectedGallery.galleryImages && selectedGallery.galleryImages.length > 0
             ? selectedGallery.galleryImages
             : [selectedGallery.image || '/images/museum-hero.jpg'];
-        const currentImageUrl = galleryImages[activeImageIndex] || galleryImages[0];
+
+        const parsedImages = rawImages.map(parseImage);
+        const currentImgObj = parsedImages[activeImageIndex] || parsedImages[0];
         const artifacts = selectedGallery.highlightArtifacts || [];
-        const matchingArtifact = artifacts.find((a) => a.image === currentImageUrl);
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/85 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-stone-900 w-full max-w-7xl rounded-3xl shadow-2xl border border-stone-800 overflow-hidden flex flex-col max-h-[96vh] text-stone-100">
-              {/* Header Bar */}
-              <div className="px-5 py-3.5 bg-stone-950/90 border-b border-stone-800 flex items-center justify-between gap-4 shrink-0">
-                <div className="flex items-center gap-3 min-w-0">
-                  {getStatusBadge(selectedGallery.status)}
-                  <span className="hidden sm:inline-block px-2.5 py-1 bg-stone-800 text-amber-300 border border-amber-500/30 text-xs font-mono font-bold rounded-lg shadow-xs">
-                    {selectedGallery.id}
-                  </span>
-                  <h3 className="text-sm sm:text-lg font-bold text-stone-100 truncate">
-                    {selectedGallery.name}
-                  </h3>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() =>
-                      setPreviewImage({
-                        src: currentImageUrl,
-                        title: matchingArtifact?.name || selectedGallery.name,
-                        description: matchingArtifact?.description || selectedGallery.description,
-                        period: matchingArtifact?.period,
-                      })
-                    }
-                    className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border border-amber-500/20"
-                    title="Phóng to toàn màn hình"
-                  >
-                    <Maximize2 className="w-4 h-4 text-amber-400" />
-                    <span className="hidden md:inline">Toàn màn hình</span>
-                  </button>
-                  <button
-                    onClick={() => setSelectedGallery(null)}
-                    className="w-8 h-8 rounded-full bg-stone-800 hover:bg-red-950 hover:text-red-400 text-stone-300 flex items-center justify-center transition-all cursor-pointer border border-stone-700"
-                    title="Đóng cửa sổ"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Theater Stage for High-Res Image Display */}
-              <div className="relative bg-black h-[340px] sm:h-[440px] md:h-[490px] flex items-center justify-center overflow-hidden shrink-0 group select-none">
-                {/* Background blurred ambiance */}
-                <div
-                  className="absolute inset-0 bg-cover bg-center blur-2xl opacity-20 scale-110 pointer-events-none"
-                  style={{ backgroundImage: `url(${currentImageUrl})` }}
-                />
-
-                {/* Main Theater Image */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-xs animate-fadeIn">
+            <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[92vh]">
+              {/* Modal Top Image Carousel / Banner */}
+              <div className="relative h-64 sm:h-80 md:h-96 bg-stone-900 shrink-0 group select-none overflow-hidden">
                 <img
-                  src={currentImageUrl}
-                  alt={matchingArtifact?.name || selectedGallery.name}
-                  className="relative max-h-full max-w-full object-contain cursor-pointer transition-transform duration-300 hover:scale-[1.01] drop-shadow-2xl z-10"
+                  src={currentImgObj.url}
+                  alt={currentImgObj.caption || selectedGallery.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-contain sm:object-cover transition-all duration-300 cursor-pointer"
                   onClick={() =>
                     setPreviewImage({
-                      src: currentImageUrl,
-                      title: matchingArtifact?.name || selectedGallery.name,
-                      description: matchingArtifact?.description || selectedGallery.description,
-                      period: matchingArtifact?.period,
+                      src: currentImgObj.url,
+                      title: currentImgObj.caption || selectedGallery.name,
+                      description: selectedGallery.description,
                     })
                   }
                   onError={(e) => {
                     e.target.src = '/images/museum-hero.jpg';
                   }}
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/20 pointer-events-none" />
 
-                {/* Prev / Next Stage Navigation Buttons */}
-                {galleryImages.length > 1 && (
+                {/* Top Actions: ZoomIn + Close */}
+                <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
+                  <button
+                    onClick={() =>
+                      setPreviewImage({
+                        src: currentImgObj.url,
+                        title: currentImgObj.caption || selectedGallery.name,
+                        description: selectedGallery.description,
+                      })
+                    }
+                    className="px-3 py-1.5 rounded-xl bg-black/60 hover:bg-black/80 text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-md backdrop-blur-xs border border-white/10"
+                    title="Phóng to ảnh"
+                  >
+                    <ZoomIn className="w-4 h-4 text-museum-gold" />
+                    <span className="hidden sm:inline">Phóng to</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectedGallery(null)}
+                    className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition-all cursor-pointer shadow-md border border-white/10"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Status & Code on Top-Left */}
+                <div className="absolute top-4 left-4 flex items-center gap-2 z-20">
+                  {getStatusBadge(selectedGallery.status)}
+                  <span className="px-2.5 py-1 bg-black/60 backdrop-blur-md text-amber-200 border border-amber-400/30 text-xs font-mono font-bold rounded-lg shadow-sm">
+                    {selectedGallery.id}
+                  </span>
+                </div>
+
+                {/* Prev / Next Buttons (if multiple images) */}
+                {parsedImages.length > 1 && (
                   <>
                     <button
                       onClick={() =>
                         setActiveImageIndex((prev) =>
-                          prev > 0 ? prev - 1 : galleryImages.length - 1
+                          prev > 0 ? prev - 1 : parsedImages.length - 1
                         )
                       }
-                      className="absolute left-3 sm:left-5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/65 hover:bg-amber-500 hover:text-stone-950 text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-xl backdrop-blur-xs border border-white/20 hover:border-amber-400"
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-md border border-white/10"
                       title="Ảnh trước"
                     >
-                      <ChevronLeft className="w-6 h-6" />
+                      <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() =>
                         setActiveImageIndex((prev) =>
-                          prev < galleryImages.length - 1 ? prev + 1 : 0
+                          prev < parsedImages.length - 1 ? prev + 1 : 0
                         )
                       }
-                      className="absolute right-3 sm:right-5 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/65 hover:bg-amber-500 hover:text-stone-950 text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-xl backdrop-blur-xs border border-white/20 hover:border-amber-400"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 hover:bg-black text-white flex items-center justify-center transition-all z-20 cursor-pointer shadow-md border border-white/10"
                       title="Ảnh tiếp theo"
                     >
-                      <ChevronRight className="w-6 h-6" />
+                      <ChevronRight className="w-5 h-5" />
                     </button>
                   </>
                 )}
 
-                {/* Top Overlay Badge - Image Counter */}
-                <div className="absolute top-3 left-4 z-20 flex items-center gap-2">
-                  <span className="px-3 py-1 bg-black/70 backdrop-blur-md text-white text-xs font-semibold rounded-full border border-white/15 shadow-md">
-                    Tư liệu {activeImageIndex + 1} / {galleryImages.length}
-                  </span>
-                </div>
-
-                {/* Bottom Overlay Label for current photo / artifact */}
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4 sm:p-5 z-20 flex flex-col sm:flex-row sm:items-end justify-between gap-2 pointer-events-none">
-                  <div className="max-w-2xl">
-                    {matchingArtifact ? (
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider bg-amber-400/20 px-2 py-0.5 rounded-md border border-amber-400/30">
-                            Hiện vật tiêu biểu
-                          </span>
-                          {matchingArtifact.period && (
-                            <span className="text-[11px] text-stone-300 bg-stone-800/80 px-2 py-0.5 rounded-md">
-                              {matchingArtifact.period}
-                            </span>
-                          )}
-                        </div>
-                        <h4 className="text-base sm:text-xl font-extrabold text-white leading-tight drop-shadow-md">
-                          {matchingArtifact.name}
-                        </h4>
-                      </div>
-                    ) : (
-                      <h4 className="text-base sm:text-lg font-bold text-white leading-tight drop-shadow-md">
-                        {selectedGallery.name}
-                      </h4>
+                {/* Bottom Title & Image Thumbnails Carousel */}
+                <div className="absolute bottom-4 inset-x-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3 z-20 text-white">
+                  <div className="space-y-1 max-w-xl">
+                    <h3 className="text-lg sm:text-2xl font-bold leading-tight drop-shadow-md">
+                      {selectedGallery.name}
+                    </h3>
+                    <div className="flex items-center gap-2 text-xs text-white/90">
+                      <CalendarDays className="w-4 h-4 text-museum-gold shrink-0" />
+                      <span>{formatPeriod(selectedGallery.startDate, selectedGallery.endDate)}</span>
+                    </div>
+                    {currentImgObj.caption && (
+                      <p className="text-xs text-amber-200 italic drop-shadow-xs">
+                        {currentImgObj.caption}
+                      </p>
                     )}
                   </div>
 
-                  <div className="pointer-events-auto">
-                    <button
-                      onClick={() =>
-                        setPreviewImage({
-                          src: currentImageUrl,
-                          title: matchingArtifact?.name || selectedGallery.name,
-                          description: matchingArtifact?.description || selectedGallery.description,
-                          period: matchingArtifact?.period,
-                        })
-                      }
-                      className="px-3 py-1.5 rounded-xl bg-amber-500/90 hover:bg-amber-400 text-stone-950 text-xs font-bold flex items-center gap-1.5 shadow-lg transition-all cursor-pointer"
-                    >
-                      <ZoomIn className="w-4 h-4" />
-                      <span>Xem phóng to cỡ lớn</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Horizontal Filmstrip Thumbnail Carousel */}
-              {galleryImages.length > 1 && (
-                <div className="px-4 py-2.5 bg-stone-950 border-b border-stone-800 shrink-0">
-                  <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-stone-700 scrollbar-track-stone-900">
-                    {galleryImages.map((img, idx) => {
-                      const isAct = activeImageIndex === idx;
-                      const art = artifacts.find((a) => a.image === img);
-                      return (
+                  {/* Thumbnail Filmstrip */}
+                  {parsedImages.length > 1 && (
+                    <div className="flex items-center gap-1.5 overflow-x-auto max-w-full sm:max-w-xs pb-1 shrink-0">
+                      {parsedImages.map((img, idx) => (
                         <button
                           key={idx}
                           onClick={() => setActiveImageIndex(idx)}
-                          className={`relative w-20 h-14 sm:w-24 sm:h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer group/thumb ${
-                            isAct
-                              ? 'border-amber-400 ring-2 ring-amber-400/50 scale-105 shadow-lg'
-                              : 'border-stone-700 opacity-60 hover:opacity-100 hover:border-stone-500'
+                          className={`w-11 h-8 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                            activeImageIndex === idx
+                              ? 'border-museum-gold scale-105 shadow-md ring-2 ring-museum-gold/50'
+                              : 'border-white/50 opacity-70 hover:opacity-100'
                           }`}
-                          title={art?.name || `Ảnh ${idx + 1}`}
                         >
                           <img
-                            src={img}
+                            src={img.url}
                             alt="thumb"
-                            className="w-full h-full object-cover group-hover/thumb:scale-110 transition-transform duration-300"
-                            onError={(e) => {
-                              e.target.src = '/images/museum-hero.jpg';
-                            }}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-cover"
                           />
-                          <span className="absolute bottom-0.5 right-1 text-[9px] font-bold text-white bg-black/75 px-1 rounded">
-                            #{idx + 1}
-                          </span>
                         </button>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-
-              {/* Sub-Tabs Selector */}
-              <div className="px-6 pt-3 bg-stone-900 border-b border-stone-800 flex items-center gap-2 sm:gap-4 shrink-0">
-                <button
-                  onClick={() => setModalTab('artifacts')}
-                  className={`pb-3 px-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-                    modalTab === 'artifacts'
-                      ? 'border-amber-400 text-amber-300'
-                      : 'border-transparent text-stone-400 hover:text-stone-200'
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>Bộ sưu tập hiện vật quý ({artifacts.length})</span>
-                </button>
-
-                <button
-                  onClick={() => setModalTab('overview')}
-                  className={`pb-3 px-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-                    modalTab === 'overview'
-                      ? 'border-amber-400 text-amber-300'
-                      : 'border-transparent text-stone-400 hover:text-stone-200'
-                  }`}
-                >
-                  <FileText className="w-4 h-4 text-amber-400" />
-                  <span>Tổng quan & Bối cảnh lịch sử</span>
-                </button>
-
-                <button
-                  onClick={() => setModalTab('photos')}
-                  className={`pb-3 px-3 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all cursor-pointer ${
-                    modalTab === 'photos'
-                      ? 'border-amber-400 text-amber-300'
-                      : 'border-transparent text-stone-400 hover:text-stone-200'
-                  }`}
-                >
-                  <LayoutGrid className="w-4 h-4 text-amber-400" />
-                  <span>Thư viện ảnh tư liệu ({galleryImages.length})</span>
-                </button>
               </div>
 
-              {/* Modal Scrollable Body Content */}
-              <div className="p-6 sm:p-8 overflow-y-auto space-y-6 flex-1 bg-stone-900/90 text-stone-200">
-                {/* Location & Dates Bar */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-stone-950/80 rounded-2xl border border-stone-800 text-xs">
-                  <div className="flex items-start gap-2.5">
-                    <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold text-stone-100 block">Địa điểm trưng bày:</span>
-                      <span className="text-stone-300">
-                        {selectedGallery.location ||
-                          'Bảo tàng Lịch sử Quốc gia – Số 1 Tràng Tiền / 216 Trần Quang Khải, Hoàn Kiếm, Hà Nội'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2.5">
-                    <CalendarDays className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold text-stone-100 block">Thời gian diễn ra:</span>
-                      <span className="text-amber-200 font-semibold">
-                        {formatPeriod(selectedGallery.startDate, selectedGallery.endDate)}
-                      </span>
-                    </div>
+              {/* Modal Scrollable Body */}
+              <div className="p-6 sm:p-8 overflow-y-auto space-y-6 flex-1 text-gray-700">
+                {/* Location Bar */}
+                <div className="p-4 bg-museum-ivory/80 rounded-2xl border border-museum-gold/30 flex items-start sm:items-center gap-2.5 text-xs font-semibold text-museum-brown">
+                  <MapPin className="w-4 h-4 text-museum-gold shrink-0 mt-0.5 sm:mt-0" />
+                  <div>
+                    <span className="font-bold text-gray-900 mr-1.5">Địa điểm trưng bày:</span>
+                    <span>
+                      {selectedGallery.location ||
+                        'Bảo tàng Lịch sử Quốc gia – Số 1 Tràng Tiền / 216 Trần Quang Khải, Hoàn Kiếm, Hà Nội'}
+                    </span>
                   </div>
                 </div>
 
-                {/* TAB 1: ARTIFACTS SHOWCASE (LARGE HIGH-VISIBILITY CARDS) */}
-                {modalTab === 'artifacts' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-extrabold text-amber-300 uppercase tracking-wider flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-amber-400" />
-                        <span>Danh mục bảo vật & hiện vật nghệ thuật ({artifacts.length})</span>
-                      </h4>
-                      <span className="text-xs text-stone-400">
-                        * Nhấn vào ảnh bất kỳ để xem ở kích thước lớn
-                      </span>
-                    </div>
+                {/* Detailed Narrative Section */}
+                <div>
+                  <h4 className="text-sm font-extrabold text-museum-brown uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-museum-gold" />
+                    <span>Nội dung & Bối cảnh lịch sử</span>
+                  </h4>
+                  <div className="text-xs sm:text-sm text-gray-700 leading-relaxed space-y-3 text-justify">
+                    <p className="font-medium text-gray-800 bg-museum-cream/30 p-3.5 rounded-xl border-l-4 border-museum-gold">
+                      {selectedGallery.description}
+                    </p>
+                    {selectedGallery.detailedContent &&
+                      selectedGallery.detailedContent !== selectedGallery.description && (
+                        <p className="whitespace-pre-line text-gray-700">
+                          {selectedGallery.detailedContent}
+                        </p>
+                      )}
+                  </div>
+                </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                      {artifacts.map((art, idx) => {
-                        const imgIdx = galleryImages.findIndex((img) => img === art.image);
-                        const isCurrentActive = imgIdx === activeImageIndex;
+                {/* Highlight Artifacts Showcase Cards */}
+                {artifacts.length > 0 && (
+                  <div className="pt-2">
+                    <h4 className="text-sm font-extrabold text-museum-brown uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-museum-gold" />
+                      <span>Danh mục hiện vật đặc biệt ({artifacts.length})</span>
+                    </h4>
 
-                        return (
-                          <div
-                            key={idx}
-                            className={`bg-stone-950 rounded-2xl border overflow-hidden transition-all duration-300 flex flex-col group/card ${
-                              isCurrentActive
-                                ? 'border-amber-400 ring-2 ring-amber-400/30 shadow-xl'
-                                : 'border-stone-800 hover:border-amber-400/60 shadow-md'
-                            }`}
-                          >
-                            {/* Big Image Header */}
-                            <div
-                              onClick={() => {
-                                if (imgIdx !== -1) setActiveImageIndex(imgIdx);
-                                setPreviewImage({
-                                  src: art.image || '/images/binh-gom.jpg',
-                                  title: art.name,
-                                  description: art.description,
-                                  period: art.period,
-                                });
-                              }}
-                              className="relative h-60 sm:h-64 bg-stone-900 overflow-hidden cursor-pointer"
-                            >
-                              <img
-                                src={art.image || '/images/binh-gom.jpg'}
-                                alt={art.name}
-                                className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
-                                onError={(e) => {
-                                  e.target.src = '/images/binh-gom.jpg';
-                                }}
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 opacity-70 group-hover/card:opacity-90 transition-opacity" />
-
-                              {/* Number Badge */}
-                              <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/75 backdrop-blur-md rounded-lg border border-white/20 text-amber-300 text-xs font-mono font-bold">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {artifacts.map((art, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() =>
+                            setPreviewImage({
+                              src: art.image || '/images/binh-gom.jpg',
+                              title: art.name,
+                              description: art.description,
+                              period: art.period,
+                            })
+                          }
+                          className="bg-museum-ivory/30 hover:bg-white p-4 rounded-2xl border border-gray-200 hover:border-museum-gold/50 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 cursor-pointer group/art"
+                        >
+                          <div className="flex items-start gap-3">
+                            {art.image ? (
+                              <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-200 shrink-0 shadow-2xs">
+                                <img
+                                  src={art.image}
+                                  alt={art.name}
+                                  loading="lazy"
+                                  decoding="async"
+                                  className="w-full h-full object-cover group-hover/art:scale-110 transition-transform duration-300"
+                                  onError={(e) => {
+                                    e.target.src = '/images/binh-gom.jpg';
+                                  }}
+                                />
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/art:opacity-100 flex items-center justify-center transition-opacity">
+                                  <ZoomIn className="w-4 h-4 text-white" />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="w-12 h-12 rounded-xl bg-museum-cream text-museum-gold flex items-center justify-center font-extrabold text-sm shrink-0 border border-museum-gold/30">
                                 #{idx + 1}
                               </div>
+                            )}
 
-                              {/* Period Badge */}
-                              {art.period && (
-                                <div className="absolute top-3 right-3 px-2.5 py-1 bg-amber-400/20 backdrop-blur-md rounded-lg border border-amber-400/40 text-amber-200 text-xs font-semibold">
-                                  {art.period}
-                                </div>
-                              )}
-
-                              {/* Hover Zoom CTA */}
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity bg-black/40">
-                                <span className="px-3 py-1.5 rounded-xl bg-amber-500 text-stone-950 text-xs font-bold flex items-center gap-1.5 shadow-lg">
-                                  <ZoomIn className="w-4 h-4" />
-                                  <span>Phóng to xem chi tiết</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-1">
+                                <span className="text-[10px] font-bold text-museum-gold uppercase">
+                                  Hiện vật #{idx + 1}
                                 </span>
-                              </div>
-                            </div>
-
-                            {/* Card Details */}
-                            <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
-                              <div>
-                                <h5 className="font-extrabold text-base text-stone-100 group-hover/card:text-amber-300 transition-colors leading-snug">
-                                  {art.name}
-                                </h5>
-                                {art.description && (
-                                  <p className="text-xs sm:text-sm text-stone-300 leading-relaxed mt-2.5 text-justify">
-                                    {art.description}
-                                  </p>
+                                {art.period && (
+                                  <span className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full font-semibold truncate">
+                                    {art.period}
+                                  </span>
                                 )}
                               </div>
-
-                              <div className="pt-3 border-t border-stone-800/80 flex items-center justify-between">
-                                <button
-                                  onClick={() => {
-                                    if (imgIdx !== -1) setActiveImageIndex(imgIdx);
-                                  }}
-                                  className="text-xs text-amber-400 hover:text-amber-300 font-semibold inline-flex items-center gap-1 cursor-pointer"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                  <span>Đưa lên khán đài chính</span>
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    setPreviewImage({
-                                      src: art.image || '/images/binh-gom.jpg',
-                                      title: art.name,
-                                      description: art.description,
-                                      period: art.period,
-                                    })
-                                  }
-                                  className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-amber-300 transition-colors cursor-pointer"
-                                  title="Phóng to"
-                                >
-                                  <Maximize2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
+                              <h5 className="font-extrabold text-sm text-museum-brown mt-0.5 leading-snug group-hover/art:text-museum-gold transition-colors">
+                                {art.name}
+                              </h5>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
 
-                {/* TAB 2: OVERVIEW & HISTORICAL CONTEXT */}
-                {modalTab === 'overview' && (
-                  <div className="space-y-6">
-                    <div>
-                      <h4 className="text-sm font-extrabold text-amber-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-amber-400" />
-                        <span>Bối cảnh & Ý nghĩa lịch sử chuyên đề</span>
-                      </h4>
-
-                      <div className="text-sm text-stone-200 leading-relaxed space-y-4 text-justify bg-stone-950/80 p-5 rounded-2xl border border-stone-800">
-                        <p className="font-medium text-amber-100 bg-amber-950/30 p-4 rounded-xl border-l-4 border-amber-400">
-                          {selectedGallery.description}
-                        </p>
-                        {selectedGallery.detailedContent &&
-                          selectedGallery.detailedContent !== selectedGallery.description && (
-                            <div className="whitespace-pre-line text-stone-300 space-y-3 pt-2">
-                              {selectedGallery.detailedContent}
-                            </div>
+                          {art.description && (
+                            <p className="text-xs text-gray-600 leading-relaxed italic pt-2 border-t border-gray-100 text-justify">
+                              "{art.description}"
+                            </p>
                           )}
-                      </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                {/* TAB 3: ALL PHOTOS GALLERY (FULL GRID) */}
-                {modalTab === 'photos' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-extrabold text-amber-300 uppercase tracking-wider flex items-center gap-2">
-                        <LayoutGrid className="w-4 h-4 text-amber-400" />
-                        <span>Toàn bộ thư viện ảnh tư liệu ({galleryImages.length})</span>
-                      </h4>
-                      <span className="text-xs text-stone-400">
-                        * Nhấn vào ảnh để phóng to
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {galleryImages.map((img, idx) => {
-                        const art = artifacts.find((a) => a.image === img);
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setActiveImageIndex(idx);
-                              setPreviewImage({
-                                src: img,
-                                title: art?.name || `Tư liệu hiện vật #${idx + 1}`,
-                                description: art?.description || selectedGallery.description,
-                                period: art?.period,
-                              });
-                            }}
-                            className="group/photocard relative h-44 sm:h-52 bg-stone-950 rounded-2xl overflow-hidden border border-stone-800 hover:border-amber-400 cursor-pointer shadow-md transition-all"
-                          >
-                            <img
-                              src={img}
-                              alt={art?.name || `Ảnh ${idx + 1}`}
-                              className="w-full h-full object-cover group-hover/photocard:scale-110 transition-transform duration-500"
-                              onError={(e) => {
-                                e.target.src = '/images/museum-hero.jpg';
-                              }}
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/20 opacity-60 group-hover/photocard:opacity-90 transition-opacity" />
-
-                            <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/75 rounded text-[10px] font-bold text-amber-300">
-                              #{idx + 1}
-                            </div>
-
-                            <div className="absolute bottom-2 inset-x-2">
-                              <p className="text-xs font-bold text-white truncate drop-shadow-md">
-                                {art?.name || `Tư liệu #${idx + 1}`}
-                              </p>
-                            </div>
-
-                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/photocard:opacity-100 transition-opacity bg-black/40">
-                              <ZoomIn className="w-6 h-6 text-amber-400" />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                {/* Source Note (if available) */}
+                {selectedGallery.sourceNote && (
+                  <div className="pt-2 border-t border-gray-100 text-xs text-gray-400 italic flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                    <span>Nguồn tư liệu: {selectedGallery.sourceNote}</span>
                   </div>
                 )}
               </div>
 
               {/* Modal Bottom Footer */}
-              <div className="px-6 py-4 bg-stone-950 border-t border-stone-800 flex items-center justify-between shrink-0">
+              <div className="p-4 sm:p-5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
                 <button
                   onClick={(e) => handleShare(selectedGallery, e)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-stone-300 bg-stone-800 hover:bg-stone-700 hover:text-white border border-stone-700 rounded-xl transition-all cursor-pointer shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-all cursor-pointer shadow-2xs"
                 >
-                  <Share2 className="w-3.5 h-3.5 text-amber-400" />
+                  <Share2 className="w-3.5 h-3.5" />
                   <span>Chia sẻ chuyên đề</span>
                 </button>
 
@@ -939,15 +746,15 @@ export const Galleries = () => {
                         setSelectedGallery(null);
                         openEdit(item);
                       }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-stone-950 bg-amber-400 hover:bg-amber-300 rounded-xl transition-all cursor-pointer shadow-md"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-museum-brown bg-museum-cream hover:bg-museum-gold hover:text-white rounded-xl transition-all cursor-pointer"
                     >
                       <Pencil className="w-3.5 h-3.5" />
-                      <span>Chỉnh sửa chuyên đề</span>
+                      <span>Chỉnh sửa</span>
                     </button>
                   )}
                   <button
                     onClick={() => setSelectedGallery(null)}
-                    className="px-6 py-2 text-xs font-bold text-white bg-stone-800 hover:bg-stone-700 rounded-xl shadow-xs transition-colors cursor-pointer border border-stone-700"
+                    className="px-6 py-2 text-xs font-bold text-white bg-museum-brown hover:bg-museum-brown-dk rounded-xl shadow-xs transition-colors cursor-pointer"
                   >
                     Đóng
                   </button>
@@ -1064,86 +871,87 @@ export const Galleries = () => {
                     type="text"
                     value={formData.image}
                     onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    placeholder="/images/tuong-phat.jpg"
+                    placeholder="https://... hoặc /images/tuong-phat.jpg"
                     className="w-full px-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-museum-brown mb-1.5">
-                    Liên kết nguồn tham khảo (baotanglichsu.vn)
+                    Ghi chú nguồn tư liệu (source_note)
                   </label>
                   <input
-                    type="url"
-                    value={formData.sourceUrl}
-                    onChange={(e) => setFormData({ ...formData, sourceUrl: e.target.value })}
-                    placeholder="https://baotanglichsu.vn/vi/Articles/..."
+                    type="text"
+                    value={formData.sourceNote}
+                    onChange={(e) => setFormData({ ...formData, sourceNote: e.target.value })}
+                    placeholder="Báo Nhân Dân / Báo điện tử ĐCSVN"
                     className="w-full px-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold"
                   />
                 </div>
               </div>
 
-              {/* Short Description */}
+              {/* Description */}
               <div>
                 <label className="block text-xs font-bold text-museum-brown mb-1.5">
-                  Tóm tắt ngắn <span className="text-red-500">*</span>
+                  Mô tả tóm tắt <span className="text-red-500">*</span>
                 </label>
                 <textarea
-                  rows={2}
+                  rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Tóm tắt nội dung chính hiển thị trên thẻ ngoài danh sách..."
-                  className="w-full px-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold resize-none"
+                  placeholder="Mô tả ngắn gọn về chủ đề, nội dung và ý nghĩa..."
+                  className="w-full px-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold"
                 />
-                {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
+                {errors.description && (
+                  <p className="text-red-500 text-xs mt-1">{errors.description}</p>
+                )}
               </div>
 
               {/* Detailed Content */}
               <div>
                 <label className="block text-xs font-bold text-museum-brown mb-1.5">
-                  Bài viết chi tiết / Ý nghĩa lịch sử
+                  Nội dung chi tiết & Bối cảnh lịch sử
                 </label>
                 <textarea
                   rows={4}
                   value={formData.detailedContent}
                   onChange={(e) => setFormData({ ...formData, detailedContent: e.target.value })}
-                  placeholder="Nội dung chi tiết về bối cảnh lịch sử, giá trị di sản và công nghệ trình diễn..."
-                  className="w-full px-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold resize-none"
+                  placeholder="Nội dung chuyên sâu về các hiện vật, thời kỳ, ý nghĩa lịch sử..."
+                  className="w-full px-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold"
                 />
               </div>
 
-              {/* Highlight Artifacts Builder */}
-              <div className="pt-2">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-museum-brown flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-museum-gold" />
-                    <span>Danh sách hiện vật đặc biệt (Highlight Artifacts)</span>
+              {/* Highlight Artifacts Section */}
+              <div className="pt-2 border-t border-gray-200">
+                <div className="flex items-center justify-between mb-2.5">
+                  <label className="block text-xs font-bold text-museum-brown">
+                    Danh mục hiện vật tiêu biểu trong chuyên đề ({formData.highlightArtifacts.length})
                   </label>
                   <button
                     type="button"
                     onClick={addArtifactRow}
-                    className="text-xs font-bold text-museum-gold hover:text-museum-brown flex items-center gap-1 cursor-pointer"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-museum-gold hover:text-museum-brown transition-colors cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>+ Thêm hiện vật</span>
+                    <span>Thêm dòng hiện vật</span>
                   </button>
                 </div>
 
-                <div className="space-y-3 bg-gray-50 p-3.5 rounded-2xl border border-gray-200 max-h-64 overflow-y-auto">
+                <div className="space-y-3">
                   {formData.highlightArtifacts.map((art, idx) => (
-                    <div key={idx} className="bg-white p-3.5 rounded-xl border border-gray-200 space-y-2 relative">
+                    <div
+                      key={idx}
+                      className="p-3 bg-gray-50 rounded-xl border border-gray-200 space-y-2 relative"
+                    >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-museum-brown flex items-center gap-1">
-                          <span className="w-4 h-4 rounded-full bg-museum-gold text-white text-[9px] flex items-center justify-center">
-                            {idx + 1}
-                          </span>
+                        <span className="text-[11px] font-bold text-museum-gold">
                           Hiện vật #{idx + 1}
                         </span>
                         {formData.highlightArtifacts.length > 1 && (
                           <button
                             type="button"
                             onClick={() => removeArtifactRow(idx)}
-                            className="text-red-500 hover:text-red-700 text-xs font-semibold cursor-pointer"
+                            className="text-red-500 hover:text-red-700 text-xs font-bold cursor-pointer"
                           >
                             Xóa
                           </button>
@@ -1155,32 +963,34 @@ export const Galleries = () => {
                           type="text"
                           value={art.name}
                           onChange={(e) => handleArtifactFieldChange(idx, 'name', e.target.value)}
-                          placeholder="Tên hiện vật (Ví dụ: Tượng Phật A Di Đà chùa Phật Tích)"
-                          className="w-full px-3 py-1.5 text-xs bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-museum-gold"
+                          placeholder="Tên hiện vật..."
+                          className="w-full px-3 py-1.5 bg-white text-xs rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-museum-gold"
                         />
                         <input
                           type="text"
                           value={art.period || ''}
                           onChange={(e) => handleArtifactFieldChange(idx, 'period', e.target.value)}
-                          placeholder="Niên đại (Ví dụ: Thời Lý, Thế kỷ 11)"
-                          className="w-full px-3 py-1.5 text-xs bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-museum-gold"
+                          placeholder="Niên đại (ví dụ: Thời Lý - Thế kỷ 11)"
+                          className="w-full px-3 py-1.5 bg-white text-xs rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-museum-gold"
                         />
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <input
                           type="text"
                           value={art.image || ''}
                           onChange={(e) => handleArtifactFieldChange(idx, 'image', e.target.value)}
-                          placeholder="Link ảnh hiện vật (/images/...)"
-                          className="w-full px-3 py-1.5 text-xs bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-museum-gold sm:col-span-1"
+                          placeholder="URL ảnh hiện vật..."
+                          className="w-full px-3 py-1.5 bg-white text-xs rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-museum-gold"
                         />
                         <input
                           type="text"
-                          value={art.description}
-                          onChange={(e) => handleArtifactFieldChange(idx, 'description', e.target.value)}
-                          placeholder="Mô tả hiện vật, xuất xứ và giá trị nghệ thuật..."
-                          className="w-full px-3 py-1.5 text-xs bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-museum-gold sm:col-span-2"
+                          value={art.description || ''}
+                          onChange={(e) =>
+                            handleArtifactFieldChange(idx, 'description', e.target.value)
+                          }
+                          placeholder="Mô tả tóm tắt hiện vật..."
+                          className="w-full px-3 py-1.5 bg-white text-xs rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-museum-gold"
                         />
                       </div>
                     </div>
@@ -1188,20 +998,20 @@ export const Galleries = () => {
                 </div>
               </div>
 
-              {/* Modal Actions */}
-              <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
+              {/* Form Footer Actions */}
+              <div className="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-5 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+                  className="px-5 py-2 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
                 >
-                  Hủy bỏ
+                  Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 text-xs font-bold text-white bg-museum-brown hover:bg-museum-brown-dk rounded-xl shadow-md transition-colors cursor-pointer"
+                  className="px-6 py-2 text-xs font-bold text-white bg-museum-brown hover:bg-museum-brown-dk rounded-xl shadow-md transition-colors cursor-pointer"
                 >
-                  {editingItem ? 'Lưu thay đổi' : 'Tạo chuyên đề'}
+                  {editingItem ? 'Lưu thay đổi' : 'Thêm chuyên đề'}
                 </button>
               </div>
             </form>
@@ -1209,41 +1019,23 @@ export const Galleries = () => {
         </div>
       )}
 
-      {/* 6. Delete Confirm Dialog */}
+      {/* 6. Confirm Delete Modal */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-gray-100 space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-            <div className="text-center">
-              <h4 className="font-extrabold text-base text-museum-brown">
-                Xác nhận xóa trưng bày chuyên đề
-              </h4>
-              <p className="text-xs text-gray-500 mt-2">
-                Bạn có chắc muốn xóa chuyên đề <strong className="text-gray-800">"{deleteTarget.name}"</strong>?
-                Hành động này sẽ xóa dữ liệu trên hệ thống.
-              </p>
-            </div>
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="px-5 py-2.5 text-xs font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={async () => {
-                  await deleteGallery(deleteTarget.id);
-                  setDeleteTarget(null);
-                }}
-                className="px-5 py-2.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-md transition-colors cursor-pointer"
-              >
-                Xác nhận xóa
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          isOpen={!!deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={async () => {
+            if (deleteTarget) {
+              await deleteGallery(deleteTarget.id);
+              setDeleteTarget(null);
+            }
+          }}
+          title="Xác nhận xóa trưng bày chuyên đề"
+          message={`Bạn có chắc chắn muốn xóa chuyên đề "${deleteTarget.name}" (${deleteTarget.id})? Thao tác này sẽ xóa vĩnh viễn khỏi hệ thống.`}
+          confirmText="Xác nhận xóa"
+          cancelText="Hủy bỏ"
+          danger
+        />
       )}
 
       {/* 7. Fullscreen Image Lightbox Preview Modal */}
@@ -1254,7 +1046,7 @@ export const Galleries = () => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-6xl w-full bg-stone-950 rounded-3xl overflow-hidden shadow-2xl border border-amber-500/20 flex flex-col max-h-[96vh] cursor-default"
+            className="relative max-w-5xl w-full bg-stone-950 rounded-3xl overflow-hidden shadow-2xl border border-amber-500/20 flex flex-col max-h-[96vh] cursor-default"
           >
             {/* Top Close Button */}
             <button
@@ -1265,11 +1057,13 @@ export const Galleries = () => {
             </button>
 
             {/* High-res Image display */}
-            <div className="flex-1 flex items-center justify-center bg-black/60 min-h-[360px] sm:min-h-[480px] p-3 sm:p-6 overflow-hidden">
+            <div className="flex-1 flex items-center justify-center bg-black/60 min-h-[340px] sm:min-h-[460px] p-3 sm:p-6 overflow-hidden">
               <img
                 src={previewImage.src}
                 alt={previewImage.title || 'Hiện vật'}
-                className="max-h-[72vh] w-auto max-w-full object-contain rounded-xl shadow-2xl"
+                loading="lazy"
+                decoding="async"
+                className="max-h-[70vh] w-auto max-w-full object-contain rounded-xl shadow-2xl"
                 onError={(e) => {
                   e.target.src = '/images/museum-hero.jpg';
                 }}
