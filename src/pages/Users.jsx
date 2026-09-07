@@ -77,7 +77,7 @@ export const UsersPage = () => {
   };
 
   const confirmMessages = {
-    role: (a) => `Bạn có chắc muốn đổi quyền của "${a.user.name}" thành ${a.newRole === 'admin' ? 'Quản trị viên (Admin)' : 'Khách tham quan (Visitor)'}?`,
+    role: (a) => `Bạn có chắc muốn đổi quyền của "${a.user.name}" thành ${a.newRole === 'admin' ? 'Quản trị viên (Admin)' : a.newRole === 'staff' ? 'Nhân viên (Staff)' : 'Khách tham quan (Visitor)'}?`,
     lock: (a) => `Bạn có chắc muốn KHÓA tài khoản "${a.user.name}"? Tài khoản này sẽ không thể đăng nhập.`,
     unlock: (a) => `Bạn có chắc muốn MỞ KHÓA tài khoản "${a.user.name}"?`,
     delete: (a) => `Bạn có chắc muốn XÓA VĨNH VIỄN tài khoản "${a.user.name}"? Hành động này không thể hoàn tác!`,

@@ -648,31 +648,59 @@ export const AppProvider = ({ children }) => {
         : 'Khách tham quan';
 
     try {
-      // 1. Cập nhật trực tiếp lên Supabase table nguoi_dung
-      const { error: updateError } = await supabase
-        .from('nguoi_dung')
-        .update({ role: newRole, role_label: roleLabel })
-        .eq('id', userId);
-
-      if (updateError) {
-        console.error('Lỗi khi cập nhật quyền trên Supabase:', updateError);
-        addToast(`Không thể đổi quyền: ${updateError.message || 'Lỗi phân quyền'}`, 'error');
-        return { success: false, message: updateError.message };
+      // 1. Thử gọi hàm RPC chuyên dụng assign_user_role nếu có
+      let rpcSuccess = false;
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('assign_user_role', {
+          target_user_id: userId,
+          new_role: newRole,
+        });
+        if (!rpcError) {
+          rpcSuccess = true;
+        } else {
+          console.warn('Supabase assign_user_role RPC notification, trying table update:', rpcError.message);
+        }
+      } catch (e) {
+        console.warn('RPC not available, falling back to direct table update:', e);
       }
 
-      // 2. Đồng bộ lại toàn bộ danh sách người dùng thật từ Supabase
+      // 2. Fallback: Cập nhật trực tiếp lên Supabase table nguoi_dung
+      if (!rpcSuccess) {
+        const { error: updateError } = await supabase
+          .from('nguoi_dung')
+          .update({ role: newRole, role_label: roleLabel })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('Lỗi khi cập nhật quyền trên Supabase:', updateError);
+          addToast(`Không thể đổi quyền: ${updateError.message || 'Lỗi phân quyền'}`, 'error');
+          return { success: false, message: updateError.message };
+        }
+      }
+
+      // 3. Cập nhật state nội bộ ngay lập tức để UI phản hồi mượt mà
+      setUsersList((prev) =>
+        prev.map((u) =>
+          u.id === userId
+            ? { ...u, role: newRole, roleLabel, role_label: roleLabel }
+            : u
+        )
+      );
+
+      // 4. Đồng bộ lại toàn bộ danh sách người dùng thật từ Supabase
       await refreshUsers();
 
-      if (currentUser && currentUser.id === userId) {
+      const targetUser = usersList.find((u) => u.id === userId);
+      if (currentUser && (currentUser.id === userId || currentUser.email === targetUser?.email)) {
         const updatedCurrent = {
           ...currentUser,
           role: newRole,
           roleLabel,
         };
         setCurrentUser(updatedCurrent);
+        localStorage.setItem('museum_current_user', JSON.stringify(updatedCurrent));
       }
 
-      const targetUser = usersList.find((u) => u.id === userId);
       addToast(
         `Đã chuyển quyền cho "${targetUser?.name || userId}" thành ${roleLabel}!`,
         'success'
@@ -692,19 +720,39 @@ export const AppProvider = ({ children }) => {
     const newStatus = targetUser.status === 'Hoạt động' ? 'Tạm khóa' : 'Hoạt động';
 
     try {
-      // 1. Cập nhật trạng thái lên Supabase
-      const { error: updateError } = await supabase
-        .from('nguoi_dung')
-        .update({ status: newStatus })
-        .eq('id', userId);
-
-      if (updateError) {
-        console.error('Lỗi khi đổi trạng thái trên Supabase:', updateError);
-        addToast(`Không thể đổi trạng thái: ${updateError.message || 'Lỗi cập nhật'}`, 'error');
-        return;
+      // 1. Thử gọi RPC toggle_user_status
+      let rpcSuccess = false;
+      try {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('toggle_user_status', {
+          target_user_id: userId,
+        });
+        if (!rpcError) {
+          rpcSuccess = true;
+        }
+      } catch (e) {
+        console.warn('RPC toggle_user_status not available:', e);
       }
 
-      // 2. Đồng bộ lại từ DB
+      // 2. Fallback: Cập nhật trạng thái trực tiếp lên table nguoi_dung
+      if (!rpcSuccess) {
+        const { error: updateError } = await supabase
+          .from('nguoi_dung')
+          .update({ status: newStatus })
+          .eq('id', userId);
+
+        if (updateError) {
+          console.error('Lỗi khi đổi trạng thái trên Supabase:', updateError);
+          addToast(`Không thể đổi trạng thái: ${updateError.message || 'Lỗi cập nhật'}`, 'error');
+          return;
+        }
+      }
+
+      // Cập nhật local state
+      setUsersList((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
+      );
+
+      // Đồng bộ lại từ DB
       await refreshUsers();
       addToast(`Đã chuyển trạng thái tài khoản sang "${newStatus}".`, 'info');
       await logAudit('TOGGLE_USER_STATUS', `Cập nhật trạng thái người dùng ${targetUser.email} thành ${newStatus}`);
@@ -719,8 +767,6 @@ export const AppProvider = ({ children }) => {
 
     try {
       // 1. Xóa hồ sơ trong bảng nguoi_dung trên Supabase
-      // Lưu ý: Việc này xóa hồ sơ trong public.nguoi_dung. Để xóa hoàn toàn tài khoản
-      // trong auth.users cần Edge Function với service_role key ở máy chủ.
       const { error: deleteError } = await supabase
         .from('nguoi_dung')
         .delete()
@@ -732,7 +778,10 @@ export const AppProvider = ({ children }) => {
         return;
       }
 
-      // 2. Đồng bộ lại từ DB
+      // 2. Xóa khỏi local state
+      setUsersList((prev) => prev.filter((u) => u.id !== userId));
+
+      // 3. Đồng bộ lại từ DB
       await refreshUsers();
       addToast('Đã xóa hồ sơ người dùng khỏi cơ sở dữ liệu.', 'info');
       await logAudit('DELETE_USER', `Xóa hồ sơ người dùng: ${targetUser?.email || userId}`);
