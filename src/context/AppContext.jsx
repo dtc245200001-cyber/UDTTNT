@@ -7,6 +7,7 @@ import { ticketTypes as initialTickets, ticketStats as initialTicketStats } from
 import { categories as initialCategories } from '../data/categories';
 import { users as initialUsers } from '../data/users';
 import { reviews as initialReviews } from '../data/reviews';
+import { initialGalleries } from '../data/galleries';
 import { getAuditLogs, logAction as createAuditLog } from '../utils/auditLogger';
 import { formatCurrency } from '@/utils/formatters';
 import {
@@ -50,6 +51,17 @@ export const AppProvider = ({ children }) => {
   // 1. Core Data States
   const [artifactsList, setArtifactsList] = useState(initialArtifacts);
   const [exhibitionsList, setExhibitionsList] = useState(initialExhibitions);
+  const [galleriesList, setGalleriesList] = useState(() => {
+    const saved = localStorage.getItem('museum_galleries');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse museum_galleries from localStorage', e);
+      }
+    }
+    return initialGalleries;
+  });
   const [eventsList, setEventsList] = useState(initialEvents);
   const [ticketsList, setTicketsList] = useState(initialTickets);
   const [ticketStatsState, setTicketStatsState] = useState(initialTicketStats);
@@ -265,6 +277,10 @@ export const AppProvider = ({ children }) => {
   }, [usersList]);
 
   useEffect(() => {
+    localStorage.setItem('museum_galleries', JSON.stringify(galleriesList));
+  }, [galleriesList]);
+
+  useEffect(() => {
     localStorage.setItem('museum_booked_tickets', JSON.stringify(bookedTicketsList));
   }, [bookedTicketsList]);
 
@@ -314,6 +330,23 @@ export const AppProvider = ({ children }) => {
             endDate: e.end_date || e.endDate,
             artifactsCount: e.artifacts_count || e.artifactsCount,
             visitorsCount: e.visitors_count || e.visitorsCount,
+          }))
+        );
+      }
+
+      // 3.1 Fetch Phòng trưng bày chuyên đề (phong_trung_bay)
+      const { data: galData, error: galError } = await supabase.from('phong_trung_bay').select('*').order('id', { ascending: true });
+      if (!galError && galData && galData.length > 0) {
+        setGalleriesList(
+          galData.map((g) => ({
+            id: g.id,
+            name: g.name,
+            description: g.description,
+            status: g.status || 'Đang diễn ra',
+            startDate: g.start_date || g.startDate,
+            endDate: g.end_date || g.endDate,
+            image: g.image || '/images/museum-hero.jpg',
+            highlightArtifacts: g.highlight_artifacts || g.highlightArtifacts || [],
           }))
         );
       }
@@ -1537,6 +1570,89 @@ export const AppProvider = ({ children }) => {
     addToast('Đã xóa loại vé thành công!', 'info');
   };
 
+  // 18. Galleries / Thematic Exhibitions (Trưng bày chuyên đề - phong_trung_bay)
+  const addGallery = async (gallery) => {
+    const nextId = gallery.id || getNextMaxId('TBCD', galleriesList, 2);
+    const created = {
+      ...gallery,
+      id: nextId,
+      image: gallery.image || '/images/museum-hero.jpg',
+      status: gallery.status || 'Đang diễn ra',
+      highlightArtifacts: gallery.highlightArtifacts || [],
+    };
+
+    try {
+      const { error } = await supabase.from('phong_trung_bay').insert([{
+        id: created.id,
+        name: created.name,
+        description: created.description,
+        status: created.status,
+        start_date: created.startDate || created.start_date || null,
+        end_date: created.endDate || created.end_date || null,
+        image: created.image,
+        highlight_artifacts: created.highlightArtifacts,
+      }]);
+
+      if (error) {
+        console.error('Lỗi khi thêm trưng bày chuyên đề lên Supabase:', error);
+        addToast(`Lỗi thêm trưng bày: ${error.message}`, 'error');
+        return null;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối trưng bày chuyên đề:', e);
+    }
+
+    setGalleriesList((prev) => [created, ...prev]);
+    addToast('Đã thêm trưng bày chuyên đề mới thành công!', 'success');
+    logAudit('CREATE_GALLERY', `Thêm trưng bày chuyên đề: ${created.name} (${created.id})`);
+    return created;
+  };
+
+  const updateGallery = async (id, data) => {
+    try {
+      const { error } = await supabase.from('phong_trung_bay').update({
+        name: data.name,
+        description: data.description,
+        status: data.status,
+        start_date: data.startDate || data.start_date || null,
+        end_date: data.endDate || data.end_date || null,
+        image: data.image,
+        highlight_artifacts: data.highlightArtifacts || data.highlight_artifacts,
+      }).eq('id', id);
+
+      if (error) {
+        console.error('Lỗi khi cập nhật trưng bày trên Supabase:', error);
+        addToast(`Lỗi cập nhật: ${error.message}`, 'error');
+        return;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối cập nhật trưng bày:', e);
+    }
+
+    setGalleriesList((prev) =>
+      prev.map((g) => (g.id === id ? { ...g, ...data } : g))
+    );
+    addToast('Đã cập nhật trưng bày chuyên đề thành công!', 'success');
+    logAudit('UPDATE_GALLERY', `Cập nhật trưng bày: ${data.name || id}`);
+  };
+
+  const deleteGallery = async (id) => {
+    try {
+      const { error } = await supabase.from('phong_trung_bay').delete().eq('id', id);
+      if (error) {
+        console.error('Lỗi khi xóa trưng bày trên Supabase:', error);
+        addToast(`Lỗi xóa trưng bày: ${error.message}`, 'error');
+        return;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối xóa trưng bày:', e);
+    }
+
+    setGalleriesList((prev) => prev.filter((g) => g.id !== id));
+    addToast('Đã xóa trưng bày chuyên đề thành công!', 'info');
+    logAudit('DELETE_GALLERY', `Xóa trưng bày mã: ${id}`);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1566,11 +1682,17 @@ export const AppProvider = ({ children }) => {
         // Categories
         categories: categoriesList,
 
-        // Exhibitions
+        // Exhibitions (Triển lãm)
         exhibitions: exhibitionsList,
         addExhibition,
         updateExhibition,
         deleteExhibition,
+
+        // Galleries (Trưng bày chuyên đề - phong_trung_bay)
+        galleries: galleriesList,
+        addGallery,
+        updateGallery,
+        deleteGallery,
 
         // Events
         events: eventsList,

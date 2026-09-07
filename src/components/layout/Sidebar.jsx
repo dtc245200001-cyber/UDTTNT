@@ -17,13 +17,14 @@ import {
   BarChart3,
   Settings,
   X,
+  BookOpen,
 } from 'lucide-react';
 
 export const navItems = [
   { name: 'Tổng quan', icon: LayoutDashboard, path: '/dashboard' },
   { name: 'Hiện vật', icon: Landmark, path: '/artifacts' },
   { name: 'Danh mục', icon: FolderTree, path: '/categories' },
-  { name: 'Phòng trưng bày', icon: Image, path: '/galleries' },
+  { name: 'Trưng bày chuyên đề', icon: BookOpen, path: '/galleries' },
   { name: 'Triển lãm', icon: Archive, path: '/exhibitions' },
   { name: 'Sự kiện', icon: CalendarDays, path: '/events' },
   { name: 'Vé tham quan', icon: Ticket, path: '/tickets' },

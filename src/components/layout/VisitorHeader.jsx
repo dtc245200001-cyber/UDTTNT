@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   QrCode,
+  BookOpen,
 } from 'lucide-react';
 
 export const VisitorHeader = () => {
@@ -38,6 +39,7 @@ export const VisitorHeader = () => {
   const navLinks = [
     { name: 'Trang chủ', path: '/', icon: Home },
     { name: 'Khám phá hiện vật', path: '/artifacts', icon: Compass },
+    { name: 'Chuyên đề', path: '/galleries', icon: BookOpen },
     { name: 'Triển lãm', path: '/exhibitions', icon: Archive },
     { name: 'Sự kiện', path: '/events', icon: CalendarDays },
     { name: 'Vé tham quan', path: '/#tickets', icon: Ticket },
