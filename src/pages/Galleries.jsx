@@ -89,6 +89,44 @@ export const Galleries = () => {
     return gallery.image || '/images/museum-hero.jpg';
   };
 
+  // Helper: Get specific details for an image (Artifact name, period, and description)
+  const getImageDetails = (imgObj, gallery, index) => {
+    const url = typeof imgObj === 'string' ? imgObj : imgObj?.url;
+    const caption = typeof imgObj === 'object' ? imgObj?.caption : '';
+    const artifacts = gallery?.highlightArtifacts || [];
+
+    // 1. Match by exact image URL
+    if (url) {
+      const matchByUrl = artifacts.find((a) => a.image === url);
+      if (matchByUrl) {
+        return {
+          title: caption || matchByUrl.name,
+          period: matchByUrl.period || '',
+          description: matchByUrl.description || gallery?.description || '',
+          isArtifact: true,
+        };
+      }
+    }
+
+    // 2. Match by index
+    if (artifacts[index] && artifacts[index].name) {
+      return {
+        title: caption || artifacts[index].name,
+        period: artifacts[index].period || '',
+        description: artifacts[index].description || gallery?.description || '',
+        isArtifact: true,
+      };
+    }
+
+    // 3. Fallback to caption or intelligent context
+    return {
+      title: caption || `${gallery?.name || 'Hiện vật tư liệu'} (Ảnh #${index + 1})`,
+      period: gallery?.startDate ? formatPeriod(gallery.startDate, gallery.endDate) : '',
+      description: gallery?.description || 'Hình ảnh tư liệu và hiện vật lưu trữ của Bảo tàng.',
+      isArtifact: false,
+    };
+  };
+
   // Memoized Tab Counts
   const counts = useMemo(() => {
     return {
@@ -500,6 +538,7 @@ export const Galleries = () => {
 
         const parsedImages = rawImages.map(parseImage);
         const currentImgObj = parsedImages[activeImageIndex] || parsedImages[0];
+        const currentDetails = getImageDetails(currentImgObj, selectedGallery, activeImageIndex);
         const artifacts = selectedGallery.highlightArtifacts || [];
 
         return (
@@ -509,15 +548,16 @@ export const Galleries = () => {
               <div className="relative h-64 sm:h-80 md:h-96 bg-stone-900 shrink-0 group select-none overflow-hidden">
                 <img
                   src={currentImgObj.url}
-                  alt={currentImgObj.caption || selectedGallery.name}
+                  alt={currentDetails.title}
                   loading="lazy"
                   decoding="async"
                   className="w-full h-full object-contain sm:object-cover transition-all duration-300 cursor-pointer"
                   onClick={() =>
                     setPreviewImage({
                       src: currentImgObj.url,
-                      title: currentImgObj.caption || selectedGallery.name,
-                      description: selectedGallery.description,
+                      title: currentDetails.title,
+                      period: currentDetails.period,
+                      description: currentDetails.description,
                     })
                   }
                   onError={(e) => {
@@ -532,8 +572,9 @@ export const Galleries = () => {
                     onClick={() =>
                       setPreviewImage({
                         src: currentImgObj.url,
-                        title: currentImgObj.caption || selectedGallery.name,
-                        description: selectedGallery.description,
+                        title: currentDetails.title,
+                        period: currentDetails.period,
+                        description: currentDetails.description,
                       })
                     }
                     className="px-3 py-1.5 rounded-xl bg-black/60 hover:bg-black/80 text-white text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-md backdrop-blur-xs border border-white/10"
@@ -550,12 +591,17 @@ export const Galleries = () => {
                   </button>
                 </div>
 
-                {/* Status & Code on Top-Left */}
+                {/* Status & Code & Image Counter on Top-Left */}
                 <div className="absolute top-4 left-4 flex items-center gap-2 z-20">
                   {getStatusBadge(selectedGallery.status)}
                   <span className="px-2.5 py-1 bg-black/60 backdrop-blur-md text-amber-200 border border-amber-400/30 text-xs font-mono font-bold rounded-lg shadow-sm">
                     {selectedGallery.id}
                   </span>
+                  {parsedImages.length > 1 && (
+                    <span className="px-2.5 py-1 bg-black/60 backdrop-blur-md text-white text-xs font-semibold rounded-lg shadow-sm border border-white/15">
+                      Ảnh {activeImageIndex + 1}/{parsedImages.length}
+                    </span>
+                  )}
                 </div>
 
                 {/* Prev / Next Buttons (if multiple images) */}
@@ -589,16 +635,24 @@ export const Galleries = () => {
                 {/* Bottom Title & Image Thumbnails Carousel */}
                 <div className="absolute bottom-4 inset-x-4 flex flex-col sm:flex-row sm:items-end justify-between gap-3 z-20 text-white">
                   <div className="space-y-1 max-w-xl">
-                    <h3 className="text-lg sm:text-2xl font-bold leading-tight drop-shadow-md">
-                      {selectedGallery.name}
+                    <h3 className="text-base sm:text-xl font-bold leading-tight drop-shadow-md text-white">
+                      {currentDetails.title}
                     </h3>
-                    <div className="flex items-center gap-2 text-xs text-white/90">
-                      <CalendarDays className="w-4 h-4 text-museum-gold shrink-0" />
-                      <span>{formatPeriod(selectedGallery.startDate, selectedGallery.endDate)}</span>
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-white/90">
+                      {currentDetails.period ? (
+                        <span className="text-amber-300 font-semibold bg-black/50 px-2 py-0.5 rounded border border-amber-400/30">
+                          {currentDetails.period}
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          <CalendarDays className="w-4 h-4 text-museum-gold shrink-0" />
+                          <span>{formatPeriod(selectedGallery.startDate, selectedGallery.endDate)}</span>
+                        </div>
+                      )}
                     </div>
-                    {currentImgObj.caption && (
-                      <p className="text-xs text-amber-200 italic drop-shadow-xs">
-                        {currentImgObj.caption}
+                    {currentDetails.description && (
+                      <p className="text-xs text-amber-100/90 italic drop-shadow-xs line-clamp-1">
+                        "{currentDetails.description}"
                       </p>
                     )}
                   </div>
@@ -606,25 +660,29 @@ export const Galleries = () => {
                   {/* Thumbnail Filmstrip */}
                   {parsedImages.length > 1 && (
                     <div className="flex items-center gap-1.5 overflow-x-auto max-w-full sm:max-w-xs pb-1 shrink-0">
-                      {parsedImages.map((img, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => setActiveImageIndex(idx)}
-                          className={`w-11 h-8 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
-                            activeImageIndex === idx
-                              ? 'border-museum-gold scale-105 shadow-md ring-2 ring-museum-gold/50'
-                              : 'border-white/50 opacity-70 hover:opacity-100'
-                          }`}
-                        >
-                          <img
-                            src={img.url}
-                            alt="thumb"
-                            loading="lazy"
-                            decoding="async"
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      ))}
+                      {parsedImages.map((img, idx) => {
+                        const imgDet = getImageDetails(img, selectedGallery, idx);
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => setActiveImageIndex(idx)}
+                            className={`w-11 h-8 rounded-lg overflow-hidden border-2 transition-all cursor-pointer shrink-0 ${
+                              activeImageIndex === idx
+                                ? 'border-museum-gold scale-105 shadow-md ring-2 ring-museum-gold/50'
+                                : 'border-white/50 opacity-70 hover:opacity-100'
+                            }`}
+                            title={imgDet.title}
+                          >
+                            <img
+                              src={img.url}
+                              alt="thumb"
+                              loading="lazy"
+                              decoding="async"
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -675,14 +733,16 @@ export const Galleries = () => {
                       {artifacts.map((art, idx) => (
                         <div
                           key={idx}
-                          onClick={() =>
+                          onClick={() => {
+                            const targetIdx = parsedImages.findIndex((img) => img.url === art.image);
+                            if (targetIdx !== -1) setActiveImageIndex(targetIdx);
                             setPreviewImage({
                               src: art.image || '/images/binh-gom.jpg',
                               title: art.name,
                               description: art.description,
                               period: art.period,
-                            })
-                          }
+                            });
+                          }}
                           className="bg-museum-ivory/30 hover:bg-white p-4 rounded-2xl border border-gray-200 hover:border-museum-gold/50 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 cursor-pointer group/art"
                         >
                           <div className="flex items-start gap-3">
