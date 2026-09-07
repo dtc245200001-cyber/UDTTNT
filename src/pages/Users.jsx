@@ -142,7 +142,6 @@ export const UsersPage = () => {
               <tr className="bg-museum-ivory text-museum-brown text-xs font-bold uppercase tracking-wider border-b border-gray-200">
                 <th className="py-3.5 px-4">Tài khoản & Họ tên</th>
                 <th className="py-3.5 px-4">Địa chỉ Email</th>
-                <th className="py-3.5 px-4">Vai trò</th>
                 <th className="py-3.5 px-4">Phân quyền</th>
                 <th className="py-3.5 px-4">Trạng thái</th>
                 <th className="py-3.5 px-4">Ngày tham gia</th>
@@ -166,9 +165,6 @@ export const UsersPage = () => {
                       <div className="h-3.5 w-32 bg-gray-200 rounded" />
                     </td>
                     <td className="py-3.5 px-4">
-                      <div className="h-5 w-16 bg-gray-200 rounded-lg" />
-                    </td>
-                    <td className="py-3.5 px-4">
                       <div className="h-7 w-24 bg-gray-200 rounded-xl" />
                     </td>
                     <td className="py-3.5 px-4">
@@ -184,14 +180,13 @@ export const UsersPage = () => {
                 ))
               ) : filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-gray-400 font-medium">
+                  <td colSpan={6} className="text-center py-8 text-gray-400 font-medium">
                     Không tìm thấy tài khoản phù hợp.
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((u) => {
                   const isCurrent = currentUser && currentUser.email?.toLowerCase() === u.email?.toLowerCase();
-                  const isAdmin = u.role === 'admin';
                   const isLocked = u.status === 'Tạm khóa';
 
                   return (
@@ -219,19 +214,6 @@ export const UsersPage = () => {
                       {/* Email */}
                       <td className="py-3.5 px-4 font-medium text-gray-600">{u.email}</td>
 
-                      {/* Current Role Badge */}
-                      <td className="py-3.5 px-4">
-                        {isAdmin ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-800 border border-amber-300 rounded-lg text-xs font-bold">
-                            <Shield className="w-3.5 h-3.5 text-amber-600" />Admin
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold">
-                            <User className="w-3.5 h-3.5 text-emerald-600" />Visitor
-                          </span>
-                        )}
-                      </td>
-
                       {/* Role Switcher — disable on self */}
                       <td className="py-3.5 px-4">
                         <select
@@ -241,6 +223,7 @@ export const UsersPage = () => {
                           className={`px-3 py-1.5 border rounded-xl text-xs font-bold text-museum-brown focus:outline-none focus:ring-2 focus:ring-museum-gold ${isCurrent ? 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-60' : 'bg-gray-50 border-gray-300 cursor-pointer'}`}
                         >
                           <option value="admin">👑 Admin</option>
+                          <option value="staff">🛡️ Staff</option>
                           <option value="visitor">👤 Visitor</option>
                         </select>
                       </td>
