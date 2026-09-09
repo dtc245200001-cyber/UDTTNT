@@ -1,0 +1,107 @@
+﻿
+> CREATE OR REPLACE FUNCTION public.handle_new_user()
+  RETURNS TRIGGER
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  AS $$
+  DECLARE
+      user_role TEXT := 'visitor';
+      user_role_label TEXT := 'KhÃ¡ch tham quan';
+      user_name TEXT;
+  BEGIN
+      -- GÃ¡n vai trÃ² an toÃ n: chá»‰ email admin@gmail.com Ä‘Æ°á»£c gÃ¡n admin máº·c Ä‘á»‹nh
+      -- Tuyá»‡t Ä‘á»‘i KHÃ”NG Ä‘á»c role tá»« raw_user_meta_data Ä‘á»ƒ ngÄƒn cháº·n leo thang quyá»n tá»« client
+      IF NEW.email = 'admin@gmail.com' THEN
+          user_role := 'admin';
+          user_role_label := 'Quáº£n trá»‹ viÃªn';
+      ELSE
+          user_role := 'visitor';
+          user_role_label := 'KhÃ¡ch tham quan';
+      END IF;
+  
+      user_name := COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1));
+  
+      -- Tá»± Ä‘á»™ng thÃªm hoáº·c cáº­p nháº­t há»“ sÆ¡ trong báº£ng nguoi_dung
+      INSERT INTO public.nguoi_dung (
+          id,
+          auth_user_id,
+          email,
+          name,
+          role,
+          role_label,
+          status,
+          avatar,
+          joined_at
+      )
+      VALUES (
+          'USR' || substring(NEW.id::text from 1 for 6),
+          NEW.id,
+          NEW.email,
+          user_name,
+          user_role,
+          user_role_label,
+          'Hoáº¡t Ä‘á»™ng',
+          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+          CURRENT_DATE
+      )
+      ON CONFLICT (email) DO UPDATE
+      SET 
+          auth_user_id = EXCLUDED.auth_user_id,
+          role = CASE WHEN public.nguoi_dung.role = 'admin' THEN 'admin' ELSE EXCLUDED.role END,
+          role_label = CASE WHEN public.nguoi_dung.role = 'admin' THEN 'Quáº£n trá»‹ viÃªn' ELSE EXCLUDED.role_label 
+END;
+  
+> CREATE OR REPLACE FUNCTION public.handle_new_user()
+  RETURNS TRIGGER
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  AS $$
+  DECLARE
+      user_role TEXT := 'visitor';
+      user_role_label TEXT := 'KhÃ¡ch tham quan';
+      user_name TEXT;
+  BEGIN
+      -- XÃ¡c Ä‘á»‹nh vai trÃ² dá»±a trÃªn email hoáº·c metadata
+      IF NEW.email = 'admin@gmail.com' OR (NEW.raw_user_meta_data->>'role') = 'admin' THEN
+          user_role := 'admin';
+          user_role_label := 'Quáº£n trá»‹ viÃªn';
+      ELSIF (NEW.raw_user_meta_data->>'role') = 'staff' THEN
+          user_role := 'staff';
+          user_role_label := 'NhÃ¢n viÃªn';
+      END IF;
+  
+      user_name := COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1));
+  
+      -- Tá»± Ä‘á»™ng thÃªm hoáº·c cáº­p nháº­t há»“ sÆ¡ trong báº£ng nguoi_dung
+      INSERT INTO public.nguoi_dung (
+          id,
+          auth_user_id,
+          email,
+          name,
+          role,
+          role_label,
+          status,
+          avatar,
+          joined_at
+      )
+      VALUES (
+          'USR' || substring(NEW.id::text from 1 for 6),
+          NEW.id,
+          NEW.email,
+          user_name,
+          user_role,
+          user_role_label,
+          'Hoáº¡t Ä‘á»™ng',
+          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+          CURRENT_DATE
+      )
+      ON CONFLICT (email) DO UPDATE
+      SET 
+          auth_user_id = EXCLUDED.auth_user_id,
+          role = CASE WHEN public.nguoi_dung.role = 'admin' THEN 'admin' ELSE EXCLUDED.role END,
+          role_label = CASE WHEN public.nguoi_dung.role = 'admin' THEN 'Quáº£n trá»‹ viÃªn' ELSE EXCLUDED.role_label 
+END;
+  
+      RETURN NEW;
+
+

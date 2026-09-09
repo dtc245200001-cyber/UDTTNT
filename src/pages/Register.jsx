@@ -61,36 +61,8 @@ export const Register = () => {
     });
 
     if (result && result.success) {
-      const pendingTicket = localStorage.getItem('pending_ticket_booking');
-      if (pendingTicket) {
-        localStorage.removeItem('pending_ticket_booking');
-        navigate('/#tickets');
-        return;
-      }
-
-      const pendingReg = localStorage.getItem('pending_event_registration');
-      if (pendingReg) {
-        try {
-          const { eventId } = JSON.parse(pendingReg);
-          localStorage.removeItem('pending_event_registration');
-          registerForEvent(eventId);
-          navigate('/events');
-          return;
-        } catch (err) {
-          console.error('Failed to parse pending event registration', err);
-        }
-      }
-
-      const isAdminUser =
-        result.user?.role === 'admin' ||
-        result.user?.roleLabel?.toLowerCase()?.includes('quản trị') ||
-        formData.email.trim().toLowerCase() === 'admin@gmail.com';
-
-      if (isAdminUser) {
-        navigate('/dashboard');
-      } else {
-        navigate('/');
-      }
+      // Nhảy sang trang đăng nhập ngay lập tức để người dùng tự đăng nhập
+      navigate('/login');
     } else {
       setErrors((prev) => ({
         ...prev,

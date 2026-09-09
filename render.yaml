@@ -1,0 +1,40 @@
+services:
+  # ----------------------------------------------------
+  # 1. Backend FastAPI Service
+  # ----------------------------------------------------
+  - type: web
+    name: museum-backend
+    env: python
+    region: singapore
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: FRONTEND_URL
+        fromService:
+          name: museum-frontend
+          type: web
+          property: url
+
+  # ----------------------------------------------------
+  # 2. Frontend React/Vite (Static Site)
+  # ----------------------------------------------------
+  - type: web
+    name: museum-frontend
+    env: static
+    region: singapore
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: "./dist"
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: museum-backend
+          type: web
+          property: url

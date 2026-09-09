@@ -1,0 +1,40 @@
+data: {"chunk": "Một"}
+
+data: {"chunk": " ngày khám phá bảo tàng trọn vẹn và thú vị nghe rất tuyệt"}
+
+data: {"chunk": " đúng không? Để mình gợi ý cho bạn một lịch trình từ sáng đến chiều nhé!\n\n**Buổi sáng (Kh"}
+
+data: {"chunk": "ởi động và khám phá không gian chính):**\n* **8h00 - 10h30:** Bạn"}
+
+data: {"chunk": " đến bảo tàng lúc sáng sớm cho mát mẻ, lúc này không gian còn khá yên tĩnh, rất hợp để th"}
+
+data: {"chunk": "ong thả ngắm nghía các phòng trưng bày lịch sử theo dòng thời gian.\n* **10h3"}
+
+data: {"chunk": "0 - 11h30:** Dành thời gian khám phá khu vực trưng bày các bảo vật quốc gia hoặc các chuyên"}
+
+data: {"chunk": " đề đặc biệt đang diễn ra. \n* **11h30 - 13h30:** Ngh"}
+
+data: {"chunk": "ỉ ngơi và thưởng thức bữa trưa nhẹ nhàng gần khu vực bảo tàng.\n\n**Buổi chiều (Tr"}
+
+data: {"chunk": "ải nghiệm sâu hơn và tương tác):**\n* **13h30 - 15h30:** Quay lại bảo"}
+
+data: {"chunk": " tàng để tiếp tục tham quan các khu vực còn lại. Nếu đi cùng các bạn nhỏ, bạn có thể gh"}
+
+data: {"chunk": "é qua các hoạt động giáo dục di sản hoặc tìm hiểu thêm về các câu chuyện lịch sử thú vị.\n* **1"}
+
+data: {"chunk": "5h30 - 16h30:** Dành chút thời gian ghé qua không gian lưu niệm hoặc"}
+
+data: {"chunk": " trải nghiệm nhanh Tour ảo 3D trên điện thoại nếu bạn muốn ngắm lại các hiện vật dưới góc độ kỹ"}
+
+data: {"chunk": " thuật số trước khi ra về.\n\n*Mẹo nhỏ:* Nhớ chú ý khung giờ mở cửa (sáng đến"}
+
+data: {"chunk": " 12h00, chiều đến 17h00) để sắp xếp thời gian thoải mái nhất"}
+
+data: {"chunk": " nha. Nếu bạn đi theo đoàn đông (từ 10 người trở lên), đừng quên đặt trước dịch vụ thuyết minh để chuyến"}
+
+data: {"chunk": " đi có thêm nhiều câu chuyện hay ho được bật mí nhé! \n\nBạn thấy lịch trình này thế nào, có cần điều chỉnh gì"}
+
+data: {"chunk": " cho hợp với sở thích của bạn không? 😊"}
+
+data: {"done": true}
+

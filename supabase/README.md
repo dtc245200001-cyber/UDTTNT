@@ -8,17 +8,15 @@ Tài liệu hướng dẫn cấu trúc, thứ tự thực thi và quy chuẩn đ
 
 | Thứ tự | File Migration | Mục đích |
 | :---: | :--- | :--- |
-| **01** | `supabase/migration_current.sql` | **Bản Canonical gốc**: Khởi tạo toàn bộ Schemas, 10 bảng dữ liệu quan hệ, pgvector extension, HNSW indexes, RPC `match_hien_vat`, seed 13 danh mục (`DM01`–`DM13`) và 270 hiện vật chuẩn hóa. |
-| **02** | `supabase/migration_security_hardening.sql` | **Vá Bảo mật & RLS**: Thêm liên kết `auth_user_id UUID` cho `nguoi_dung`, bảng `audit_logs` bất biến, Trigger tự động đồng bộ tài khoản `auth.users` &rarr; `public.nguoi_dung`, và toàn bộ Policies RLS chặt chẽ theo vai trò (RBAC). |
+| **01** | `supabase/migration_current.sql` | **Bản Baseline Hoàn Chỉnh Duy Nhất**: Khởi tạo toàn bộ Schemas, 10 bảng dữ liệu quan hệ, pgvector, HNSW indexes, RPC. Chứa Seed 13 danh mục, 270 hiện vật. Bao gồm RLS đã được **vá lỗ hổng bảo mật hoàn chỉnh** và các Trigger đồng bộ quyền. |
 
 ---
 
-## 2. Thứ Tự Chạy Khi Khởi Tạo Dự Án Mới Trên Supabase
+## 2. Hướng Dẫn Chạy Khi Khởi Tạo Dự Án Mới Trên Supabase
 
-Khi cài đặt trên một Supabase project mới hoặc reset database, chạy tuần tự trong **SQL Editor**:
+Khi cài đặt trên một Supabase project mới hoặc reset database, bạn chỉ cần thực hiện **đúng 1 bước duy nhất**:
 
-1. **Bước 1**: Mở và chạy `supabase/migration_current.sql` để tạo toàn bộ bảng và nạp 270 hiện vật.
-2. **Bước 2**: Mở và chạy `supabase/migration_security_hardening.sql` để thiết lập cơ chế bảo mật, trigger đồng bộ user và chính sách RLS.
+1. Mở và chạy file `supabase/migration_current.sql` trong **SQL Editor**. (Không chạy lại trên production đã có data thật).
 
 ---
 
@@ -36,4 +34,7 @@ Khi cài đặt trên một Supabase project mới hoặc reset database, chạy
 
 ## 4. Thư Mục Lưu Trữ Lịch Sử (`supabase/archive/`)
 
-Thư mục `supabase/archive/` chứa các script phụ trợ, công cụ migrate dữ liệu 1 lần (one-off scripts) và bản backup trong quá trình chuẩn hóa danh mục từ `CAT01-CAT08` sang `DM01-DM13`. Không chạy lại các file trong thư mục này trừ khi cần đối chiếu lịch sử.
+Thư mục `supabase/archive/` chứa:
+- Các file migration trung gian (vd: `migration_security_hardening.sql`, `migration_fix_roles_and_permissions.sql`, v.v.) đã được **gộp vào baseline** `migration_current.sql` để tránh việc lỡ tay chạy đè lại các bản cũ chứa lỗ hổng (điển hình là lỗ hổng bypass `anon` insert Role).
+- Các script phụ trợ, công cụ migrate dữ liệu 1 lần. 
+**TUYỆT ĐỐI KHÔNG chạy lại** các file trong thư mục này trừ khi cần đối chiếu lịch sử.

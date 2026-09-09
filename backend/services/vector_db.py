@@ -27,6 +27,42 @@ class VectorDBService:
             metadata={"description": "Kho tri thức RAG Bảo tàng Lịch sử Quốc gia Việt Nam"}
         )
 
+    def upsert_document(
+        self,
+        doc_id: str,
+        document: str,
+        metadata: dict,
+        embedding: list[float] = None,
+    ):
+        """
+        Thêm mới hoặc cập nhật một document đơn lẻ trong ChromaDB.
+        Dùng cho auto-sync sau khi admin tạo/sửa bản ghi.
+        """
+        if embedding:
+            self.collection.upsert(
+                ids=[doc_id],
+                documents=[document],
+                metadatas=[metadata],
+                embeddings=[embedding],
+            )
+        else:
+            self.collection.upsert(
+                ids=[doc_id],
+                documents=[document],
+                metadatas=[metadata],
+            )
+
+    def delete_document(self, doc_id: str):
+        """
+        Xóa một document khỏi ChromaDB theo ID.
+        Dùng cho auto-sync sau khi admin xóa bản ghi.
+        """
+        try:
+            self.collection.delete(ids=[doc_id])
+        except Exception as e:
+            print(f"[VectorDB] Không thể xóa document '{doc_id}': {e}")
+
+
     def add_documents(
         self,
         documents: list[str],

@@ -11,8 +11,9 @@ import { removeVietnameseTones } from '@/utils/artifactSearch';
 
 export const Artifacts = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryParam = searchParams.get('q') || '';
+  const categoryParam = searchParams.get('category') || '';
 
   const { artifacts, categories, deleteArtifact, currentUser } = useApp();
 
@@ -33,6 +34,23 @@ export const Artifacts = () => {
   useEffect(() => {
     if (queryParam) setSearchTerm(queryParam);
   }, [queryParam]);
+
+  // Sync categoryParam if present in URL (DM01, DM08... or category name)
+  useEffect(() => {
+    if (categoryParam && categories && categories.length > 0) {
+      const cleanParam = categoryParam.trim().toLowerCase();
+      const matched = categories.find(
+        (c) =>
+          (c.id && c.id.toLowerCase() === cleanParam) ||
+          (c.name && c.name.toLowerCase() === cleanParam)
+      );
+      if (matched) {
+        setSelectedCategory(matched.name);
+        setViewMode('grid');
+        setCurrentPage(1);
+      }
+    }
+  }, [categoryParam, categories]);
 
   // Filtered Artifacts list
   const filteredArtifacts = useMemo(() => {
@@ -81,12 +99,24 @@ export const Artifacts = () => {
     }
   };
 
+  const handleClearCategoryFilter = () => {
+    setSelectedCategory('Tất cả');
+    setCurrentPage(1);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('category');
+    setSearchParams(newParams);
+  };
+
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedCategory('Tất cả');
     setSelectedPeriod('Tất cả');
     setSelectedStatus('Tất cả');
     setCurrentPage(1);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('q');
+    newParams.delete('category');
+    setSearchParams(newParams);
   };
 
   return (
@@ -216,11 +246,25 @@ export const Artifacts = () => {
       </div>
 
       {/* Results Count Bar */}
-      <div className="flex items-center justify-between text-xs text-gray-500 font-medium px-1">
-        <span>
-          Hiển thị <strong>{filteredArtifacts.length}</strong> hiện vật
-          {searchTerm && <span> cho từ khóa "<strong className="text-museum-brown">{searchTerm}</strong>"</span>}
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500 font-medium px-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span>
+            Hiển thị <strong>{filteredArtifacts.length}</strong> hiện vật
+            {searchTerm && <span> cho từ khóa "<strong className="text-museum-brown">{searchTerm}</strong>"</span>}
+          </span>
+          {categoryParam && selectedCategory !== 'Tất cả' && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-museum-ivory border border-museum-cream text-museum-brown text-xs font-semibold shadow-2xs">
+              <span>Đang lọc theo danh mục: <strong className="text-museum-brown font-bold">{selectedCategory}</strong></span>
+              <button
+                onClick={handleClearCategoryFilter}
+                className="ml-1 text-museum-gold hover:text-museum-brown-dk underline cursor-pointer font-bold transition-colors"
+                title="Xoá bộ lọc danh mục"
+              >
+                [Xoá bộ lọc]
+              </button>
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Main Content View: Grid or Table */}

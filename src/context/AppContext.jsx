@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { api } from '@/services/apiClient';
 import { artifacts as initialArtifacts } from '../data/artifacts';
 import { exhibitions as initialExhibitions } from '../data/exhibitions';
 import { events as initialEvents } from '../data/events';
@@ -64,9 +65,9 @@ export const AppProvider = ({ children }) => {
             return {
               ...init,
               ...found,
-              image: init.id === 'TBCD01' ? init.image : (found.image || init.image),
-              galleryImages: init.id === 'TBCD01' ? init.galleryImages : (found.galleryImages || init.galleryImages),
-              highlightArtifacts: init.id === 'TBCD01' ? init.highlightArtifacts : (found.highlightArtifacts || init.highlightArtifacts),
+              image: (init.id === 'TBCD01' || init.id === 'TBCD03') ? init.image : (found.image || init.image),
+              galleryImages: (init.id === 'TBCD01' || init.id === 'TBCD03') ? init.galleryImages : (found.galleryImages || init.galleryImages),
+              highlightArtifacts: (init.id === 'TBCD01' || init.id === 'TBCD03') ? init.highlightArtifacts : (found.highlightArtifacts || init.highlightArtifacts),
             };
           });
         }
@@ -124,60 +125,38 @@ export const AppProvider = ({ children }) => {
 
   const [usersLoading, setUsersLoading] = useState(false);
 
-  // Hàm đọc dữ liệu người dùng từ Supabase và map chuẩn camelCase
+  // Hàm đọc dữ liệu người dùng qua Backend FastAPI /api/users
   const fetchUsersFromSupabase = useCallback(async () => {
     setUsersLoading(true);
     try {
-      const { data: userData, error: userError } = await supabase
-        .from('nguoi_dung')
-        .select('*')
-        .order('joined_at', { ascending: false });
+      const usersData = await api.get('/api/users');
 
-      if (userError) {
-        console.error('Lỗi khi tải bảng nguoi_dung từ Supabase:', userError);
-        addToast(`Không thể tải người dùng từ Supabase: ${userError.message}`, 'error');
-        return false;
-      }
-
-      if (userData) {
-        const mappedUsers = userData.map((u) => {
-          const rawRole = String(u.role || '').toLowerCase();
-          const normalizedRole =
-            rawRole === 'admin' || rawRole.includes('quản trị') || u.email?.toLowerCase() === 'admin@gmail.com'
-              ? 'admin'
-              : rawRole === 'staff' || rawRole.includes('nhân viên')
-              ? 'staff'
-              : 'visitor';
-
-          const roleLabel =
-            u.role_label ||
-            (normalizedRole === 'admin'
-              ? 'Quản trị viên'
-              : normalizedRole === 'staff'
-              ? 'Nhân viên'
-              : 'Khách tham quan');
-
-          return {
-            id: u.id,
-            name: u.name,
-            email: u.email,
-            role: normalizedRole,
-            roleLabel: roleLabel,
-            role_label: roleLabel,
-            status: u.status || 'Hoạt động',
-            avatar: u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-            auth_user_id: u.auth_user_id,
-            joinedAt: u.joined_at,
-            joined_at: u.joined_at,
-          };
-        });
+      if (usersData && Array.isArray(usersData)) {
+        const mappedUsers = usersData.map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          roleLabel: u.role_label,
+          role_label: u.role_label,
+          status: u.status || 'Hoạt động',
+          avatar: u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+          auth_user_id: u.auth_user_id,
+          joinedAt: u.joined_at,
+          joined_at: u.joined_at,
+        }));
 
         setUsersList(mappedUsers);
         localStorage.setItem('museum_users', JSON.stringify(mappedUsers));
         return true;
       }
     } catch (err) {
-      console.error('Lỗi ngoại lệ khi fetch users từ Supabase:', err);
+      // Nếu lỗi 401/403 (chưa đăng nhập hoặc không phải admin) thì im lặng, dùng cache
+      if (err.status === 401 || err.status === 403) {
+        console.warn('[Users] Không có quyền tải danh sách người dùng — dùng cache.');
+        return false;
+      }
+      console.error('Lỗi ngoại lệ khi fetch users từ backend:', err);
       addToast(`Lỗi kết nối khi tải danh sách người dùng: ${err.message}`, 'error');
       return false;
     } finally {
@@ -187,10 +166,6 @@ export const AppProvider = ({ children }) => {
 
   const refreshUsers = useCallback(async () => {
     return await fetchUsersFromSupabase();
-  }, [fetchUsersFromSupabase]);
-
-  useEffect(() => {
-    fetchUsersFromSupabase();
   }, [fetchUsersFromSupabase]);
 
   // 4. Current User State
@@ -210,6 +185,13 @@ export const AppProvider = ({ children }) => {
     }
     return null;
   });
+
+  useEffect(() => {
+    // Xử lý triệt để: Chỉ tải danh sách users nếu người dùng có quyền admin hoặc staff
+    if (currentUser?.role === 'admin' || currentUser?.role === 'staff') {
+      fetchUsersFromSupabase();
+    }
+  }, [fetchUsersFromSupabase, currentUser?.role]);
 
   // 5. Booked tickets state with LocalStorage persistence
   const [bookedTicketsList, setBookedTicketsList] = useState(() => {
@@ -543,57 +525,21 @@ export const AppProvider = ({ children }) => {
     const fullName = userData.name.trim();
 
     try {
-      // 1. Đăng ký tài khoản an toàn qua Supabase Auth (Mật khẩu được mã hóa tự động ở server Supabase)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: userData.password,
-        options: {
-          data: {
-            name: fullName,
-            role: 'visitor',
-          },
-        },
-      });
-
-      if (authError || !authData.user) {
-        let errorMsg = authError?.message || 'Đăng ký tài khoản không thành công.';
-        if (errorMsg.includes('User already registered') || errorMsg.includes('already exists')) {
-          errorMsg = 'Địa chỉ email này đã được đăng ký trong hệ thống!';
-        }
-        addToast(errorMsg, 'error');
-        return { success: false, message: errorMsg };
-      }
-
-      // 2. Tạo hồ sơ người dùng trong bảng nguoi_dung (KHÔNG lưu mật khẩu plaintext)
-      const newUserId = getNextMaxId('USR', usersList, 3);
-      const userProfile = {
-        id: newUserId,
-        auth_user_id: authData.user.id,
+      const response = await api.post('/api/auth/register', {
         name: fullName,
         email: cleanEmail,
-        role: 'visitor',
-        role_label: 'Khách tham quan',
-        status: 'Hoạt động',
-        avatar: userData.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-        joined_at: new Date().toISOString().split('T')[0],
-      };
+        password: userData.password,
+        avatar: userData.avatar || '',
+      });
 
-      try {
-        await supabase.from('nguoi_dung').insert([userProfile]);
-      } catch (profileErr) {
-        console.warn('Lưu hồ sơ người dùng bổ sung:', profileErr);
-      }
-
-      // Tự động gán session và đăng nhập
-      setCurrentUser(userProfile);
-      await fetchSupabaseData();
-      addToast('Đăng ký tài khoản thành công! Chào mừng bạn đến với Bảo tàng.', 'success');
-      await logAudit('REGISTER', `Tài khoản khách mới đăng ký: ${userProfile.email}`);
-      return { success: true, user: userProfile };
+      addToast('Đăng ký tài khoản thành công! Vui lòng đăng nhập.', 'success');
+      await logAudit('REGISTER', `Tài khoản khách mới đăng ký: ${cleanEmail}`);
+      return { success: true, user: response.user };
     } catch (e) {
       console.error('Lỗi khi đăng ký:', e);
-      addToast('Lỗi máy chủ khi đăng ký tài khoản. Vui lòng thử lại!', 'error');
-      return { success: false, message: e.message || 'Lỗi đăng ký' };
+      const errorMessage = e.message || 'Lỗi máy chủ khi đăng ký tài khoản. Vui lòng thử lại!';
+      addToast(errorMessage, 'error');
+      return { success: false, message: errorMessage };
     }
   };
 
@@ -690,7 +636,7 @@ export const AppProvider = ({ children }) => {
     logAudit('DELETE_ARTIFACT', `Xóa hiện vật: ${item?.name || id}`);
   };
 
-  // 12. User Management (Đồng bộ trực tiếp với Supabase PostgreSQL)
+  // 12. User Management (Gọi qua Backend FastAPI /api/users)
   const updateUserRole = async (userId, newRole) => {
     const roleLabel =
       newRole === 'admin'
@@ -700,37 +646,10 @@ export const AppProvider = ({ children }) => {
         : 'Khách tham quan';
 
     try {
-      // 1. Thử gọi hàm RPC chuyên dụng assign_user_role nếu có
-      let rpcSuccess = false;
-      try {
-        const { data: rpcData, error: rpcError } = await supabase.rpc('assign_user_role', {
-          target_user_id: userId,
-          new_role: newRole,
-        });
-        if (!rpcError) {
-          rpcSuccess = true;
-        } else {
-          console.warn('Supabase assign_user_role RPC notification, trying table update:', rpcError.message);
-        }
-      } catch (e) {
-        console.warn('RPC not available, falling back to direct table update:', e);
-      }
+      // Gọi backend FastAPI để đổi role
+      const updatedUser = await api.patch(`/api/users/${userId}/role`, { role: newRole });
 
-      // 2. Fallback: Cập nhật trực tiếp lên Supabase table nguoi_dung
-      if (!rpcSuccess) {
-        const { error: updateError } = await supabase
-          .from('nguoi_dung')
-          .update({ role: newRole, role_label: roleLabel })
-          .eq('id', userId);
-
-        if (updateError) {
-          console.error('Lỗi khi cập nhật quyền trên Supabase:', updateError);
-          addToast(`Không thể đổi quyền: ${updateError.message || 'Lỗi phân quyền'}`, 'error');
-          return { success: false, message: updateError.message };
-        }
-      }
-
-      // 3. Cập nhật state nội bộ ngay lập tức để UI phản hồi mượt mà
+      // Cập nhật state nội bộ ngay lập tức để UI phản hồi mượt mà
       setUsersList((prev) =>
         prev.map((u) =>
           u.id === userId
@@ -739,7 +658,7 @@ export const AppProvider = ({ children }) => {
         )
       );
 
-      // 4. Đồng bộ lại toàn bộ danh sách người dùng thật từ Supabase
+      // Đồng bộ lại toàn bộ danh sách người dùng thật từ backend
       await refreshUsers();
 
       const targetUser = usersList.find((u) => u.id === userId);
@@ -772,39 +691,15 @@ export const AppProvider = ({ children }) => {
     const newStatus = targetUser.status === 'Hoạt động' ? 'Tạm khóa' : 'Hoạt động';
 
     try {
-      // 1. Thử gọi RPC toggle_user_status
-      let rpcSuccess = false;
-      try {
-        const { data: rpcData, error: rpcError } = await supabase.rpc('toggle_user_status', {
-          target_user_id: userId,
-        });
-        if (!rpcError) {
-          rpcSuccess = true;
-        }
-      } catch (e) {
-        console.warn('RPC toggle_user_status not available:', e);
-      }
-
-      // 2. Fallback: Cập nhật trạng thái trực tiếp lên table nguoi_dung
-      if (!rpcSuccess) {
-        const { error: updateError } = await supabase
-          .from('nguoi_dung')
-          .update({ status: newStatus })
-          .eq('id', userId);
-
-        if (updateError) {
-          console.error('Lỗi khi đổi trạng thái trên Supabase:', updateError);
-          addToast(`Không thể đổi trạng thái: ${updateError.message || 'Lỗi cập nhật'}`, 'error');
-          return;
-        }
-      }
+      // Gọi backend FastAPI để đổi trạng thái
+      await api.patch(`/api/users/${userId}/status`, { status: newStatus });
 
       // Cập nhật local state
       setUsersList((prev) =>
         prev.map((u) => (u.id === userId ? { ...u, status: newStatus } : u))
       );
 
-      // Đồng bộ lại từ DB
+      // Đồng bộ lại từ backend
       await refreshUsers();
       addToast(`Đã chuyển trạng thái tài khoản sang "${newStatus}".`, 'info');
       await logAudit('TOGGLE_USER_STATUS', `Cập nhật trạng thái người dùng ${targetUser.email} thành ${newStatus}`);
@@ -818,22 +713,13 @@ export const AppProvider = ({ children }) => {
     const targetUser = usersList.find((u) => u.id === userId);
 
     try {
-      // 1. Xóa hồ sơ trong bảng nguoi_dung trên Supabase
-      const { error: deleteError } = await supabase
-        .from('nguoi_dung')
-        .delete()
-        .eq('id', userId);
+      // Gọi backend FastAPI để xoá người dùng
+      await api.delete(`/api/users/${userId}`);
 
-      if (deleteError) {
-        console.error('Lỗi khi xóa người dùng trên Supabase:', deleteError);
-        addToast(`Không thể xóa tài khoản: ${deleteError.message || 'Lỗi xóa'}`, 'error');
-        return;
-      }
-
-      // 2. Xóa khỏi local state
+      // Xóa khỏi local state
       setUsersList((prev) => prev.filter((u) => u.id !== userId));
 
-      // 3. Đồng bộ lại từ DB
+      // Đồng bộ lại từ backend
       await refreshUsers();
       addToast('Đã xóa hồ sơ người dùng khỏi cơ sở dữ liệu.', 'info');
       await logAudit('DELETE_USER', `Xóa hồ sơ người dùng: ${targetUser?.email || userId}`);
@@ -843,50 +729,19 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // TODO: Cần Edge Function admin-create-user (với service_role) để tạo tài khoản Supabase Auth thật từ Admin Dashboard.
-  // Hiện tại: Chỉ lưu hồ sơ vào bảng nguoi_dung, KHÔNG lưu mật khẩu plaintext dưới bất kỳ hình thức nào.
+  // Tạo hồ sơ người dùng mới qua Backend FastAPI /api/users
   const addUser = async (newUser) => {
-    const nextId = newUser.id || getNextMaxId('USR', usersList, 3);
-    const roleLabel =
-      newUser.role === 'admin'
-        ? 'Quản trị viên'
-        : newUser.role === 'staff'
-        ? 'Nhân viên'
-        : 'Khách tham quan';
-
-    const createdUser = {
-      id: nextId,
-      name: newUser.name || newUser.email.split('@')[0],
-      email: newUser.email,
-      role: newUser.role || 'visitor',
-      roleLabel: roleLabel,
-      role_label: roleLabel,
-      status: 'Hoạt động',
-      avatar: newUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-      joined_at: new Date().toISOString().split('T')[0],
-      joinedAt: new Date().toISOString().split('T')[0],
-    };
-
     try {
-      const { error: insertError } = await supabase.from('nguoi_dung').insert([{
-        id: createdUser.id,
-        name: createdUser.name,
-        email: createdUser.email,
-        role: createdUser.role,
-        role_label: createdUser.role_label,
-        status: createdUser.status,
-        avatar: createdUser.avatar,
-        joined_at: createdUser.joined_at,
-      }]);
-
-      if (insertError) {
-        console.error('Lỗi tạo hồ sơ người dùng trên Supabase:', insertError);
-        addToast(`Không thể tạo hồ sơ: ${insertError.message}`, 'error');
-        return { success: false, message: insertError.message };
-      }
+      const createdUser = await api.post('/api/users', {
+        name: newUser.name || newUser.email.split('@')[0],
+        email: newUser.email,
+        role: newUser.role || 'visitor',
+        avatar: newUser.avatar || undefined,
+      });
 
       await refreshUsers();
-      addToast(`Đã tạo hồ sơ "${createdUser.name}" (${createdUser.roleLabel}) thành công!`, 'success');
+      const roleLabel = createdUser.role_label || 'Khách tham quan';
+      addToast(`Đã tạo hồ sơ "${createdUser.name}" (${roleLabel}) thành công!`, 'success');
       await logAudit('CREATE_USER', `Tạo hồ sơ người dùng: ${createdUser.email}`);
       return { success: true, user: createdUser };
     } catch (err) {

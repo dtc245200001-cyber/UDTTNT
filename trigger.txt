@@ -1,0 +1,45 @@
+﻿
+> CREATE OR REPLACE FUNCTION public.handle_new_user()
+  RETURNS TRIGGER
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  AS $$
+  DECLARE
+      user_role TEXT := 'visitor';
+      user_role_label TEXT := 'KhÃ¡ch tham quan';
+      user_name TEXT;
+  BEGIN
+      -- GÃ¡n vai trÃ² an toÃ n: chá»‰ email admin@gmail.com Ä‘Æ°á»£c gÃ¡n admin máº·c Ä‘á»‹nh
+      -- Tuyá»‡t Ä‘á»‘i KHÃ”NG Ä‘á»c role tá»« raw_user_meta_data Ä‘á»ƒ ngÄƒn cháº·n leo thang quyá»n tá»« client
+      IF NEW.email = 'admin@gmail.com' THEN
+          user_role := 'admin';
+          user_role_label := 'Quáº£n trá»‹ viÃªn';
+      ELSE
+          user_role := 'visitor';
+          user_role_label := 'KhÃ¡ch tham quan';
+      END IF;
+  
+      user_name := COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1));
+> CREATE OR REPLACE FUNCTION public.handle_new_user()
+  RETURNS TRIGGER
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  AS $$
+  DECLARE
+      user_role TEXT := 'visitor';
+      user_role_label TEXT := 'KhÃ¡ch tham quan';
+      user_name TEXT;
+  BEGIN
+      -- XÃ¡c Ä‘á»‹nh vai trÃ² dá»±a trÃªn email hoáº·c metadata
+      IF NEW.email = 'admin@gmail.com' OR (NEW.raw_user_meta_data->>'role') = 'admin' THEN
+          user_role := 'admin';
+          user_role_label := 'Quáº£n trá»‹ viÃªn';
+      ELSIF (NEW.raw_user_meta_data->>'role') = 'staff' THEN
+          user_role := 'staff';
+          user_role_label := 'NhÃ¢n viÃªn';
+      END IF;
+  
+      user_name := COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1));
+  
+
+

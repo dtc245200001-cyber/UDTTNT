@@ -34,12 +34,18 @@ serve(async (req) => {
   }
 
   try {
-    const secret = Deno.env.get("QR_SIGNING_SECRET") || "BAO_TANG_QUOC_GIA_VIET_NAM_SECURE_HMAC_KEY_2026";
+    const secret = Deno.env.get("QR_SIGNING_SECRET");
+    if (!secret) {
+      return new Response(
+        JSON.stringify({ error: "Server misconfigured: QR_SIGNING_SECRET not set." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
     const { order_code } = await req.json();
 
-    if (!order_code || typeof order_code !== "string") {
+    if (!order_code) {
       return new Response(
-        JSON.stringify({ error: "Missing or invalid 'order_code' parameter." }),
+        JSON.stringify({ error: "Thiếu 'order_code' trong request body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

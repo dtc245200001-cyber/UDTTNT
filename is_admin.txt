@@ -1,0 +1,24 @@
+﻿
+> CREATE OR REPLACE FUNCTION public.is_admin()
+  RETURNS BOOLEAN
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  SET search_path = public
+  STABLE
+  AS $$
+  DECLARE
+      _jwt_email TEXT;
+      _jwt_role TEXT;
+      _db_role TEXT;
+  BEGIN
+      -- 1. Náº¿u thá»±c thi tá»« Supabase SQL Editor, Table Editor, hoáº·c Service Role
+      IF current_user IN ('postgres', 'supabase_admin', 'service_role') 
+         OR (auth.role() = 'service_role') THEN
+          RETURN TRUE;
+      END IF;
+  
+      -- 2. Kiá»ƒm tra trá»±c tiáº¿p qua JWT claims (nhanh vÃ  khÃ´ng Ä‘á»‡ quy)
+      _jwt_email := auth.jwt() ->> 'email';
+      _jwt_role := COALESCE(
+
+

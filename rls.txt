@@ -1,0 +1,465 @@
+﻿
+  
+  -- Báº£ng NgÆ°á»i dÃ¹ng há»‡ thá»‘ng (liÃªn káº¿t auth.users)
+> CREATE TABLE IF NOT EXISTS nguoi_dung (
+      id VARCHAR(100) PRIMARY KEY,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      password_hash TEXT,
+      role VARCHAR(50) NOT NULL DEFAULT 'visitor',
+      id VARCHAR(50) PRIMARY KEY,
+      author VARCHAR(255) NOT NULL,
+>     user_id VARCHAR(100) REFERENCES nguoi_dung(id) ON DELETE SET NULL,
+      artifact_id VARCHAR(50) REFERENCES hien_vat(id) ON DELETE SET NULL,
+      artifact_name VARCHAR(255),
+      rating INT CHECK (rating >= 1 AND rating <= 5),
+      comment TEXT NOT NULL,
+      date DATE DEFAULT CURRENT_DATE,
+      id VARCHAR(100) PRIMARY KEY,
+      ticket_code VARCHAR(100) UNIQUE NOT NULL,
+>     user_id VARCHAR(100) REFERENCES nguoi_dung(id) ON DELETE SET NULL,
+      name VARCHAR(255) NOT NULL,
+      phone VARCHAR(50),
+      email VARCHAR(255),
+      ticket_type VARCHAR(255),
+      price NUMERIC NOT NULL,
+      event_id VARCHAR(50) REFERENCES su_kien(id) ON DELETE CASCADE,
+      event_title VARCHAR(255),
+>     user_id VARCHAR(100) REFERENCES nguoi_dung(id) ON DELETE SET NULL,
+      name VARCHAR(255) NOT NULL,
+      phone VARCHAR(50),
+      email VARCHAR(255),
+      visit_date DATE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+  ALTER TABLE su_kien ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE ve_tham_quan ENABLE ROW LEVEL SECURITY;
+> ALTER TABLE nguoi_dung ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE bai_viet ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE danh_gia ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE dat_ve ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE dang_ky_su_kien ENABLE ROW LEVEL SECURITY;
+  
+  DROP POLICY IF EXISTS "Public read bai_viet" ON bai_viet;
+  DROP POLICY IF EXISTS "Public read danh_gia" ON danh_gia;
+> DROP POLICY IF EXISTS "Public read nguoi_dung" ON nguoi_dung;
+  DROP POLICY IF EXISTS "Public read dat_ve" ON dat_ve;
+  DROP POLICY IF EXISTS "Public read dang_ky_su_kien" ON dang_ky_su_kien;
+  
+  DROP POLICY IF EXISTS "Public insert/update hien_vat" ON hien_vat;
+  DROP POLICY IF EXISTS "Public insert/update danh_muc" ON danh_muc;
+  DROP POLICY IF EXISTS "Public insert/update su_kien" ON su_kien;
+  DROP POLICY IF EXISTS "Public insert/update ve_tham_quan" ON ve_tham_quan;
+> DROP POLICY IF EXISTS "Public insert/update nguoi_dung" ON nguoi_dung;
+  DROP POLICY IF EXISTS "Public insert/update danh_gia" ON danh_gia;
+  DROP POLICY IF EXISTS "Public insert/update dat_ve" ON dat_ve;
+  DROP POLICY IF EXISTS "Public insert/update dang_ky_su_kien" ON dang_ky_su_kien;
+  DROP POLICY IF EXISTS "Public insert/update bai_viet" ON bai_viet;
+  
+  CREATE POLICY "Public read bai_viet" ON bai_viet FOR SELECT USING (true);
+  CREATE POLICY "Public read danh_gia" ON danh_gia FOR SELECT USING (true);
+> CREATE POLICY "Public read nguoi_dung" ON nguoi_dung FOR SELECT USING (true);
+  CREATE POLICY "Public read dat_ve" ON dat_ve FOR SELECT USING (true);
+  CREATE POLICY "Public read dang_ky_su_kien" ON dang_ky_su_kien FOR SELECT USING (true);
+  
+  -- Cho phÃ©p táº¡o / sá»­a / xÃ³a cho á»©ng dá»¥ng
+  
+  CREATE POLICY "Public insert/update su_kien" ON su_kien FOR ALL USING (true) WITH CHECK (true);
+  CREATE POLICY "Public insert/update ve_tham_quan" ON ve_tham_quan FOR ALL USING (true) WITH CHECK (true);
+> CREATE POLICY "Public insert/update nguoi_dung" ON nguoi_dung FOR ALL USING (true) WITH CHECK (true);
+  CREATE POLICY "Public insert/update danh_gia" ON danh_gia FOR ALL USING (true) WITH CHECK (true);
+  CREATE POLICY "Public insert/update dat_ve" ON dat_ve FOR ALL USING (true) WITH CHECK (true);
+  CREATE POLICY "Public insert/update dang_ky_su_kien" ON dang_ky_su_kien FOR ALL USING (true) WITH CHECK (true);
+  CREATE POLICY "Public insert/update bai_viet" ON bai_viet FOR ALL USING (true) WITH CHECK (true);
+  
+  
+  -- Seed NgÆ°á»i dÃ¹ng
+> INSERT INTO nguoi_dung (id, email, name, password_hash, role, role_label, status, avatar, joined_at) VALUES
+  ('USR000', 'admin@gmail.com', 'Quáº£n trá»‹ viÃªn', 'Admin@123', 'admin', 'Quáº£n trá»‹ viÃªn', 'Hoáº¡t Ä‘á»™ng', 
+'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', '2024-01-01'),
+  ('USR001', 'admin@baotang.gov.vn', 'Nguyá»…n VÄƒn Quáº£n', 'admin123', 'admin', 'Quáº£n trá»‹ viÃªn', 'Hoáº¡t 
+Ä‘á»™ng', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', '2023-01-10'),
+  ('USR002', 'huong.tt@baotang.gov.vn', 'Tráº§n Thá»‹ Thu HÆ°Æ¡ng', '123456', 'admin', 'ChuyÃªn viÃªn Báº£o tá»“n', 
+'Hoáº¡t Ä‘á»™ng', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', '2023-03-15'),
+  ('USR003', 'minh.lh@baotang.gov.vn', 'LÃª HoÃng Minh', '123456', 'admin', 'HÆ°á»›ng dáº«n viÃªn', 'Hoáº¡t Ä‘á»™ng', 
+'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150', '2023-06-20'),
+  ('USR004', 'visitor@gmail.com', 'Tráº§n VÄƒn KhÃ¡ch', 'visitor123', 'visitor', 'KhÃ¡ch tham quan', 'Hoáº¡t Ä‘á»™ng', 
+'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150', '2024-05-01')
+  -- Báº¢O TÃ€NG QUá»C GIA VIá»†T NAM - SUPABASE USER SYNC TRIGGER MIGRATION
+  -- File: supabase/migration_ensure_user_sync.sql
+> -- Má»¥c Ä‘Ã­ch: Äáº£m báº£o Trigger tá»± Ä‘á»™ng Ä‘á»“ng bá»™ tá»« auth.users sang public.nguoi_dung
+  -- Báº£o máº­t: Loáº¡i bá» hoÃ n toÃ n kháº£ nÄƒng tá»± nÃ¢ng quyá»n qua client metadata (raw_user_meta_data)
+  -- TÃ­nh cháº¥t: Idempotent (cháº¡y nhiá»u láº§n an toÃ n, khÃ´ng sinh lá»—i duplicate)
+  -- ====================================================================
+  
+> -- 1. Äáº£m báº£o cá»™t auth_user_id Ä‘Ã£ tá»“n táº¡i trong báº£ng nguoi_dung
+  DO $$
+  BEGIN
+      IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+>         WHERE table_name = 'nguoi_dung' AND column_name = 'auth_user_id'
+      ) THEN
+>         ALTER TABLE public.nguoi_dung ADD COLUMN auth_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+>         CREATE UNIQUE INDEX IF NOT EXISTS idx_nguoi_dung_auth_user_id ON public.nguoi_dung(auth_user_id);
+      END IF;
+  END $$;
+  
+  -- 2. Táº O HOáº¶C Cáº¬P NHáº¬T FUNCTION HANDLE_NEW_USER
+  CREATE OR REPLACE FUNCTION public.handle_new_user()
+      user_name := COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1));
+  
+>     -- Tá»± Ä‘á»™ng thÃªm hoáº·c cáº­p nháº­t há»“ sÆ¡ trong báº£ng nguoi_dung
+>     INSERT INTO public.nguoi_dung (
+          id,
+          auth_user_id,
+          email,
+          name,
+          role,
+      SET 
+          auth_user_id = EXCLUDED.auth_user_id,
+>         role = CASE WHEN public.nguoi_dung.role = 'admin' THEN 'admin' ELSE EXCLUDED.role END,
+>         role_label = CASE WHEN public.nguoi_dung.role = 'admin' THEN 'Quáº£n trá»‹ viÃªn' ELSE EXCLUDED.role_label 
+END;
+  
+      RETURN NEW;
+  END;
+  $$;
+  
+      FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+  
+> -- 4. Äá»’NG Bá»˜ CÃC USER HIá»†N CÃ“ Tá»ª TRÆ¯á»šC SANG NGUOI_DUNG
+> INSERT INTO public.nguoi_dung (
+      id,
+      auth_user_id,
+      email,
+      name,
+      role,
+      END IF;
+  
+>     -- 3. Kiá»ƒm tra vai trÃ² trong báº£ng public.nguoi_dung
+      IF auth.uid() IS NOT NULL OR _jwt_email IS NOT NULL THEN
+          SELECT role INTO _db_role
+>         FROM public.nguoi_dung
+          WHERE (auth_user_id = auth.uid() OR (_jwt_email IS NOT NULL AND email = _jwt_email))
+          LIMIT 1;
+  
+          IF _db_role = 'admin' THEN
+              RETURN TRUE;
+      -- Kiá»ƒm tra DB
+      SELECT role INTO _role
+>     FROM public.nguoi_dung
+      WHERE (auth_user_id = auth.uid() OR (auth.jwt() ->> 'email' IS NOT NULL AND email = (auth.jwt() ->> 'email')))
+      LIMIT 1;
+  
+      RETURN COALESCE(_role, 'visitor');
+  END;
+  
+      IF EXISTS (
+>         SELECT 1 FROM public.nguoi_dung
+          WHERE (auth_user_id = auth.uid() OR (auth.jwt() ->> 'email' IS NOT NULL AND email = (auth.jwt() ->> 
+'email')))
+            AND role IN ('admin', 'staff')
+      ) THEN
+          RETURN TRUE;
+      END IF;
+  $$;
+  
+> DROP TRIGGER IF EXISTS trg_prevent_self_role_change ON public.nguoi_dung;
+  CREATE TRIGGER trg_prevent_self_role_change
+>     BEFORE UPDATE ON public.nguoi_dung
+      FOR EACH ROW
+      EXECUTE FUNCTION public.prevent_self_role_change();
+  
+  
+  -- --------------------------------------------------------------------
+> -- 3. Cáº¬P NHáº¬T CHÃNH SÃCH ROW LEVEL SECURITY (RLS) CHO Báº¢NG NGUOI_DUNG
+  -- --------------------------------------------------------------------
+> ALTER TABLE public.nguoi_dung ENABLE ROW LEVEL SECURITY;
+  
+  -- 3.1 SELECT: Cho phÃ©p hiá»ƒn thá»‹ danh sÃ¡ch ngÆ°á»i dÃ¹ng
+> DROP POLICY IF EXISTS "allow_select_nguoi_dung" ON public.nguoi_dung;
+> CREATE POLICY "allow_select_nguoi_dung" ON public.nguoi_dung FOR SELECT
+      USING (true);
+  
+  -- 3.2 INSERT: Cho phÃ©p Ä‘Äƒng kÃ½ má»›i & táº¡o ngÆ°á»i dÃ¹ng tá»« Admin
+> DROP POLICY IF EXISTS "allow_insert_nguoi_dung" ON public.nguoi_dung;
+> CREATE POLICY "allow_insert_nguoi_dung" ON public.nguoi_dung FOR INSERT
+      WITH CHECK (
+          is_admin()
+          OR auth_user_id = auth.uid()
+          OR email = (auth.jwt() ->> 'email')
+          OR auth.role() = 'authenticated'
+  
+  -- 3.3 UPDATE: Admin Ä‘Æ°á»£c sá»­a má»i dÃ²ng, User thÆ°á»ng chá»‰ sá»­a thÃ´ng tin cÃ¡ nhÃ¢n cá»§a mÃ¬nh
+> DROP POLICY IF EXISTS "allow_update_nguoi_dung" ON public.nguoi_dung;
+> CREATE POLICY "allow_update_nguoi_dung" ON public.nguoi_dung FOR UPDATE
+      USING (
+          is_admin()
+          OR auth_user_id = auth.uid()
+          OR email = (auth.jwt() ->> 'email')
+      )
+  
+  -- 3.4 DELETE: Chá»‰ Admin má»›i cÃ³ quyá»n xÃ³a ngÆ°á»i dÃ¹ng
+> DROP POLICY IF EXISTS "allow_admin_delete_nguoi_dung" ON public.nguoi_dung;
+> DROP POLICY IF EXISTS "allow_delete_nguoi_dung" ON public.nguoi_dung;
+> CREATE POLICY "allow_delete_nguoi_dung" ON public.nguoi_dung FOR DELETE
+      USING (is_admin());
+  
+  
+  -- --------------------------------------------------------------------
+  -- 4. HÃ€M RPC Äá»”I QUYá»€N (ASSIGN USER ROLE) CHUYÃŠN Dá»¤NG
+      END IF;
+  
+>     -- Cáº­p nháº­t báº£ng public.nguoi_dung
+>     UPDATE public.nguoi_dung
+      SET 
+          role = new_role,
+          role_label = v_label
+      WHERE id = target_user_id OR email = target_user_id
+      RETURNING auth_user_id INTO v_auth_id;
+  
+      SELECT row_to_json(u) INTO v_result
+>     FROM public.nguoi_dung u
+      WHERE id = target_user_id OR email = target_user_id
+      LIMIT 1;
+  
+      RETURN v_result;
+  END;
+  
+      SELECT status INTO v_curr_status
+>     FROM public.nguoi_dung
+      WHERE id = target_user_id OR email = target_user_id;
+  
+      IF NOT FOUND THEN
+          RAISE EXCEPTION 'KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng: %', target_user_id;
+      END IF;
+      END IF;
+  
+>     UPDATE public.nguoi_dung
+      SET status = v_new_status
+      WHERE id = target_user_id OR email = target_user_id;
+  
+      SELECT row_to_json(u) INTO v_result
+>     FROM public.nguoi_dung u
+      WHERE id = target_user_id OR email = target_user_id
+      LIMIT 1;
+  
+      RETURN v_result;
+  END;
+  -- 6. Äáº¢M Báº¢O TÃ€I KHOáº¢N QUáº¢N TRá»Š VIÃŠN Máº¶C Äá»ŠNH LUÃ”N CÃ“ QUYá»€N ADMIN
+  -- --------------------------------------------------------------------
+> UPDATE public.nguoi_dung
+  SET 
+      role = 'admin',
+      role_label = 'Quáº£n trá»‹ viÃªn',
+      status = 'Hoáº¡t Ä‘á»™ng'
+  WHERE email = 'admin@gmail.com';
+  --   Chá»‘ng lá»— há»•ng leo thang Ä‘áº·c quyá»n (Privilege Escalation):
+  --   NgÄƒn cháº·n ngÆ°á»i dÃ¹ng tá»± cáº­p nháº­t cá»™t 'role', 'role_label', 'status' cá»§a chÃ­nh mÃ¬nh
+> --   thÃ´ng qua BEFORE UPDATE Trigger trÃªn báº£ng nguoi_dung.
+  -- ====================================================================
+  
+  -- 1. Táº O HÃ€M TRIGGER KIá»‚M SOÃT THAY Äá»”I VAI TRÃ’ & TRáº NG THÃI TÃ€I KHOáº¢N
+  CREATE OR REPLACE FUNCTION public.prevent_self_role_change()
+  RETURNS TRIGGER
+  $$;
+  
+> -- 2. Gáº®N TRIGGER TRÆ¯á»šC KHI Cáº¬P NHáº¬T (BEFORE UPDATE) TRÃŠN Báº¢NG NGUOI_DUNG
+> DROP TRIGGER IF EXISTS trg_prevent_self_role_change ON public.nguoi_dung;
+  
+  CREATE TRIGGER trg_prevent_self_role_change
+>     BEFORE UPDATE ON public.nguoi_dung
+      FOR EACH ROW
+      EXECUTE FUNCTION public.prevent_self_role_change();
+  
+  
+  -- ==========================================
+  -- File: supabase/migration_security_hardening.sql
+  -- Má»¥c Ä‘Ã­ch:
+> --   1. ThÃªm liÃªn káº¿t auth.users (auth_user_id) vÃ o báº£ng nguoi_dung
+  --   2. Táº¡o báº£ng audit_logs lÆ°u váº¿t táº­p trung (Postgres) vá»›i tÃ­nh báº¥t biáº¿n
+  --   3. Táº¡o cÃ¡c hÃ m SQL Helper phÃ¢n quyá»n vai trÃ² (Role-Based Access Control)
+  --   4. Viáº¿t láº¡i toÃ n bá»™ Row Level Security (RLS) theo vai trÃ² tháº­t
+  -- ====================================================================
+  
+> -- 1. Cáº¬P NHáº¬T Báº¢NG NGUOI_DUNG Äá»‚ LIÃŠN Káº¾T SUPABASE AUTH (auth.users)
+  -- ThÃªm cá»™t auth_user_id kiá»ƒu UUID trá» tá»›i auth.users(id)
+  DO $$
+  BEGIN
+      IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns 
+>         WHERE table_name = 'nguoi_dung' AND column_name = 'auth_user_id'
+      ) THEN
+>         ALTER TABLE nguoi_dung ADD COLUMN auth_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+>         CREATE UNIQUE INDEX IF NOT EXISTS idx_nguoi_dung_auth_user_id ON nguoi_dung(auth_user_id);
+      END IF;
+  END $$;
+  
+> -- 1.1 Tá»° Äá»˜NG Äá»’NG Bá»˜ Má»ŒI TÃ€I KHOáº¢N Táº O Tá»ª AUTH.USERS SANG PUBLIC.NGUOI_DUNG
+  CREATE OR REPLACE FUNCTION public.handle_new_user()
+  RETURNS TRIGGER
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  AS $$
+      user_name := COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1));
+  
+>     -- Tá»± Ä‘á»™ng thÃªm hoáº·c cáº­p nháº­t há»“ sÆ¡ trong báº£ng nguoi_dung
+>     INSERT INTO public.nguoi_dung (
+          id,
+          auth_user_id,
+          email,
+          name,
+          role,
+      SET 
+          auth_user_id = EXCLUDED.auth_user_id,
+>         role = CASE WHEN public.nguoi_dung.role = 'admin' THEN 'admin' ELSE EXCLUDED.role END,
+>         role_label = CASE WHEN public.nguoi_dung.role = 'admin' THEN 'Quáº£n trá»‹ viÃªn' ELSE EXCLUDED.role_label 
+END;
+  
+      RETURN NEW;
+  END;
+  $$;
+  
+      FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+  
+> -- Äá»“ng bá»™ ngay láº­p tá»©c toÃ n bá»™ cÃ¡c user hiá»‡n Ä‘ang cÃ³ trong auth.users sang báº£ng nguoi_dung
+> INSERT INTO public.nguoi_dung (
+      id,
+      auth_user_id,
+      email,
+      name,
+      role,
+  CREATE TABLE IF NOT EXISTS audit_logs (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+>     user_id VARCHAR(100) REFERENCES nguoi_dung(id) ON DELETE SET NULL,
+      auth_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+      user_email TEXT,
+      user_name TEXT,
+      action VARCHAR(100) NOT NULL,
+      description TEXT,
+          (
+              SELECT role 
+>             FROM nguoi_dung 
+              WHERE auth_user_id = auth.uid() 
+                 OR email = (auth.jwt() ->> 'email')
+              LIMIT 1
+          ),
+          'visitor'
+  ALTER TABLE ve_tham_quan ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE bai_viet ENABLE ROW LEVEL SECURITY;
+> ALTER TABLE nguoi_dung ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE dat_ve ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE dang_ky_su_kien ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE danh_gia ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+  
+  DROP POLICY IF EXISTS "Public read bai_viet" ON bai_viet;
+  DROP POLICY IF EXISTS "Public read danh_gia" ON danh_gia;
+> DROP POLICY IF EXISTS "Public read nguoi_dung" ON nguoi_dung;
+  DROP POLICY IF EXISTS "Public read dat_ve" ON dat_ve;
+  DROP POLICY IF EXISTS "Public read dang_ky_su_kien" ON dang_ky_su_kien;
+  
+  DROP POLICY IF EXISTS "Public insert/update hien_vat" ON hien_vat;
+  DROP POLICY IF EXISTS "Public insert/update danh_muc" ON danh_muc;
+  DROP POLICY IF EXISTS "Public insert/update su_kien" ON su_kien;
+  DROP POLICY IF EXISTS "Public insert/update ve_tham_quan" ON ve_tham_quan;
+> DROP POLICY IF EXISTS "Public insert/update nguoi_dung" ON nguoi_dung;
+  DROP POLICY IF EXISTS "Public insert/update danh_gia" ON danh_gia;
+  DROP POLICY IF EXISTS "Public insert/update dat_ve" ON dat_ve;
+  DROP POLICY IF EXISTS "Public insert/update dang_ky_su_kien" ON dang_ky_su_kien;
+  DROP POLICY IF EXISTS "Public insert/update bai_viet" ON bai_viet;
+  
+  DROP POLICY IF EXISTS "allow_admin_modify_bai_viet" ON bai_viet;
+  
+> DROP POLICY IF EXISTS "allow_select_nguoi_dung" ON nguoi_dung;
+> DROP POLICY IF EXISTS "allow_insert_nguoi_dung" ON nguoi_dung;
+> DROP POLICY IF EXISTS "allow_update_nguoi_dung" ON nguoi_dung;
+> DROP POLICY IF EXISTS "allow_admin_delete_nguoi_dung" ON nguoi_dung;
+  
+  DROP POLICY IF EXISTS "allow_select_dat_ve" ON dat_ve;
+  DROP POLICY IF EXISTS "allow_insert_dat_ve" ON dat_ve;
+  DROP POLICY IF EXISTS "allow_update_dat_ve" ON dat_ve;
+  DROP POLICY IF EXISTS "allow_delete_dat_ve" ON dat_ve;
+  
+  
+> -- [NHÃ“M 2: Báº¢NG NGÆ¯á»œI DÃ™NG (nguoi_dung)]
+  -- NguyÃªn táº¯c: 
+  -- - User chá»‰ xem/sá»­a há»“ sÆ¡ cá»§a chÃ­nh mÃ¬nh (auth_user_id = auth.uid() hoáº·c email trÃ¹ng JWT).
+  -- - Admin Ä‘Æ°á»£c xem vÃ  chá»‰nh sá»­a táº¥t cáº£.
+  -- - Chá»‰ Admin má»›i cÃ³ quyá»n xÃ³a tÃ i khoáº£n.
+  -- - Cho phÃ©p INSERT khi Ä‘Äƒng kÃ½ tÃ i khoáº£n má»›i.
+> DROP POLICY IF EXISTS "allow_select_nguoi_dung" ON nguoi_dung;
+> CREATE POLICY "allow_select_nguoi_dung" ON nguoi_dung FOR SELECT
+      USING (
+          auth_user_id = auth.uid() 
+          OR email = (auth.jwt() ->> 'email')
+          OR is_admin()
+      );
+  
+> DROP POLICY IF EXISTS "allow_insert_nguoi_dung" ON nguoi_dung;
+> CREATE POLICY "allow_insert_nguoi_dung" ON nguoi_dung FOR INSERT
+      WITH CHECK (
+          auth_user_id = auth.uid()
+          OR email = (auth.jwt() ->> 'email')
+          OR is_admin()
+          
+      );
+  
+> DROP POLICY IF EXISTS "allow_update_nguoi_dung" ON nguoi_dung;
+> CREATE POLICY "allow_update_nguoi_dung" ON nguoi_dung FOR UPDATE
+      USING (
+          auth_user_id = auth.uid() 
+          OR email = (auth.jwt() ->> 'email')
+          OR is_admin()
+      )
+      );
+  
+> DROP POLICY IF EXISTS "allow_admin_delete_nguoi_dung" ON nguoi_dung;
+> CREATE POLICY "allow_admin_delete_nguoi_dung" ON nguoi_dung FOR DELETE
+      USING (is_admin());
+  
+  
+  -- [NHÃ“M 3: Báº¢NG Äáº¶T VÃ‰ (dat_ve)]
+  -- NguyÃªn táº¯c:
+      USING (
+          email = (auth.jwt() ->> 'email')
+>         OR user_id IN (SELECT id FROM nguoi_dung WHERE auth_user_id = auth.uid())
+          OR is_staff_or_admin()
+      );
+  
+  DROP POLICY IF EXISTS "allow_insert_dat_ve" ON dat_ve;
+  CREATE POLICY "allow_insert_dat_ve" ON dat_ve FOR INSERT
+      USING (
+          email = (auth.jwt() ->> 'email')
+>         OR user_id IN (SELECT id FROM nguoi_dung WHERE auth_user_id = auth.uid())
+          OR is_staff_or_admin()
+      );
+  
+  DROP POLICY IF EXISTS "allow_insert_dang_ky_su_kien" ON dang_ky_su_kien;
+  CREATE POLICY "allow_insert_dang_ky_su_kien" ON dang_ky_su_kien FOR INSERT
+  CREATE POLICY "allow_author_or_admin_modify_danh_gia" ON danh_gia FOR UPDATE
+      USING (
+>         user_id IN (SELECT id FROM nguoi_dung WHERE auth_user_id = auth.uid())
+          OR is_admin()
+      )
+      WITH CHECK (
+>         user_id IN (SELECT id FROM nguoi_dung WHERE auth_user_id = auth.uid())
+          OR is_admin()
+      );
+  
+  DROP POLICY IF EXISTS "allow_author_or_admin_delete_danh_gia" ON danh_gia;
+  CREATE POLICY "allow_author_or_admin_delete_danh_gia" ON danh_gia FOR DELETE
+      USING (
+>         user_id IN (SELECT id FROM nguoi_dung WHERE auth_user_id = auth.uid())
+          OR is_admin()
+      );
+  
+  
+  -- [NHÃ“M 6: Báº¢NG AUDIT LOGS (audit_logs) - Báº¤T BIáº¾N]
+  $$;
+  
+> DROP TRIGGER IF EXISTS trg_enforce_default_role ON public.nguoi_dung;
+  CREATE TRIGGER trg_enforce_default_role
+>   BEFORE INSERT ON public.nguoi_dung
+    FOR EACH ROW EXECUTE FUNCTION public.enforce_default_role();
+
+

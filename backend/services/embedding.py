@@ -1,6 +1,7 @@
 import os
 import math
 import hashlib
+import time
 
 from dotenv import load_dotenv
 from google import genai
@@ -23,6 +24,8 @@ if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
         print(f"[Embedding] Không thể khởi tạo Gemini client: {e}")
         client = None
 
+
+import asyncio
 
 def get_embedding(text: str) -> list[float]:
     """
@@ -59,6 +62,12 @@ def get_embedding(text: str) -> list[float]:
         print(f"[Embedding Warning] {e}")
         return _create_fallback_embedding(text)
 
+async def get_embedding_async(text: str) -> list[float]:
+    """
+    Chạy get_embedding() trong một thread pool riêng,
+    không chặn event loop chính.
+    """
+    return await asyncio.to_thread(get_embedding, text)
 
 def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
     """
@@ -84,57 +93,94 @@ def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
         ]
 
     try:
-        contents = []
+        BATCH_SIZE = 100  # Giới hạn của Gemini Embedding API
+        all_embeddings = []
 
-        for text in clean_texts:
-            # Lấy tiêu đề từ dòng đầu tiên nếu có
-            title = "none"
+        for batch_start in range(0, len(clean_texts), BATCH_SIZE):
+            batch = clean_texts[batch_start: batch_start + BATCH_SIZE]
+            contents = []
 
-            if text.startswith("Tiêu đề:"):
-                first_line = text.split("\n", 1)[0]
-                title = first_line.replace(
-                    "Tiêu đề:", ""
-                ).strip()
+            for text in batch:
+                # Lấy tiêu đề từ dòng đầu tiên nếu có
+                title = "none"
 
-            document_text = (
-                f"title: {title} | text: {text}"
-            )
+                if text.startswith("Tiêu đề:"):
+                    first_line = text.split("\n", 1)[0]
+                    title = first_line.replace(
+                        "Tiêu đề:", ""
+                    ).strip()
 
-            contents.append(
-                types.Content(
-                    parts=[
-                        types.Part.from_text(
-                            text=document_text
-                        )
-                    ]
+                document_text = (
+                    f"title: {title} | text: {text}"
                 )
+
+                contents.append(
+                    types.Content(
+                        parts=[
+                            types.Part.from_text(
+                                text=document_text
+                            )
+                        ]
+                    )
+                )
+
+            # Gọi API với retry khi bị 429 (quota)
+            MAX_EMBED_RETRIES = 5
+            for embed_attempt in range(1, MAX_EMBED_RETRIES + 1):
+                try:
+                    result = client.models.embed_content(
+                        model=EMBEDDING_MODEL,
+                        contents=contents,
+                        config=types.EmbedContentConfig(
+                            output_dimensionality=EMBEDDING_DIMENSION
+                        )
+                    )
+                    break  # Thành công, thoát retry loop
+                except Exception as embed_err:
+                    err_str = str(embed_err)
+                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                        # Tìm retryDelay từ message
+                        import re as _re
+                        delay_match = _re.search(r"retryDelay.*?(\d+)s", err_str)
+                        wait_secs = int(delay_match.group(1)) + 5 if delay_match else 65
+                        print(
+                            f"[Embedding] Batch {batch_start // BATCH_SIZE + 1} bị rate limit. "
+                            f"Chờ {wait_secs}s rồi thử lại (lần {embed_attempt}/{MAX_EMBED_RETRIES})..."
+                        )
+                        time.sleep(wait_secs)
+                        if embed_attempt == MAX_EMBED_RETRIES:
+                            raise
+                    else:
+                        raise
+
+            batch_embeddings = [
+                embedding.values
+                for embedding in result.embeddings
+            ]
+
+            if len(batch_embeddings) != len(batch):
+                raise ValueError(
+                    f"Gemini trả về {len(batch_embeddings)} vector "
+                    f"cho {len(batch)} tài liệu (batch {batch_start // BATCH_SIZE + 1})."
+                )
+
+            all_embeddings.extend(batch_embeddings)
+            print(
+                f"[Embedding] Batch {batch_start // BATCH_SIZE + 1}: "
+                f"Đã embed {len(all_embeddings)}/{len(clean_texts)} documents."
             )
 
-        result = client.models.embed_content(
-            model=EMBEDDING_MODEL,
-            contents=contents,
-            config=types.EmbedContentConfig(
-                output_dimensionality=EMBEDDING_DIMENSION
-            )
-        )
-
-        embeddings = [
-            embedding.values
-            for embedding in result.embeddings
-        ]
-
-        if len(embeddings) != len(clean_texts):
-            raise ValueError(
-                f"Gemini trả về {len(embeddings)} vector "
-                f"cho {len(clean_texts)} tài liệu."
-            )
+            # Chờ để tránh vượt rate limit của Gemini Embedding API (100 req/phút free tier)
+            if batch_start + BATCH_SIZE < len(clean_texts):
+                print("[Embedding] Chờ 65 giây để tránh vượt quota rate limit...")
+                time.sleep(65)
 
         print(
             f"[Embedding] Đã tạo thành công "
-            f"{len(embeddings)} vector Gemini."
+            f"{len(all_embeddings)} vector Gemini."
         )
 
-        return embeddings
+        return all_embeddings
 
     except Exception as e:
         print(

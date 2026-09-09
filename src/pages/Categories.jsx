@@ -1,8 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { FolderTree, Plus, ChevronRight } from 'lucide-react';
 
 export const Categories = () => {
+  const navigate = useNavigate();
   const { categories } = useApp();
 
   return (
@@ -26,7 +28,16 @@ export const Categories = () => {
         {categories.map((c) => (
           <div
             key={c.id}
-            className="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 hover:shadow-md transition-all duration-200 flex flex-col justify-between group"
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate(`/admin/artifacts?category=${encodeURIComponent(c.id)}`)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate(`/admin/artifacts?category=${encodeURIComponent(c.id)}`);
+              }
+            }}
+            className="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 hover:shadow-md transition-all duration-200 flex flex-col justify-between group cursor-pointer"
           >
             <div>
               <div className="flex items-center justify-between mb-3">

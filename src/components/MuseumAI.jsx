@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { searchArtifacts } from '@/utils/artifactSearch';
-import { sendChatQuery } from '@/services/aiChatService';
+import { sendChatQuery, streamChatQuery } from '@/services/aiChatService';
 import { MarkdownMessage } from '@/components/ai/MarkdownMessage';
 import {
   Bot,
@@ -30,6 +30,30 @@ export const MuseumAI = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState(null);
   const [expandedSources, setExpandedSources] = useState({});
+  // Trạng thái streaming
+  const [streamingText, setStreamingText] = useState('');
+  const [streamingMsgId, setStreamingMsgId] = useState(null);
+  const abortStreamRef = useRef(null);
+
+  // Hiệu ứng cuộn gợi ý
+  const [activePromptIdx, setActivePromptIdx] = useState(0);
+
+  const handlePromptScroll = (e) => {
+    const container = e.target;
+    const scrollLeft = container.scrollLeft;
+    let minDiff = Infinity;
+    let newActive = 0;
+    Array.from(container.children).forEach((child, idx) => {
+      const diff = Math.abs(child.offsetLeft - container.offsetLeft - scrollLeft);
+      if (diff < minDiff) {
+        minDiff = diff;
+        newActive = idx;
+      }
+    });
+    if (newActive !== activePromptIdx) {
+      setActivePromptIdx(newActive);
+    }
+  };
 
   // Gợi ý câu hỏi tiêu biểu, gần gũi và thú vị
   const suggestedPrompts = [
@@ -74,7 +98,14 @@ export const MuseumAI = () => {
     const textToSend = (queryText || inputText).trim();
     if (!textToSend || isSearching) return;
 
+    // Hủy stream cũ nếu đang chạy
+    if (abortStreamRef.current) {
+      abortStreamRef.current();
+      abortStreamRef.current = null;
+    }
+
     const userMsgId = `user-${Date.now()}`;
+    const aiMsgId = `ai-${Date.now()}`;
     const userMsg = {
       id: userMsgId,
       sender: 'user',
@@ -88,53 +119,92 @@ export const MuseumAI = () => {
     setMessages(currentHistory);
     if (!queryText) setInputText('');
     setIsSearching(true);
+    setStreamingText('');
+    setStreamingMsgId(aiMsgId);
 
-    try {
-      // 1. Gửi tin nhắn kèm lịch sử hội thoại lên FastAPI RAG Backend
-      const res = await sendChatQuery(textToSend, messages);
+    let fullText = '';
 
-      if (res.success && res.answer) {
+    // Thử streaming trước
+    const abort = streamChatQuery(
+      textToSend,
+      messages,
+      // onChunk: nhận từng phần văn bản
+      (chunk) => {
+        fullText += chunk;
+        setStreamingText(fullText);
+      },
+      // onDone: hoàn tất — chốt tin nhắn AI vào danh sách
+      () => {
         const aiMsg = {
-          id: `ai-${Date.now()}`,
+          id: aiMsgId,
           sender: 'ai',
-          text: res.answer,
-          sources: res.sources || [],
+          text: fullText || '...',
+          sources: [],
           artifacts: [],
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
         setMessages((prev) => [...prev, aiMsg]);
-      } else {
-        // Fallback sang tra cứu local nếu backend chưa bật
-        const localResult = searchArtifacts(artifacts, textToSend, { events, tickets });
-        const aiMsg = {
-          id: `ai-${Date.now()}`,
-          sender: 'ai',
-          text: localResult.message,
-          sources: (localResult.matchedArtifacts || []).map((art) => ({
-            title: art.name,
-            category: art.period || 'Hiện vật bảo tàng',
-            snippet: art.description,
-            period: art.period || '',
-          })),
-          artifacts: localResult.matchedArtifacts || [],
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setMessages((prev) => [...prev, aiMsg]);
+        setStreamingText('');
+        setStreamingMsgId(null);
+        setIsSearching(false);
+        abortStreamRef.current = null;
+      },
+      // onError: fallback về non-streaming
+      async (errMsg) => {
+        console.warn('[MuseumAI] Stream lỗi, fallback non-stream:', errMsg);
+        setStreamingText('');
+        setStreamingMsgId(null);
+
+        try {
+          const res = await sendChatQuery(textToSend, messages);
+          if (res.success && res.answer) {
+            const aiMsg = {
+              id: aiMsgId,
+              sender: 'ai',
+              text: res.answer,
+              sources: res.sources || [],
+              artifacts: [],
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            };
+            setMessages((prev) => [...prev, aiMsg]);
+          } else {
+            // Fallback local search
+            const localResult = searchArtifacts(artifacts, textToSend, { events, tickets });
+            const aiMsg = {
+              id: aiMsgId,
+              sender: 'ai',
+              text: localResult.message,
+              sources: (localResult.matchedArtifacts || []).map((art) => ({
+                title: art.name,
+                category: art.period || 'Hiện vật bảo tàng',
+                snippet: art.description,
+                period: art.period || '',
+              })),
+              artifacts: localResult.matchedArtifacts || [],
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            };
+            setMessages((prev) => [...prev, aiMsg]);
+          }
+        } catch {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: aiMsgId,
+              sender: 'ai',
+              text: 'Rất tiếc, đã có chút gián đoạn kết nối. Bạn vui lòng thử lại sau giây lát nhé! 🏛️',
+              sources: [],
+              artifacts: [],
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            },
+          ]);
+        } finally {
+          setIsSearching(false);
+          abortStreamRef.current = null;
+        }
       }
-    } catch (err) {
-      console.error('Chat error:', err);
-      const errorMsg = {
-        id: `ai-${Date.now()}`,
-        sender: 'ai',
-        text: 'Rất tiếc, đã có chút gián đoạn kết nối. Bạn vui lòng thử lại sau giây lát nhé! 🏛️',
-        sources: [],
-        artifacts: [],
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setMessages((prev) => [...prev, errorMsg]);
-    } finally {
-      setIsSearching(false);
-    }
+    );
+
+    abortStreamRef.current = abort;
   };
 
   const handleKeyDown = (e) => {
@@ -206,9 +276,12 @@ export const MuseumAI = () => {
         </button>
       )}
 
-      {/* 2. CỬA SỔ CHATBOT DẠNG FLOATING WIDGET (380px x 600px) */}
+      {/* 2. CỬA SỔ CHATBOT DẠNG FLOATING WIDGET (RESIZABLE) */}
       {isOpen && (
-        <div className="w-[calc(100vw-2.5rem)] sm:w-[380px] h-[600px] max-h-[88vh] bg-white rounded-3xl shadow-2xl border border-museum-gold/40 flex flex-col overflow-hidden animate-fadeIn transition-all duration-300 ease-out">
+        <div 
+          className="w-[calc(100vw-2.5rem)] sm:w-[380px] h-[600px] min-w-[320px] min-h-[400px] max-w-[95vw] max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-museum-gold/40 flex flex-col overflow-hidden animate-fadeIn transition-all duration-300 ease-out pointer-events-auto"
+          style={{ resize: 'both' }}
+        >
           {/* HEADER CHATBOT */}
           <div className="bg-museum-brown text-white px-4 py-3.5 flex items-center justify-between shadow-md relative border-b border-museum-gold/30">
             <div className="flex items-center gap-3">
@@ -303,56 +376,7 @@ export const MuseumAI = () => {
                       )}
                     </div>
 
-                    {/* HIỂN THỊ NGUỒN RAG (SOURCE CITATIONS) */}
-                    {msg.sender === 'ai' && msg.sources && msg.sources.length > 0 && (
-                      <div className="mt-2 bg-museum-cream/50 border border-museum-gold/30 rounded-xl p-2.5 text-left text-xs">
-                        <button
-                          onClick={() => toggleSourceExpand(msg.id)}
-                          className="w-full flex items-center justify-between font-bold text-[11px] text-museum-brown hover:text-museum-gold transition-colors cursor-pointer"
-                        >
-                          <span className="flex items-center gap-1.5">
-                            <BookOpen className="w-3.5 h-3.5 text-museum-gold" />
-                            <span>Tài liệu tham khảo RAG ({msg.sources.length})</span>
-                          </span>
-                          {expandedSources[msg.id] ? (
-                            <ChevronUp className="w-3.5 h-3.5 text-museum-gold" />
-                          ) : (
-                            <ChevronDown className="w-3.5 h-3.5 text-museum-gold" />
-                          )}
-                        </button>
 
-                        {/* Chi tiết các nguồn RAG */}
-                        {expandedSources[msg.id] && (
-                          <div className="mt-2 space-y-2 pt-2 border-t border-museum-gold/20">
-                            {msg.sources.map((src, sIdx) => (
-                              <div
-                                key={sIdx}
-                                className="bg-white p-2 rounded-lg border border-museum-gold/20 text-[11px]"
-                              >
-                                <div className="flex items-center justify-between font-bold text-museum-brown">
-                                  <span className="truncate flex-1">{src.title}</span>
-                                  {src.relevance && (
-                                    <span className="text-[10px] text-emerald-700 font-semibold ml-2 bg-emerald-50 px-1.5 py-0.5 rounded">
-                                      {src.relevance}% khớp
-                                    </span>
-                                  )}
-                                </div>
-                                {src.category && (
-                                  <div className="text-[10px] text-museum-gold font-medium mt-0.5">
-                                    Phân loại: {src.category} {src.period ? `• ${src.period}` : ''}
-                                  </div>
-                                )}
-                                {src.snippet && (
-                                  <p className="text-[10px] text-gray-600 line-clamp-2 mt-1 italic">
-                                    "{src.snippet}"
-                                  </p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
 
                     {/* HIỂN THỊ CARD HIỆN VẬT LIÊN QUAN (NẾU CÓ) */}
                     {msg.artifacts && msg.artifacts.length > 0 && (
@@ -407,8 +431,23 @@ export const MuseumAI = () => {
               </div>
             ))}
 
+            {/* STREAMING TYPING BUBBLE — hiển thị khi đang nhận chunk từ stream */}
+            {streamingMsgId && streamingText && (
+              <div className="flex items-start gap-2 max-w-[92%]">
+                <div className="w-7 h-7 rounded-lg bg-museum-brown flex items-center justify-center text-museum-gold-lt flex-shrink-0 mt-0.5 shadow-2xs">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <div className="p-3.5 rounded-2xl rounded-tl-none text-xs sm:text-[13px] leading-relaxed shadow-2xs bg-white text-gray-800 border border-museum-gold/20 font-normal">
+                    <MarkdownMessage content={streamingText} />
+                    <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-museum-gold rounded-sm animate-pulse align-middle" />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* LOADING ANIMATION (KHI AI ĐANG SUY NGHĨ / TÌM KIẾM RAG) */}
-            {isSearching && (
+            {isSearching && !streamingText && (
               <div className="flex items-center gap-2 max-w-[85%]">
                 <div className="w-7 h-7 rounded-lg bg-museum-brown flex items-center justify-center text-museum-gold-lt flex-shrink-0 shadow-2xs">
                   <Bot className="w-4 h-4" />
@@ -423,18 +462,23 @@ export const MuseumAI = () => {
             <div ref={chatEndRef} />
           </div>
 
-          {/* GỢI Ý CÂU HỎI NHANH (KHI VỪA MỞ HOẶC ÍT HƠN 3 TIN NHẮN) */}
-          {messages.length <= 2 && !isSearching && (
-            <div className="px-3 py-2 bg-white border-t border-gray-100">
-              <div className="text-[10px] font-extrabold text-museum-gold uppercase mb-1.5 px-1 flex items-center gap-1">
-                <Compass className="w-3 h-3" /> Gợi ý cùng bạn khám phá:
-              </div>
-              <div className="flex flex-wrap gap-1.5">
+          {/* GỢI Ý CÂU HỎI NHANH (CUỘN NGANG) */}
+          {!isSearching && (
+            <div className="px-3 pb-3 pt-1 bg-transparent relative z-10">
+              <div 
+                className="flex items-center gap-2.5 overflow-x-auto pb-2 pt-1 scrollbar-hide snap-x snap-mandatory scroll-smooth"
+                style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)' }}
+                onScroll={handlePromptScroll}
+              >
                 {suggestedPrompts.map((prompt, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSendMessage(prompt)}
-                    className="text-[11px] font-medium bg-museum-cream hover:bg-museum-gold hover:text-white text-museum-brown px-2.5 py-1 rounded-lg transition-colors text-left cursor-pointer border border-museum-gold/20 truncate max-w-full"
+                    className={`whitespace-nowrap snap-center shrink-0 text-[11.5px] font-medium px-4 py-2 rounded-2xl transition-all duration-300 cursor-pointer shadow-sm border ${
+                      idx === activePromptIdx 
+                        ? 'bg-museum-gold/20 text-museum-brown border-museum-gold/40 opacity-100 scale-105' 
+                        : 'bg-white/50 text-museum-brown/60 border-transparent opacity-50 hover:opacity-100 hover:bg-museum-gold/10'
+                    }`}
                   >
                     {prompt}
                   </button>

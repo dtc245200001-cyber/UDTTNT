@@ -225,40 +225,203 @@ Không gian trưng bày tập trung vào 4 lĩnh vực nghệ thuật tiêu bi�
   },
   {
     id: 'TBCD03',
-    name: 'Rồng trên cổ vật – Biểu tượng quyền uy & tâm linh',
-    description: 'Chuyên đề đặc biệt giới thiệu sự biến đổi của biểu tượng Rồng thiêng qua hơn 2.000 năm lịch sử văn hóa Việt Nam, từ thời kỳ văn hóa Đông Sơn, Lý - Trần - Lê cho đến triều Nguyễn.',
-    status: 'Sắp diễn ra',
-    startDate: '2026-10-10',
-    endDate: '2027-02-28',
-    location: 'Gian Trưng bày Trung tâm – Số 1 Tràng Tiền, Hoàn Kiếm, Hà Nội',
-    sourceUrl: 'https://baotanglichsu.vn/vi/Articles/4002/chuyen-dje-dja-dien-ra',
-    detailedContent: 'Hình tượng Rồng là một trong những biểu tượng thiêng liêng và quyền quý bậc nhất trong lịch sử mỹ thuật truyền thống Việt Nam. Trưng bày tập hợp hơn 60 cổ vật quý hiếm từ văn hóa Đông Sơn hơn 2.000 năm trước, qua các thời kỳ Đinh - Tiền Lê, Lý - Trần, Lê Sơ cho đến triều Nguyễn thế kỷ 19, minh chứng cho sự tiến hóa độc đáo và ý nghĩa biểu trưng quyền lực của vương quyền Đại Việt.',
-    image: '/images/trong-dong.jpg',
+    name: 'Rồng trên cổ vật qua sưu tập hiện vật Bảo tàng Lịch sử quốc gia',
+    description: 'Bộ sưu tập 25 hiện vật quý hiếm giới thiệu sự tiến hóa và ý nghĩa linh thiêng, quyền uy của hình tượng Rồng qua hơn 2.000 năm lịch sử văn hóa Việt Nam từ thời Đông Sơn, Lý, Trần, Lê, Mạc đến triều Nguyễn.',
+    status: 'Đang diễn ra',
+    startDate: '2024-01-20',
+    endDate: '2026-12-31',
+    location: 'Phòng Trưng bày Chuyên đề số 1, Tầng 1 – Số 1 Tràng Tiền, Hoàn Kiếm, Hà Nội',
+    sourceUrl: 'https://baotanglichsu.vn/vi/Articles/3096/74471/rong-tren-co-vat-qua-suu-tap-hien-vat-bao-tang-lich-su-quoc-gia.html',
+    sourceNote: 'Bảo tàng Lịch sử Quốc gia (baotanglichsu.vn) - Phòng Nghiên cứu Sưu tầm',
+    detailedContent: `Rồng là hình tượng có vị trí đặc biệt trong văn hóa, tín ngưỡng của nhiều dân tộc trên thế giới, trong đó có dân tộc Việt Nam. Ở Việt Nam, hình tượng rồng xuất hiện rất sớm vào buổi đầu dựng nước Văn Lang - Âu Lạc và trở thành biểu tượng linh thiêng gắn với Tổ Tiên, cội nguồn "con Rồng cháu Tiên" của dân tộc. Nằm trong khu vực là cái nôi của nền văn minh lúa nước, rồng Việt Nam còn giữ vai trò là một Phúc thần mang lại mưa thuận gió hòa, mùa màng tươi tốt.
+
+Trưng bày chuyên đề "Rồng trên cổ vật" do Bảo tàng Lịch sử Quốc gia tổ chức giới thiệu 25 hiện vật tiêu biểu phân theo 5 giai đoạn tiến hóa mỹ thuật đỉnh cao:
+
+1. Văn hóa Đông Sơn (khoảng 2.500 - 2.000 năm cách ngày nay): Xuất phát từ cư dân nông nghiệp ven sông, "rồng" được hình dung từ con vật thân dài có vẩy như cá sấu (Giao Long) trang trí trên họng rìu đồng, qua đồng và tấm che ngực (hộ tâm phiến).
+2. Thời kỳ 10 thế kỷ đầu Công nguyên (Thế kỷ I - X): Hình tượng rồng tiếp thu giao lưu văn hóa qua gương đồng đúc nổi Nghi Vệ (Bắc Ninh), bích đồng thần thú Thanh Long và trán bia chùa Trường Xuân (năm 618).
+3. Thời Lý - Trần (Thế kỷ XI - XIV): Rồng gắn với vương quyền và Phật giáo thiền môn; rồng thời Lý thân tròn lượn sóng hình sin mềm mại dạng lá đề, bờm bay uyển chuyển; rồng thời Trần khỏe khoắn, có sừng, móng vuốt vững chãi trên kiến trúc chùa tháp, bệ đá và cửa gỗ chùa Phổ Minh.
+4. Thời Lê Sơ - Mạc - Lê Trung Hưng (Thế kỷ XV - XVIII): Phân định nghiêm ngặt đồ ngự dụng của nhà vua (rồng 5 móng) và quan lại (rồng 4 móng), rồng mây đao lửa, rồng đuôi cá trên gạch điện miếu Lam Kinh, gốm hoa lam Cù Lao Chàm, cửa gỗ chùa Keo và lư hương gốm men tứ linh.
+5. Thời Nguyễn (Thế kỷ XIX - Đầu thế kỷ XX): Đỉnh cao quyền uy quân chủ với tượng rồng vàng, kim sách thời Gia Long, ấn vàng "Sắc mệnh chi bảo" (Bảo vật Quốc gia), tranh "Đại Nam lịch đại long phi đồ" khẳng định khí thế vươn lên và sự cường thịnh của non sông Đại Nam.`,
+    image: 'https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/1.jpg',
     galleryImages: [
-      '/images/trong-dong.jpg',
-      '/images/tuong-phat.jpg',
-      '/images/binh-gom.jpg',
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/1.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/2.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/3.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/4.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/5.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/6.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/7.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/8.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/9.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/10.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/11.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/12a.png",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/13.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/14.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/15.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/16.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/17.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/18.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/19.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/20.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/22.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/23.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/24.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/25.jpg",
+      "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/26.jpg"
     ],
     highlightArtifacts: [
       {
-        name: 'Ấn vàng Sắc mệnh chi bảo triều Nguyễn',
-        description: 'Bảo vật hoàng gia đúc năm Minh Mạng thứ 8 (1827) bằng vàng ròng, núm ấn chạm khắc hình rồng uốn lượn uy nghiêm.',
-        image: '/images/trong-dong.jpg',
-        period: 'Triều Nguyễn (Năm 1827)',
+        name: "Giao Long trang trí trên họng rìu đồng Đông Sơn",
+        description: "Hiện vật rìu đồng văn hóa Đông Sơn khắc họa hình tượng Giao Long (cá sấu) - cội nguồn biểu tượng rồng của cư dân nông nghiệp lúa nước buổi đầu dựng nước Văn Lang - Âu Lạc.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/1.jpg",
+        period: "Văn hóa Đông Sơn (2.500 - 2.000 năm trước)"
       },
       {
-        name: 'Rồng đá trang trí thềm điện Kính Thiên',
-        description: 'Tác phẩm điêu khắc đá thế kỷ 15 mang phong cách quyền uy, khỏe khoắn thời Lê Sơ tại Hoàng thành Thăng Long.',
-        image: '/images/tuong-phat.jpg',
-        period: 'Thời Lê Sơ (Thế kỷ 15)',
+        name: "Giao Long (cá sấu) trang trí trên qua đồng Đông Sơn",
+        description: "Vũ khí qua đồng thời kỳ Đông Sơn chạm khắc tinh xảo hình cá sấu Giao Long thân dài có vẩy, biểu trưng cho sức mạnh và vật Tổ bảo hộ của người Việt cổ.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/2.jpg",
+        period: "Văn hóa Đông Sơn (2.500 - 2.000 năm trước)"
       },
       {
-        name: 'Thạp đồng Đông Sơn trang trí hoa văn giao long',
-        description: 'Cổ vật hơn 2.000 năm tuổi thể hiện cội nguồn hình tượng Rồng trong tâm thức và tín ngưỡng cư dân nông nghiệp lúa nước.',
-        image: '/images/binh-gom.jpg',
-        period: 'Văn hóa Đông Sơn',
+        name: "Giao Long trang trí trên tấm che ngực (hộ tâm phiến) đồng",
+        description: "Hộ tâm phiến bằng đồng đúc nổi hình tượng hai Giao Long đối xứng, dùng để hộ vệ chiến binh và mang ý nghĩa tâm linh cầu sự bình an, mùa màng bội thu.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/3.jpg",
+        period: "Văn hóa Đông Sơn (2.500 - 2.000 năm trước)"
       },
-    ],
+      {
+        name: "Hình rồng đúc nổi trên gương đồng Nghi Vệ (Bắc Ninh)",
+        description: "Hiện vật độc bản phát hiện tại Nghi Vệ (Bắc Ninh), đúc nổi hoa văn rồng thời kỳ đầu Công nguyên, minh chứng cho sự tiếp biến văn hóa sâu sắc.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/4.jpg",
+        period: "Thế kỷ 3 - 4"
+      },
+      {
+        name: "Thần thú Thanh Long trong Tứ linh trang trí nổi trên bích đồng",
+        description: "Bích đồng đúc nổi hình tượng rồng Thanh Long kết hợp cùng Bạch Hổ, Chu Tước, Huyền Vũ biểu trưng cho bốn phương trời và sự hài hòa vũ trụ.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/5.jpg",
+        period: "Thế kỷ 1 - 3"
+      },
+      {
+        name: "Hình rồng trang trí trên trán bia Trường Xuân (Thanh Hóa)",
+        description: "Bia đá cổ niên đại năm 618 triều Tùy Đại Nghiệp ghi lại việc lập đạo tràng Bảo An Phật giáo tại Cửu Chân, trán bia chạm đôi rồng đấu lưng vào nhau độc đáo.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/6.jpg",
+        period: "Năm 618 (Thế kỷ 7)"
+      },
+      {
+        name: "Hình rồng trang trí kiến trúc hình lá đề chùa Phật Tích (Bắc Ninh)",
+        description: "Điêu khắc đá thời vua Lý Thánh Tông (năm 1056) chạm đôi rồng uốn lượn hình sin mềm mại, bờm tóc bay bổng chầu trong vòm lá bồ đề Phật giáo.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/7.jpg",
+        period: "Thời Lý (Năm 1056, Thế kỷ 11)"
+      },
+      {
+        name: "Hình rồng đắp nổi trang trí trên bệ tháp gốm men trắng",
+        description: "Gốm men trắng thời Lý chế tác tinh xảo, thân rồng 3 móng tròn trơn nhẵn uốn lượn thắt túi quanh chân bệ tháp bảo tháp Phật giáo.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/8.jpg",
+        period: "Thời Lý (Thế kỷ 11 - 13)"
+      },
+      {
+        name: "Đầu rồng đất nung trang trí bờ nóc kiến trúc cung điện, chùa tháp",
+        description: "Tác phẩm đất nung điêu khắc đầu rồng thời Lý với miệng ngậm ngọc châu, vòi uốn lượn, mũi lửa và bờm mượt mà thanh thoát mang đậm tinh thần Thiền tông.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/9.jpg",
+        period: "Thời Lý (Thế kỷ 11 - 13)"
+      },
+      {
+        name: "Hình rồng trang trí trong nửa lá đề đất nung thời Trần",
+        description: "Chi tiết trang trí kiến trúc đất nung thời Trần với hình tượng rồng 4 móng khỏe khoắn, có vảy và vây nhọn, biểu thị hào khí Đông A quật cường.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/10.jpg",
+        period: "Thời Trần (Thế kỷ 13 - 14)"
+      },
+      {
+        name: "Hình rồng chạm khắc trên cánh cửa gỗ chùa Phổ Minh (Nam Định)",
+        description: "Kiệt tác điêu khắc gỗ thời Trần tại quốc tự Phổ Minh, đồ án rồng cuộn uốn lượn trong lá đề với đường nét đục chạm tầng tầng lớp lớp tinh vi tuyệt hảo.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/11.jpg",
+        period: "Thời Trần (Thế kỷ 13 - 14)"
+      },
+      {
+        name: "Chi tiết đôi rồng chầu trên cánh cửa gỗ chùa Phổ Minh",
+        description: "Toàn cảnh cánh cửa gỗ chạm khắc đôi rồng thời Trần chầu chữ Phật, đại diện cho đỉnh cao nghệ thuật điêu khắc gỗ cổ truyền Đại Việt.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/12a.png",
+        period: "Thời Trần (Thế kỷ 13 - 14)"
+      },
+      {
+        name: "Rồng trang trí trên đôi đầu võng và bàn đạp yên ngựa bằng đồng",
+        description: "Hiện vật kim loại đồng quý hiếm thời Trần chạm khắc hình rồng trang trí ngự dụng trên yên ngựa và đầu đòn võng của tầng lớp quý tộc hoàng gia.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/13.jpg",
+        period: "Thời Trần (Thế kỷ 13 - 14)"
+      },
+      {
+        name: "Hình rồng trang trí trên gạch lát nền điện miếu Lam Kinh (Thanh Hóa)",
+        description: "Gạch đất nung khai quật tại Hoàng thành Lam Kinh chạm hình rồng 5 móng thời vua Lê Thái Tổ - Lê Thánh Tông, biểu trưng cho quyền uy tối thượng của vương triều Lê Sơ.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/14.jpg",
+        period: "Thời Lê Sơ (Thế kỷ 15)"
+      },
+      {
+        name: "Hình rồng trang trí trên diềm ngói gốm men vàng Lam Kinh",
+        description: "Diềm ngói tráng men hoàng lưu ly tráng lệ khai quật tại Lam Kinh, chạm khắc hình rồng mây uyển chuyển trên mái cung điện hoàng gia thời Lê Sơ.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/15.jpg",
+        period: "Thời Lê Sơ (Thế kỷ 15)"
+      },
+      {
+        name: "Hình rồng trang trí trên đĩa gốm hoa lam tàu đắm cổ Cù Lao Chàm",
+        description: "Hiện vật gốm hoa lam xuất khẩu đỉnh cao thời Lê Sơ trục vớt từ tàu đắm cổ Cù Lao Chàm (Hội An), vẽ rồng bay lượn giữa mây trời bằng men lam cobalt tinh tế.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/16.jpg",
+        period: "Thời Lê Sơ (Thế kỷ 15)"
+      },
+      {
+        name: "Hình rồng trang trí trên gạch đất nung chùa Sổ (Hà Nội)",
+        description: "Gạch phù điêu đất nung thời Mạc thế kỷ 16 phát hiện tại chùa Sổ, rồng có mắt lồi, sừng chạc, râu dài và các đao mác bung tỏa sống động.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/17.jpg",
+        period: "Thời Mạc (Thế kỷ 16)"
+      },
+      {
+        name: "Hình rồng chạm khắc trên cánh cửa gỗ chùa Keo (Thái Bình)",
+        description: "Nghệ thuật điêu khắc gỗ dân gian thời Lê Trung Hưng với hình tượng rồng mẹ rồng con quây quần, rồng đuôi cá đao mác uy nghi mà gần gũi với đời sống thôn dã.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/18.jpg",
+        period: "Thời Lê Trung Hưng (Thế kỷ 17)"
+      },
+      {
+        name: "Lư hương gốm men nâu đắp nổi Tứ Linh (Long - Ly - Quy - Phụng)",
+        description: "Lư hương gốm thời Lê Trung Hưng đắp nổi tượng rồng uy nghiêm cùng bộ tứ linh hướng về chốn tôn nghiêm, mang đậm màu sắc tín ngưỡng thờ cúng tổ tiên.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/19.jpg",
+        period: "Thời Lê Trung Hưng (Thế kỷ 17 - 18)"
+      },
+      {
+        name: 'Quai ấn vàng "Sắc mệnh chi bảo" hình rồng cuộn (Bảo vật Quốc gia)',
+        description: "Bảo vật Quốc gia bằng vàng ròng đúc năm Minh Mạng thứ 8 (1827), quai ấn đúc hình rồng cuộn viên long 5 móng với mắt đính ngọc, đầu ngẩng cao uy quyền hoàng đế.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/20.jpg",
+        period: "Triều Nguyễn (Năm 1827)"
+      },
+      {
+        name: "Tượng rồng vàng đúc nổi thời vua Thiệu Trị",
+        description: "Tác phẩm kim hoàn hoàng gia đúc năm Thiệu Trị thứ 2 (1842) bằng vàng nguyên chất chạm khắc vảy rồng tỉ mỉ, tượng trưng cho thiên mệnh thái bình thịnh trị.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/22.jpg",
+        period: "Triều Nguyễn (Năm 1842)"
+      },
+      {
+        name: "Hình rồng trang trí trên bìa kim sách vàng thời vua Gia Long",
+        description: "Kim sách hoàng tộc đúc năm Gia Long thứ 5 (1806) bằng vàng ròng, chạm khắc đồ án lưỡng long chầu nguyệt và mây ngũ sắc ghi lại sắc phong của triều đình.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/23.jpg",
+        period: "Triều Nguyễn (Năm 1806)"
+      },
+      {
+        name: 'Tranh "Đại Nam lịch đại long phi đồ" (Bản đồ nước Đại Nam hình rồng bay)',
+        description: "Kiệt tác tranh giấy dó vẽ nhiều màu niên đại năm Đồng Khánh thứ 3 (1888), tạo hình dáng hình đất nước non sông Đại Nam liền một dải như một con rồng thiêng vươn mình ra biển lớn.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/24.jpg",
+        period: "Triều Nguyễn (Năm 1888)"
+      },
+      {
+        name: "Đôi rồng chầu mặt trời trang trí trên biển gỗ sơn son thếp vàng",
+        description: "Hiện vật hoàng cung và đình đền thế kỷ 19 - 20 chạm lộng tinh xảo đồ án lưỡng long chầu nhật, sơn son thếp vàng rực rỡ mang ước vọng quốc thái dân an.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/25.jpg",
+        period: "Triều Nguyễn (Thế kỷ 19 - 20)"
+      },
+      {
+        name: "Chân đèn hình tòa Cửu Long (9 rồng) bằng kim loại sắt",
+        description: "Hiện vật thờ tự độc đáo đầu thế kỷ 20 với cấu trúc 9 tầng rồng uốn lượn đỡ đài sen cắm nến, thể hiện sự kết hợp mỹ thuật cung đình và tín ngưỡng thờ mẫu dân gian.",
+        image: "https://baotanglichsu.vn/DataFiles/2024/02/News/Tieng%20Viet/20.1.2024/Rong%20tren%20co%20vat%20qua%20s%C6%B0u%20tap%20hien%20vat%20BTLSQG/26.jpg",
+        period: "Triều Nguyễn (Đầu thế kỷ 20)"
+      }
+    ]
   },
   {
     id: 'TBCD04',
