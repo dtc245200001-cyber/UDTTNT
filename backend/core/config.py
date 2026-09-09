@@ -11,11 +11,18 @@ class Settings(BaseSettings):
     """Quản lý cấu hình tập trung cho backend FastAPI."""
 
     # Supabase
-    SUPABASE_URL: str = Field(..., description="URL của Supabase project")
-    SUPABASE_SERVICE_ROLE_KEY: str = Field(
-        ..., description="Service Role Key (secret) – bypass RLS, chỉ dùng server-side"
+    SUPABASE_URL: str = Field(
+        default="https://yzscfptnwecjutaobyzm.supabase.co",
+        description="URL của Supabase project"
     )
-    SUPABASE_ANON_KEY: str = Field(..., description="Anon/Public key của Supabase")
+    SUPABASE_SERVICE_ROLE_KEY: str = Field(
+        default="",
+        description="Service Role Key (secret) – bypass RLS, chỉ dùng server-side"
+    )
+    SUPABASE_ANON_KEY: str = Field(
+        default="sb_publishable_K2RJ1sdrokVsKi8x30_H1g__eESi7UN",
+        description="Anon/Public key của Supabase"
+    )
 
     # Frontend URL cho CORS
     FRONTEND_URL: str = Field(

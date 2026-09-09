@@ -1,6 +1,18 @@
 import os
 import json
 import sys
+
+# === Windows UTF-8 Fix ===
+# Uvicorn trên Windows chạy subprocess với codec CP1252 mặc định,
+# gây UnicodeEncodeError khi print() chuỗi tiếng Việt.
+# Reconfigure stdout/stderr sang UTF-8 để tránh lỗi này.
+if sys.stdout.encoding and sys.stdout.encoding.lower() not in ('utf-8', 'utf8'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except AttributeError:
+        pass  # Python < 3.7 không có reconfigure
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -31,6 +43,8 @@ if "localhost" in settings.FRONTEND_URL:
     allowed_origins.extend([
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
     ])
 
 app.add_middleware(
