@@ -78,7 +78,7 @@ export const VisitorHeader = () => {
         </div>
 
         {/* 2. KHU VỰC MENU Ở GIỮA (flex: 1, min-width: 0 chống tràn) */}
-        <nav className="hidden lg:flex items-center justify-center flex-1 min-w-0 gap-0.5 xl:gap-1.5 2xl:gap-2 px-1">
+        <nav className="hidden xl:flex items-center justify-center flex-1 min-w-0 gap-0.5 xl:gap-1.5 2xl:gap-2 px-1 overflow-hidden">
           {navLinks.map((link) => {
             const active = isLinkActive(link);
             const Icon = link.icon;
@@ -128,7 +128,7 @@ export const VisitorHeader = () => {
                 alt={currentUser?.name}
                 className="w-7 h-7 rounded-lg object-cover border border-museum-gold shadow-2xs"
               />
-              <div className="text-left leading-tight pr-1 hidden xl:block">
+              <div className="text-left leading-tight pr-1 hidden 2xl:block">
                 <div className="font-bold text-[11px] text-museum-brown truncate max-w-[100px]">
                   {currentUser?.name}
                 </div>
@@ -144,7 +144,7 @@ export const VisitorHeader = () => {
                 title="Xem vé đã đặt"
               >
                 <Ticket className="w-3 h-3 text-museum-gold" />
-                <span className="hidden sm:inline">Vé của tôi</span>
+                <span className="hidden 2xl:inline">Vé của tôi</span>
                 {userTicketsCount > 0 && (
                   <span className="ml-0.5 px-1 py-0.2 bg-museum-gold text-white text-[9px] font-black rounded-full">
                     {userTicketsCount}
@@ -160,7 +160,7 @@ export const VisitorHeader = () => {
                   title="Cổng soát vé & thu tiền tại quầy"
                 >
                   <QrCode className="w-3 h-3 text-amber-200" />
-                  <span>Soát vé</span>
+                  <span className="hidden 2xl:inline">Soát vé</span>
                 </Link>
               )}
 
@@ -171,7 +171,7 @@ export const VisitorHeader = () => {
                   className="h-7 px-2.5 bg-museum-gold hover:bg-museum-gold-lt text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 shadow-2xs hover:-translate-y-0.5"
                 >
                   <LayoutDashboard className="w-3 h-3" />
-                  <span>Quản trị</span>
+                  <span className="hidden 2xl:inline">Quản trị</span>
                 </Link>
               )}
 
@@ -191,7 +191,7 @@ export const VisitorHeader = () => {
                 className="h-9 xl:h-10 px-3.5 xl:px-4.5 text-xs xl:text-[13px] font-bold text-museum-brown bg-transparent hover:bg-museum-cream/80 border border-museum-gold/50 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 hover:-translate-y-0.5 cursor-pointer select-none whitespace-nowrap shrink-0"
               >
                 <LogIn className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-museum-gold shrink-0" />
-                <span className="whitespace-nowrap">Đăng nhập</span>
+                <span className="hidden 2xl:inline">Đăng nhập</span>
               </Link>
 
               {/* Register Button (Primary CTA Button) */}
@@ -200,7 +200,7 @@ export const VisitorHeader = () => {
                 className="h-9 xl:h-10 px-4 xl:px-5 text-xs xl:text-[13px] font-bold text-white bg-gradient-to-r from-museum-gold to-amber-600 hover:from-museum-gold-lt hover:to-amber-500 rounded-xl shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-center gap-1.5 hover:-translate-y-0.5 cursor-pointer select-none whitespace-nowrap shrink-0"
               >
                 <UserPlus className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-amber-100 shrink-0" />
-                <span className="whitespace-nowrap">Đăng ký</span>
+                <span className="hidden 2xl:inline">Đăng ký</span>
               </Link>
             </div>
           )}
@@ -209,7 +209,7 @@ export const VisitorHeader = () => {
         {/* Mobile Hamburger Button */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="lg:hidden p-2 text-museum-brown hover:bg-museum-cream rounded-xl transition-colors cursor-pointer border border-museum-gold/30 shrink-0"
+          className="xl:hidden p-2 text-museum-brown hover:bg-museum-cream rounded-xl transition-colors cursor-pointer border border-museum-gold/30 shrink-0"
           aria-label="Toggle Menu"
         >
           {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -218,7 +218,7 @@ export const VisitorHeader = () => {
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white/98 backdrop-blur-md border-b border-amber-900/10 px-4 py-4 space-y-3 shadow-lg animate-fadeIn">
+        <div className="xl:hidden bg-white/98 backdrop-blur-md border-b border-amber-900/10 px-4 py-4 space-y-3 shadow-lg animate-fadeIn">
           <div className="flex flex-col gap-1.5 text-xs font-semibold text-stone-700">
             {navLinks.map((link) => {
               const active = isLinkActive(link);

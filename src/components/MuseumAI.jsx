@@ -35,6 +35,33 @@ export const MuseumAI = () => {
   const [streamingMsgId, setStreamingMsgId] = useState(null);
   const abortStreamRef = useRef(null);
 
+  // Kích thước widget
+  const [dimensions, setDimensions] = useState({ w: 380, h: 600 });
+  const isDragging = useRef(false);
+
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    isDragging.current = true;
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging.current) return;
+    requestAnimationFrame(() => {
+      setDimensions({
+        w: Math.min(Math.max(380, window.innerWidth - e.clientX - 20), window.innerWidth * 0.95),
+        h: Math.min(Math.max(600, window.innerHeight - e.clientY - 20), window.innerHeight * 0.9)
+      });
+    });
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
   // Hiệu ứng cuộn gợi ý
   const [activePromptIdx, setActivePromptIdx] = useState(0);
 
@@ -279,11 +306,27 @@ export const MuseumAI = () => {
       {/* 2. CỬA SỔ CHATBOT DẠNG FLOATING WIDGET (RESIZABLE) */}
       {isOpen && (
         <div 
-          className="w-[calc(100vw-2.5rem)] sm:w-[380px] h-[600px] min-w-[320px] min-h-[400px] max-w-[95vw] max-h-[90vh] bg-white rounded-3xl shadow-2xl border border-museum-gold/40 flex flex-col overflow-hidden animate-fadeIn transition-all duration-300 ease-out pointer-events-auto"
-          style={{ resize: 'both' }}
+          className="bg-white rounded-3xl shadow-2xl border border-museum-gold/40 flex flex-col overflow-hidden animate-fadeIn pointer-events-auto relative"
+          style={{ 
+            width: `${dimensions.w}px`, 
+            height: `${dimensions.h}px`,
+            minWidth: '380px',
+            minHeight: '600px',
+            maxWidth: 'calc(100vw - 2.5rem)',
+            maxHeight: '90vh'
+          }}
         >
+          {/* Resize Handle */}
+          <div 
+            onMouseDown={handleMouseDown}
+            className="absolute top-0 left-0 w-8 h-8 cursor-nwse-resize z-50 flex items-start justify-start p-2 opacity-60 hover:opacity-100 transition-opacity"
+            title="Kéo để thay đổi kích thước"
+          >
+            <div className="w-2.5 h-2.5 border-t-[2.5px] border-l-[2.5px] border-white rounded-[2px] pointer-events-none" />
+          </div>
+
           {/* HEADER CHATBOT */}
-          <div className="bg-museum-brown text-white px-4 py-3.5 flex items-center justify-between shadow-md relative border-b border-museum-gold/30">
+          <div className="bg-museum-brown text-white pl-8 pr-4 py-3.5 flex items-center justify-between shadow-md relative border-b border-museum-gold/30">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-museum-gold flex items-center justify-center text-white shadow-xs">
                 <Bot className="w-6 h-6" />

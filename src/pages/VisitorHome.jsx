@@ -142,7 +142,7 @@ export const VisitorHome = () => {
               onClick={() => navigate('/artifacts')}
               className="w-full sm:w-auto px-8 py-3.5 bg-museum-gold hover:bg-museum-gold-lt text-white font-extrabold text-sm rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 cursor-pointer"
             >
-              Khám phá toàn bộ 270 hiện vật &rarr;
+              Khám phá toàn bộ {artifacts.length} hiện vật &rarr;
             </button>
             <a
               href="#tickets"
@@ -193,7 +193,7 @@ export const VisitorHome = () => {
             onClick={() => navigate('/artifacts')}
             className="inline-flex items-center gap-2 px-8 py-3 bg-white hover:bg-museum-cream text-museum-brown font-extrabold text-xs sm:text-sm rounded-xl border-2 border-museum-gold/40 shadow-xs hover:shadow-md transition-all cursor-pointer"
           >
-            <span>Xem thêm kho tàng 270 hiện vật theo {categories.length} danh mục</span>
+            <span>Xem thêm kho tàng {artifacts.length} hiện vật theo {categories.length} danh mục</span>
             <ChevronRight className="w-4 h-4 text-museum-gold" />
           </button>
         </div>

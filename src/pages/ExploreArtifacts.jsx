@@ -93,7 +93,7 @@ export const ExploreArtifacts = () => {
             KHÁM PHÁ HIỆN VẬT BẢO TÀNG
           </h1>
           <p className="text-sm sm:text-base text-gray-600 leading-relaxed font-normal">
-            Khám phá hơn 270 hiện vật, bảo vật quốc gia và tư liệu lịch sử quý hiếm qua {categories.length} danh mục đặc sắc, đại diện cho 4.000 năm văn hiến dân tộc.
+            Khám phá hơn {artifacts.length} hiện vật, bảo vật quốc gia và tư liệu lịch sử quý hiếm qua {categories.length} danh mục đặc sắc, đại diện cho 4.000 năm văn hiến dân tộc.
           </p>
         </div>
 
