@@ -18,7 +18,8 @@ import {
   ChevronDown,
   ChevronUp,
   User,
-  Compass
+  Compass,
+  ImagePlus
 } from 'lucide-react';
 
 export const MuseumAI = () => {
@@ -103,6 +104,7 @@ export const MuseumAI = () => {
   const [messages, setMessages] = useState([initialWelcomeMessage]);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Auto scroll xuống tin nhắn mới nhất
   useEffect(() => {
@@ -238,6 +240,76 @@ export const MuseumAI = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const userMsgId = `user-${Date.now()}`;
+    const aiMsgId = `ai-${Date.now()}`;
+
+    // Reset input
+    e.target.value = '';
+
+    // Tạo URL để hiển thị ảnh tạm thời trên giao diện
+    const imageUrl = URL.createObjectURL(file);
+
+    const userMsg = {
+      id: userMsgId,
+      sender: 'user',
+      text: 'Đang tìm kiếm thông tin về hình ảnh này...',
+      imageUrl: imageUrl, // Lưu link ảnh để render
+      sources: [],
+      artifacts: [],
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+    setIsSearching(true);
+    
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Thêm query parameter match_count=1 để chỉ lấy 1 kết quả duy nhất
+      const response = await fetch(`${API_BASE_URL}/api/hien-vat/image-search?match_count=1`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        const results = data.results || [];
+        const aiMsg = {
+          id: aiMsgId,
+          sender: 'ai',
+          text: results.length > 0 
+            ? `Dựa trên hình ảnh bạn tải lên, tôi xác định đây là hiện vật:` 
+            : 'Rất tiếc, tôi không tìm thấy hiện vật nào giống với hình ảnh bạn gửi.',
+          sources: [],
+          artifacts: results,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+      } else {
+        throw new Error(data.detail || 'Lỗi tìm kiếm');
+      }
+    } catch (error) {
+      console.error('Image search error:', error);
+      setMessages((prev) => [...prev, {
+        id: aiMsgId,
+        sender: 'ai',
+        text: 'Rất tiếc, có lỗi xảy ra khi xử lý hình ảnh của bạn.',
+        sources: [],
+        artifacts: [],
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }]);
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -389,7 +461,16 @@ export const MuseumAI = () => {
                       }`}
                     >
                       {msg.sender === 'user' ? (
-                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                        <div className="flex flex-col items-end gap-2">
+                          {msg.imageUrl && (
+                            <img 
+                              src={msg.imageUrl} 
+                              alt="Uploaded" 
+                              className="max-w-[200px] max-h-[200px] object-cover rounded-lg border border-museum-gold/30 shadow-sm"
+                            />
+                          )}
+                          <p className="whitespace-pre-wrap">{msg.text}</p>
+                        </div>
                       ) : (
                         <MarkdownMessage content={msg.text} />
                       )}
@@ -533,14 +614,29 @@ export const MuseumAI = () => {
           {/* KHUNG NHẬP CÂU HỎI & NÚT GỬI */}
           <div className="p-3 bg-white border-t border-gray-100">
             <div className="flex items-center gap-2 bg-gray-50 rounded-2xl p-1.5 border border-gray-200 focus-within:border-museum-gold focus-within:bg-white focus-within:ring-2 focus-within:ring-museum-gold/20 transition-all">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImageUpload} 
+                accept="image/*" 
+                className="hidden" 
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSearching}
+                className="p-2 rounded-xl text-gray-500 hover:text-museum-brown hover:bg-gray-200 transition-colors cursor-pointer flex-shrink-0"
+                title="Tải ảnh lên để tìm kiếm hiện vật"
+              >
+                <ImagePlus className="w-4.5 h-4.5" />
+              </button>
               <input
                 ref={inputRef}
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Trò chuyện, hỏi về hiện vật, lịch sử, giờ mở cửa..."
-                className="w-full px-3 py-1.5 bg-transparent text-xs text-gray-800 focus:outline-none"
+                placeholder="Trò chuyện, tải ảnh lên để tìm kiếm..."
+                className="w-full px-1 py-1.5 bg-transparent text-xs text-gray-800 focus:outline-none"
                 disabled={isSearching}
               />
               <button

@@ -1,0 +1,72 @@
+# Bài Thuyết Trình: Kiến trúc AI trong Hệ thống Quản lý Bảo tàng
+
+Dự án này tích hợp 2 luồng AI chính nhằm nâng cao trải nghiệm của du khách: **AI Chatbot (Tìm kiếm & sinh văn bản bằng RAG)** và **AI Visual Search (Tìm kiếm hiện vật bằng hình ảnh)**. Dưới đây là phân tích chi tiết về luồng chạy và cơ chế hoạt động của từng mô hình để bạn sử dụng cho bài thuyết trình.
+
+---
+
+## PHẦN 1: TÌM KIẾM BẰNG VĂN BẢN (AI CHATBOT VỚI RAG)
+
+Hệ thống Chatbot không chỉ trả lời theo kịch bản có sẵn mà hiểu được ngữ nghĩa câu hỏi của người dùng và tra cứu thông tin thực tế từ cơ sở dữ liệu bảo tàng.
+
+### 1. Công nghệ sử dụng
+*   **Mô hình Ngôn ngữ lớn (LLM):** Google Gemini (Gemini 1.5 Flash).
+*   **Vector Database (Văn bản):** ChromaDB (lưu trữ vector cục bộ tốc độ cao).
+*   **Kỹ thuật cốt lõi:** RAG (Retrieval-Augmented Generation - Sinh văn bản tăng cường truy xuất).
+
+### 2. Luồng chạy (Workflow)
+Hệ thống hoạt động qua 2 giai đoạn:
+
+**Giai đoạn A: Số hóa tri thức (Data Ingestion)**
+1.  Hệ thống đọc dữ liệu từ CSDL Supabase (thông tin hiện vật, triển lãm, sự kiện...).
+2.  Đưa các đoạn văn bản này qua **Mô hình Embedding** (của Google) để biến câu chữ thành các Vector Ngữ Nghĩa (chuỗi số thực).
+3.  Lưu các vector này vào **ChromaDB**.
+
+**Giai đoạn B: Sinh câu trả lời (RAG Flow - Thời gian thực)**
+1.  **Hỏi:** Người dùng nhắn vào chatbot: *"Trống đồng Đông Sơn được tìm thấy ở đâu?"*
+2.  **Nhúng (Embed):** Backend chuyển câu hỏi này thành Vector truy vấn.
+3.  **Truy xuất (Retrieve):** Hệ thống tìm kiếm trong **ChromaDB** xem đoạn văn bản nào (thông tin hiện vật) có Vector nằm gần với Vector câu hỏi nhất (đo bằng thuật toán Cosine/L2). Nó rút trích ra top 3-5 thông tin liên quan nhất.
+4.  **Sinh văn bản (Generate):** Backend gom câu hỏi gốc + Thông tin vừa tìm được đẩy cho AI **Google Gemini**.
+5.  **Trả lời:** Gemini đọc thông tin bối cảnh và tạo ra câu trả lời tự nhiên, chính xác nhất trả về cho người dùng.
+
+> [!TIP]
+> **Điểm mạnh để thuyết trình:** Nhờ dùng RAG, Chatbot AI sẽ không bao giờ "bịa" ra lịch sử (Hallucination), vì nó luôn bị giới hạn phải trả lời dựa trên những tư liệu (context) đã được cung cấp từ CSDL của chính Bảo tàng.
+
+---
+
+## PHẦN 2: TÌM KIẾM BẰNG HÌNH ẢNH (AI VISUAL SEARCH)
+
+Đây là tính năng cho phép khách tham quan chỉ cần chụp ảnh một hiện vật là có thể biết ngay thông tin chi tiết về nó, giống như Google Lens.
+
+### 1. Công nghệ sử dụng
+*   **Mô hình Trích xuất Đặc trưng:** ResNet-50 (Mạng Nơ-ron Tích chập - CNN).
+*   **Vector Database (Hình ảnh):** PostgreSQL kết hợp extension `pgvector` (trên nền tảng Supabase).
+
+### 2. Tại sao lại là ResNet-50?
+*   Hệ thống áp dụng phương pháp **Transfer Learning** (Học chuyển giao). ResNet-50 đã được huấn luyện trên hàng triệu bức ảnh từ tập dữ liệu ImageNet nên đã học được cách nhận diện góc cạnh, kết cấu, màu sắc.
+*   Thay vì dùng lớp cuối cùng để "phân loại" (classification), ta dùng lớp áp chót (`avgpool`) để "nén" bức ảnh thành một mã định danh gồm **2048 chiều**.
+
+### 3. Luồng chạy (Workflow)
+Cũng tương tự văn bản, hệ thống ảnh chạy qua 2 giai đoạn:
+
+**Giai đoạn A: Khởi tạo Vector Hình ảnh (Index Vector)**
+1.  Server tải toàn bộ ảnh hiện vật hiện có trong Supabase.
+2.  Từng bức ảnh đi qua mô hình **ResNet-50** để tạo ra Vector Đặc trưng (Feature Vector).
+3.  Server lưu Vector này vào cột `image_vector` của bảng `hien_vat` trong Supabase.
+
+**Giai đoạn B: Người dùng Upload (Search Flow - Thời gian thực)**
+1.  Người dùng bấm nút 📷 trên Chatbot và chọn ảnh tải lên.
+2.  Ảnh được truyền qua mạng lên Server Backend (FastAPI).
+3.  **Trích xuất:** Backend đẩy bức ảnh qua mô hình ResNet-50. Bức ảnh ngay lập tức biến thành 1 Vector (2048 chiều).
+4.  **So sánh:** Backend gọi hàm RPC (`match_artifacts_image`) xuống CSDL Supabase. `pgvector` thực hiện quét toàn bộ bảng hiện vật, sử dụng phép tính **Khoảng cách Cosine (Cosine Distance)** để tính toán góc giữa Vector truy vấn và Vector trong CSDL.
+5.  **Kết quả:** Hiện vật nào có khoảng cách gần nhất (Góc Cosine nhỏ nhất -> Độ tương đồng lớn nhất) sẽ được chọn làm kết quả trả về. Chatbot hiển thị đúng hiện vật đó lên giao diện.
+
+> [!TIP]
+> **Điểm mạnh để thuyết trình:** Việc tìm kiếm không dựa trên tên file hay metadata (ngày chụp, kích thước) mà dựa trên bản chất "thị giác" của bức ảnh. Việc tính toán phép tính Cosine ngay trên Database bằng `pgvector` giúp cho việc tra cứu cực kỳ nhanh, gần như không có độ trễ kể cả khi bảo tàng có hàng nghìn hiện vật.
+
+---
+
+## 3. TỔNG KẾT BỨC TRANH TOÀN CẢNH
+
+Hai luồng AI này tuy sử dụng công nghệ khác nhau (Văn bản dùng Gemini/ChromaDB, Ảnh dùng ResNet50/Supabase) nhưng cùng chung một triết lý toán học: **Mọi dữ liệu (Text/Image) đều được quy về các con số (Vector) và so sánh khoảng cách hình học trong không gian nhiều chiều.**
+
+Nhờ sự kết hợp hoàn hảo này, hệ thống Bảo tàng mang lại một công cụ tra cứu thông minh, đa phương thức (Multi-modal) đáp ứng mọi thói quen tra cứu của khách tham quan.

@@ -3,7 +3,7 @@ Router quản lý Hiện vật — prefix /api/hien-vat
 Yêu cầu quyền admin cho các thao tác ghi (INSERT, UPDATE, DELETE).
 """
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, UploadFile, File
 import uuid
 
 from core.auth import AuthenticatedUser, require_admin
@@ -11,6 +11,7 @@ from core.supabase_client import supabase_admin
 from schemas.hien_vat import HienVatOut, HienVatCreate, HienVatUpdate
 from services.vector_db import vector_db_service
 from services.embedding import get_embedding
+from services.image_search import image_feature_extractor
 
 router = APIRouter(prefix="/api/hien-vat", tags=["Hiện Vật"])
 
@@ -76,6 +77,52 @@ def _db_row_to_hien_vat_out(row: dict) -> HienVatOut:
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────
+
+@router.post("/image-search", status_code=status.HTTP_200_OK)
+async def search_by_image(
+    file: UploadFile = File(...),
+    match_threshold: float = 0.70,
+    match_count: int = 5
+):
+    """Tìm kiếm hiện vật tương tự bằng hình ảnh."""
+    if not image_feature_extractor:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Dịch vụ nhận diện hình ảnh đang không khả dụng."
+        )
+
+    # Đọc file upload
+    contents = await file.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="File ảnh rỗng.")
+
+    # Trích xuất vector đặc trưng
+    query_vector = image_feature_extractor.extract_feature(contents)
+    if not query_vector:
+        raise HTTPException(status_code=500, detail="Không thể trích xuất đặc trưng từ ảnh này.")
+
+    # Gọi hàm RPC của Supabase
+    # Cần tạo hàm RPC match_artifacts_image tương tự như match_artifacts nhưng dùng image_vector
+    try:
+        response = supabase_admin.rpc(
+            "match_artifacts_image",
+            {
+                "query_embedding": query_vector,
+                "match_threshold": match_threshold,
+                "match_count": match_count,
+            },
+        ).execute()
+        
+        results = response.data if response.data else []
+        return {
+            "success": True,
+            "message": f"Tìm thấy {len(results)} hiện vật",
+            "results": results
+        }
+    except Exception as e:
+        print(f"[ImageSearch] Lỗi gọi Supabase RPC: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/", response_model=HienVatOut, status_code=status.HTTP_201_CREATED)
 async def create_hien_vat(
