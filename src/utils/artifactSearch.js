@@ -6,7 +6,7 @@
 
 export function removeVietnameseTones(str) {
   if (!str) return '';
-  str = str.toLowerCase();
+  str = String(str).toLowerCase();
   str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, 'a');
   str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, 'e');
   str = str.replace(/ì|í|ị|ỉ|ĩ/g, 'i');
@@ -35,6 +35,8 @@ export function validateInput(query) {
   return { valid: true, clean };
 }
 
+import { normalizeArtifact } from './normalizeArtifact';
+
 /**
  * Search artifacts, events, tickets in dataset based on user query string.
  * @param {Array} artifactsList - List of artifact objects
@@ -42,7 +44,8 @@ export function validateInput(query) {
  * @param {Object} extraData - Optional extra data (events, tickets, exhibitions)
  * @returns {Object} Search result containing matched artifacts & generated answer
  */
-export function searchArtifacts(artifactsList = [], query = '', extraData = {}) {
+export function searchArtifacts(rawArtifactsList = [], query = '', extraData = {}) {
+  const artifactsList = rawArtifactsList.map(normalizeArtifact);
   const validation = validateInput(query);
   if (!validation.valid) {
     return {
@@ -67,7 +70,7 @@ export function searchArtifacts(artifactsList = [], query = '', extraData = {}) 
   ) {
     return {
       success: true,
-      message: `🎟️ Thông tin vé tham quan & Giờ mở cửa Bảo tàng:\n• Giờ mở cửa: 08:00 - 17:00 hàng ngày (Tất cả các ngày trong tuần).\n• Vé Người lớn: 50.000đ/vé.\n• Vé Học sinh - Sinh viên: 20.000đ/vé.\n• Trẻ em dưới 6 tuổi & Người cao tuổi: Miễn phí.\n• Vé Khách quốc tế: 100.000đ/vé.\nBạn có thể nhấn nút "Đặt vé tham quan" để mua vé trực tuyến ngay!`,
+      message: `🎟️ Thông tin vé tham quan & Giờ mở cửa Bảo tàng:\n• Giờ mở cửa: 08:00 - 17:00 hàng ngày (Tất cả các ngày trong tuần).\nBạn có thể tham khảo giá các loại vé và tiến hành đặt vé trực tuyến.`,
       matchedArtifacts: [],
     };
   }
@@ -96,51 +99,87 @@ export function searchArtifacts(artifactsList = [], query = '', extraData = {}) 
   }
 
   // Check 3: Query Artifacts Database
-  const stopWords = ['co', 'nhung', 'hien', 'vat', 'nao', 'cho', 'toi', 'biet', 've', 'la', 'gi', 'y', 'nghia', 'nhu', 'the', 'nao', 'tim', 'lay', 'xem'];
-  const queryTokens = cleanQuery
-    .split(/\s+/)
-    .filter((word) => word.length > 1 && !stopWords.includes(word));
+  // 1. Loại bỏ các cụm stopword cố định
+  let processedQuery = cleanQuery.replace(/\b(tim hieu|bao tang)\b/g, ' ');
+  let rawWords = processedQuery.split(/\s+/).filter(Boolean);
+
+  // 2. Tạo bigrams
+  let bigrams = [];
+  for (let i = 0; i < rawWords.length - 1; i++) {
+    bigrams.push(rawWords[i] + ' ' + rawWords[i + 1]);
+  }
+
+  // 3. Lọc stopword đơn
+  const stopWords = ['toi', 'minh', 'muon', 'can', 'tim', 'hieu', 'biet', 'hoi', 'cho', 'xem', 've', 'cua', 'o', 'tai', 'trong', 'bao', 'tang', 'nay', 'kia', 'nao', 'gi', 'la', 'co', 'khong', 'ko', 'nhung', 'cac', 'mot', 'va', 'hay', 'voi', 'duoc', 'truong', 'thay', 'em', 'anh', 'chi', 'ban'];
+  let unigrams = rawWords.filter(word => !stopWords.includes(word));
+
+  let searchTokens = [...bigrams, ...unigrams].filter(t => t.length >= 2);
 
   const scoredResults = artifactsList.map((item) => {
     let score = 0;
-    const nameClean = removeVietnameseTones(item.name || '');
-    const descClean = removeVietnameseTones(item.description || '');
-    const periodClean = removeVietnameseTones(item.period || item.culture || '');
+    const nameClean = removeVietnameseTones(String(item.name || ''));
+    const descClean = removeVietnameseTones(String(item.description || ''));
+    const periodClean = removeVietnameseTones(String(item.period || item.culture || item.category || ''));
 
-    if (nameClean.includes(cleanQuery)) score += 100;
+    let hasPrimaryMatch = false;
 
-    queryTokens.forEach((token) => {
-      if (nameClean.includes(token)) score += 30;
-      if (descClean.includes(token)) score += 10;
-      if (periodClean.includes(token)) score += 20;
+    // Full exact match on name
+    if (nameClean && cleanQuery && new RegExp(`\\b${cleanQuery}\\b`).test(nameClean)) {
+      score += 100;
+      hasPrimaryMatch = true;
+    }
+
+    searchTokens.forEach((token) => {
+      const regex = new RegExp(`\\b${token}\\b`);
+      let matched = false;
+      if (regex.test(nameClean)) {
+        score += 30;
+        hasPrimaryMatch = true;
+        matched = true;
+      }
+      if (regex.test(periodClean)) {
+        score += 20;
+        hasPrimaryMatch = true;
+        matched = true;
+      }
+      if (regex.test(descClean)) {
+        // Chỉ cộng điểm ở description nếu token > 3 ký tự hoặc là cụm từ (bigram)
+        if (token.length > 3 || token.includes(' ')) {
+          score += 10;
+        }
+      }
+      
+      // Bonus cho các cụm chủ đề đặc biệt nếu khớp tên
+      if (['tay son', 'dien bien phu', 'canh thinh', 'dong son', 'ngoc lu'].includes(token) && matched) {
+        score += 50;
+      }
     });
 
-    if (cleanQuery.includes('tay son') && (nameClean.includes('tay son') || descClean.includes('tay son') || periodClean.includes('tay son'))) {
-      score += 50;
-    }
-    if (cleanQuery.includes('dien bien phu') && (nameClean.includes('dien bien phu') || descClean.includes('dien bien phu'))) {
-      score += 50;
-    }
-    if (cleanQuery.includes('canh thinh') && (nameClean.includes('canh thinh') || descClean.includes('canh thinh'))) {
-      score += 50;
-    }
-    if (cleanQuery.includes('dong son') && (nameClean.includes('dong son') || descClean.includes('dong son'))) {
-      score += 50;
+    if (!hasPrimaryMatch) {
+      score = 0; // Loại bỏ nếu chỉ khớp ở description (hoặc không khớp)
     }
 
     return { artifact: item, score };
   });
 
-  const matches = scoredResults
-    .filter((res) => res.score >= 15)
-    .sort((a, b) => b.score - a.score)
-    .map((res) => res.artifact);
+  // Lọc và sắp xếp
+  let matches = scoredResults
+    .filter((res) => res.score >= (rawWords.length >= 4 ? 40 : 20))
+    .sort((a, b) => b.score - a.score);
 
-  // If NO data found -> Requirement 12 explicit notice
+  // Cắt bỏ kết quả có điểm < 40% điểm của kết quả đầu (nhiễu)
+  if (matches.length > 0) {
+    const maxScore = matches[0].score;
+    matches = matches.filter(res => res.score >= maxScore * 0.4);
+  }
+
+  matches = matches.map((res) => res.artifact);
+
+  // If NO data found
   if (matches.length === 0) {
     return {
       success: false,
-      message: '❌ Xin lỗi, hệ thống AI chưa tìm thấy thông tin hoặc hiện vật phù hợp với câu hỏi của bạn trong CSDL bảo tàng. Vui lòng thử lại với tên hiện vật hoặc chủ đề khác (ví dụ: Trống đồng Cảnh Thịnh, Bảo vật thời Tây Sơn, Vé tham quan...).',
+      message: '❌ Xin lỗi, hệ thống AI chưa tìm thấy thông tin hoặc hiện vật phù hợp với câu hỏi của bạn trong CSDL bảo tàng. Vui lòng thử lại với tên hiện vật hoặc chủ đề khác (ví dụ: Trống đồng Cảnh Thịnh, Bảo vật thời Tây Sơn...).',
       matchedArtifacts: [],
     };
   }

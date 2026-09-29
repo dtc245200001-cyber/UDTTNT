@@ -41,7 +41,7 @@ export const Artifacts = () => {
       const cleanParam = categoryParam.trim().toLowerCase();
       const matched = categories.find(
         (c) =>
-          (c.id && c.id.toLowerCase() === cleanParam) ||
+          (c.id && String(c.id).toLowerCase() === cleanParam) ||
           (c.name && c.name.toLowerCase() === cleanParam)
       );
       if (matched) {
@@ -61,7 +61,7 @@ export const Artifacts = () => {
       const catClean = removeVietnameseTones(item.category || '');
       const cultureClean = removeVietnameseTones(item.culture || item.period || '');
       const descClean = removeVietnameseTones(item.description || '');
-      const idClean = item.id.toLowerCase();
+      const idClean = item.id ? String(item.id).toLowerCase() : '';
 
       const matchSearch =
         !cleanSearch ||

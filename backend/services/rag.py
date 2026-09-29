@@ -11,44 +11,8 @@ from functools import lru_cache
 from services.embedding import get_embedding, get_embedding_async
 from services.vector_db import vector_db_service
 from services.gemini import gemini_service
-
-
-# ── Từ khóa phân loại câu hỏi ──────────────────────────────────────────────
-
-# Từ khóa chỉ định cần dữ liệu REAL-TIME (qua Function Calling)
-REALTIME_KEYWORDS = [
-    # Giá vé
-    "giá vé", "mua vé", "vé tham quan", "bao nhiêu tiền", "phí vào cửa",
-    "miễn phí", "vé trẻ em", "vé người lớn", "vé học sinh", "vé sinh viên",
-    # Sự kiện
-    "sự kiện hôm nay", "sự kiện sắp tới", "sự kiện sắp diễn ra",
-    "lịch sự kiện", "có sự kiện gì", "tuần này có gì", "workshop",
-    "tọa đàm", "hội thảo", "sự kiện nào", "sắp có gì",
-    # Triển lãm hiện tại
-    "triển lãm đang", "đang triển lãm", "triển lãm hiện tại", "triển lãm nào đang",
-    "hiện đang trưng bày", "đang mở cửa", "triển lãm nào mở",
-    # Đánh giá
-    "đánh giá", "rating", "điểm đánh giá", "mọi người nghĩ gì",
-    "khách tham quan nói gì", "nhận xét",
-    # Thống kê số lượng
-    "bao nhiêu hiện vật", "tổng số hiện vật", "có bao nhiêu",
-    "số lượng hiện vật", "số hiện vật", "thống kê bảo tàng",
-    "bao nhiêu phòng", "bao nhiêu triển lãm", "bao nhiêu sự kiện",
-    "danh mục nào nhiều nhất", "hiện vật nào nhiều nhất", "tổng hợp",
-    "bảo tàng có bao nhiêu", "số sản phẩm", "bảo tàng đang có",
-]
-
-# Từ khóa chỉ định cần tra cứu TĨNH từ ChromaDB (bảo tàng, hiện vật...)
-MUSEUM_KEYWORDS = [
-    "trống", "hiện vật", "bảo vật", "cổ vật", "giờ mở cửa",
-    "mở cửa", "địa chỉ", "cơ sở", "triều", "vua", "kháng chiến", "trưng bày",
-    "triển lãm", "đông sơn", "ngọc lũ", "cảnh thịnh", "đào thịnh", "đường kách mệnh",
-    "chúa nguyễn", "lê lợi", "quang trung", "hồ chí minh", "tiền sử", "ngô quyền",
-    "lý", "trần", "lê", "nguyễn", "tây sơn", "phòng trưng bày", "niên đại",
-    "chất liệu", "nguồn gốc", "khai quật", "văn hóa", "lịch sử", "bảo tàng",
-    "hiện vật nào", "tham quan", "lộ trình", "gợi ý tham quan", "nên xem gì",
-    "bài viết", "danh mục",
-]
+from services.constants import REALTIME_KEYWORDS, MUSEUM_KEYWORDS
+from services.text_utils import matches_phrase, remove_accents
 
 
 @lru_cache(maxsize=200)
@@ -92,12 +56,11 @@ class RAGPipeline:
         clean_no_punct = re.sub(r'[^\w\s]', '', clean)
         words = clean_no_punct.split()
 
-        clean_no_accents = self.remove_accents(clean_no_punct)
+        clean_no_accents = remove_accents(clean_no_punct)
 
         # Ưu tiên kiểm tra museum/realtime keywords trước
-        if any(kw in clean_no_punct or self.remove_accents(kw) in clean_no_accents for kw in MUSEUM_KEYWORDS + REALTIME_KEYWORDS):
+        if matches_phrase(text, MUSEUM_KEYWORDS + REALTIME_KEYWORDS):
             return False
-
         greetings = [
             "chào", "xin chào", "hello", "hi", "hey", "halo",
             "bạn là ai", "bạn tên gì", "tên bạn là gì",
@@ -107,32 +70,17 @@ class RAGPipeline:
             "rất hay", "ok", "oke", "được rồi", "hay quá", "chán", "buồn", "vui"
         ]
 
-        if len(words) <= 7 and any(g in clean_no_punct for g in greetings):
+        # Use matches_phrase instead of substring match
+        if len(words) <= 7 and matches_phrase(text, greetings):
             return True
 
         return False
-
-    def remove_accents(self, input_str: str) -> str:
-        s1 = u'ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚÝàáâãèéêìíòóôõùúýĂăĐđĨĩŨũƠơƯưẠạẢảẤấẦầẨẩẪẫẬậẮắẰằẲẳẴẵẶặẸẹẺẻẼẽẾếỀềỂểỄễỆệỈỉỊịỌọỎỏỐốỒồỔổỖỗỘộỚớỜờỞởỠỡỢợỤụỦủỨứỪừỬửỮữỰựỲỳỴỵỶỷỸỹ'
-        s0 = u'AAAAEEEIIOOOOUUYaaaaeeeiioooouuyAaDdIiUuOoUuAaAaAaAaAaAaAaAaAaAaAaAaAaEeEeEeEeEeEeEeEeEeIiIiOoOoOoOoOoOoOoOoOoOoOoOoUuUuUuUuUuUuUuYyYyYyYy'
-        s = ''
-        for c in input_str:
-            if c in s1:
-                s += s0[s1.index(c)]
-            else:
-                s += c
-        return s
-
     def needs_realtime_data(self, text: str) -> bool:
         """
         Kiểm tra xem câu hỏi có cần dữ liệu real-time qua Function Calling không.
         """
-        clean = text.lower().strip()
-        clean_no_punct = re.sub(r'[^\w\s]', '', clean)
-        clean_no_accents = self.remove_accents(clean_no_punct)
-        
-        # Check both with accents and without accents
-        return any(kw in clean_no_punct or self.remove_accents(kw) in clean_no_accents for kw in REALTIME_KEYWORDS)
+        # Dùng matches_phrase thay vì substring
+        return matches_phrase(text, REALTIME_KEYWORDS)
 
 
     def build_search_query(self, user_message: str, history: list[dict] = None) -> str:
@@ -209,11 +157,16 @@ class RAGPipeline:
             n_results=6
         )
 
-        DISTANCE_THRESHOLD = 1.9
+        DISTANCE_THRESHOLD = 0.85
         context_parts = []
         sources = []
         seen_titles = set()
         current_context_len = 0
+        artifact_ids = []
+
+        if matched_chunks and matched_chunks[0].get("distance", 10.0) >= DISTANCE_THRESHOLD:
+            # TOP 1 không đạt ngưỡng chặt, coi như context rỗng để fallback về kiến thức chung
+            matched_chunks = []
 
         for chunk in matched_chunks:
             dist = chunk.get("distance", 0.0)
@@ -222,6 +175,8 @@ class RAGPipeline:
             title = meta.get("title", meta.get("name", "Tư liệu Bảo tàng"))
             category = meta.get("category", "Tư liệu lịch sử")
             period = meta.get("period", "")
+            source_table = meta.get("source_table")
+            source_id = meta.get("source_id")
 
             if dist < DISTANCE_THRESHOLD:
                 part_text = f"### {title} (Phân loại: {category})\n{content}"
@@ -230,6 +185,9 @@ class RAGPipeline:
                 
                 context_parts.append(part_text)
                 current_context_len += len(part_text)
+                
+                if source_table == "hien_vat" and source_id and source_id not in artifact_ids:
+                    artifact_ids.append(source_id)
 
                 if title not in seen_titles:
                     seen_titles.add(title)
@@ -240,7 +198,9 @@ class RAGPipeline:
                         "category": category,
                         "period": period,
                         "snippet": snippet,
-                        "relevance": round(max(0.0, 1.0 - (dist / 2.0)) * 100, 1) if dist > 0 else 95.0
+                        "relevance": round(max(0.0, 1.0 - (dist / 2.0)) * 100, 1) if dist > 0 else 95.0,
+                        "source_table": source_table,
+                        "source_id": source_id
                     })
 
         context_str = "\n\n".join(context_parts)
@@ -256,8 +216,9 @@ class RAGPipeline:
         if "chưa tìm thấy thông tin chính xác" in answer.lower() or "không có thông tin" in answer.lower():
             if len(sources) > 0 and sources[0].get("relevance", 0) < 65:
                 sources = []
+                artifact_ids = []
 
-        return {"answer": answer, "sources": sources}
+        return {"answer": answer, "sources": sources, "artifact_ids": artifact_ids[:4]}
 
     async def process_chat_stream(
         self,
@@ -291,21 +252,33 @@ class RAGPipeline:
                 query_text=search_query,
                 n_results=6
             )
-            DISTANCE_THRESHOLD = 1.9
+            DISTANCE_THRESHOLD = 0.85
             context_parts = []
             current_context_len = 0
+            artifact_ids = []
+            
+            if matched_chunks and matched_chunks[0].get("distance", 10.0) >= DISTANCE_THRESHOLD:
+                matched_chunks = []
+                
             for chunk in matched_chunks:
                 dist = chunk.get("distance", 0.0)
                 meta = chunk.get("metadata", {})
                 content = chunk.get("content", "")
                 title = meta.get("title", "Tư liệu Bảo tàng")
                 category = meta.get("category", "Tư liệu lịch sử")
+                source_table = meta.get("source_table")
+                source_id = meta.get("source_id")
+                
                 if dist < DISTANCE_THRESHOLD:
                     part_text = f"### {title} (Phân loại: {category})\n{content}"
                     if current_context_len + len(part_text) > 6000:
                         break
                     context_parts.append(part_text)
                     current_context_len += len(part_text)
+                    
+                    if source_table == "hien_vat" and source_id and source_id not in artifact_ids:
+                        artifact_ids.append(source_id)
+                        
             context_str = "\n\n".join(context_parts)
 
         async for chunk in self.gemini.generate_response_stream(
@@ -316,6 +289,13 @@ class RAGPipeline:
             use_tools=use_tools,
         ):
             yield chunk
+
+        if not is_chitchat and not use_tools and artifact_ids:
+            # Chỉ hiển thị thẻ hiện vật nếu có kết quả RAG thực sự sát (distance < 0.7)
+            # để tránh hiện rác khi hỏi câu ngoài luồng.
+            min_dist = matched_chunks[0].get("distance", 10.0) if matched_chunks else 10.0
+            if min_dist < 0.7:
+                yield {"artifact_ids": artifact_ids[:4]}
 
 
 # Khởi tạo singleton instance

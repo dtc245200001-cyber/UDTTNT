@@ -1,82 +1,2432 @@
 [
   {
-    "id": "ART_01",
-    "category": "Hiện vật & Bảo vật Quốc gia",
+    "id": "AV001",
+    "name": "Những kỷ vật thiêng liêng về thương binh, liệt sĩ tại Bảo tàng Lịch sử quốc gia",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Hiện đại",
+    "date": "31/07/2026",
+    "location": "Tầng 1 · Phòng A · Kệ 02",
+    "content": "Chiến tranh đã lùi xa, nhưng sự hy sinh, cống hiến của các anh hùng, liệt sĩ, thương binh, bệnh binh và người có công với cách mạng vẫn mãi là biểu tượng sáng ngời của lòng yêu nước và ý chí quật cường của dân tộc Việt Nam. Sưu tập tài liệu, hiện vật về thương binh, liệt sĩ tại BTLSQG là nguồn tư liệu lịch sử quý giá, ghi lại những câu chuyện cảm động về lòng dũng cảm, đức hy sinh của những người đã cống hiến cho Tổ quốc."
+  },
+  {
+    "id": "AV002",
+    "name": "Hai kỷ vật kể chuyện về Anh hùng, liệt sĩ Lê Thị Riêng",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Hiện đại",
+    "date": "25/07/2026",
+    "location": "Tầng 2 · Phòng A · Kệ 05",
+    "content": "Gắn với cuộc tìm kiếm hài cốt Anh hùng, liệt sĩ Lê Thị Riêng tại Công viên Lê Thị Riêng (TP.HCM), hai kỷ vật (một cuốn sổ tay và một chiếc kẹp tóc) đang lưu giữ tại BTLSQG kể lại câu chuyện xúc động về tình cảm, lý tưởng cách mạng của bà."
+  },
+  {
+    "id": "AV003",
+    "name": "Một số đồ dùng sinh hoạt của Lãnh tụ Nguyễn Ái Quốc tại Pác Bó, Cao Bằng trong trưng bày chuyên đề \"Mùa Xuân – Khởi nguồn thắng lợi\"",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "13/02/2026",
+    "location": "Tầng 3 · Phòng B · Kệ 03",
+    "content": "Trong trưng bày chuyên đề, những đồ dùng sinh hoạt của lãnh tụ Nguyễn Ái Quốc tại Pác Bó, Cao Bằng (1941) thể hiện đời sống hoạt động cách mạng của Người."
+  },
+  {
+    "id": "AV004",
+    "name": "Huy hiệu Bình dân học vụ – Biểu tượng của ánh sáng tri thức giữa ngục tù Côn Đảo",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Cận đại",
+    "date": "11/11/2025",
+    "location": "Tầng 1 · Phòng B · Kệ 01",
+    "content": "Trong trưng bày \"Bình dân học vụ – Thắp sáng tương lai\" (khai mạc 22/8/2025), nhiều hiện vật quý lần đầu giới thiệu: thư khen của Chủ tịch Hồ Chí Minh (24/2/1948), sách dạy vỡ lòng chữ quốc ngữ (1946), đặc san \"Bình dân học vụ\" (1947)..."
+  },
+  {
+    "id": "AV005",
+    "name": "Kỷ vật kể chuyện lòng dân",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Lịch sử",
+    "date": "19/03/2025",
+    "location": "Tầng 2 · Phòng C · Kệ 04",
+    "content": "Nhân kỷ niệm 95 năm thành lập Đảng CSVN, trưng bày \"Đảng cộng sản Việt Nam – Những mốc son lịch sử\" giới thiệu hơn 100 hiện vật, tài liệu, hình ảnh về những thắng lợi và bài học kinh nghiệm của cách mạng Việt Nam."
+  },
+  {
+    "id": "AV006",
+    "name": "Cuốn sổ tay của dân công tỉnh Phú Thọ trong chiến dịch Điện Biên Phủ, năm 1954",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "06/09/2024",
+    "location": "Tầng 3 · Phòng C · Kệ 02",
+    "content": "Cuốn sổ tay của một dân công thuộc Tiểu đội xe thồ Phú Thọ II, tham gia vận tải cho chiến dịch Điện Biên Phủ năm 1954."
+  },
+  {
+    "id": "AV007",
+    "name": "Sưu tập hiện vật về Tổng Bí thư Trường Chinh tại Bảo tàng Lịch sử Quốc gia",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Lịch sử",
+    "date": "02/10/2023",
+    "location": "Tầng 1 · Phòng D · Kệ 05",
+    "content": "Đồng chí Trường Chinh tham gia phong trào yêu nước từ 1925, gia nhập Hội Việt Nam Cách mạng Thanh niên năm 1927, là một trong những chiến sĩ cộng sản lớp đầu tiên của Đảng (1930)."
+  },
+  {
+    "id": "AV008",
+    "name": "Tác phẩm \"Lịch sử nước ta\" năm 1942 lưu giữ tại Bảo tàng Lịch sử quốc gia",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "17/05/2023",
+    "location": "Tầng 2 · Phòng D · Kệ 03",
+    "content": "Cuối năm 1941 tại Pác Bó, Cao Bằng, lãnh tụ Nguyễn Ái Quốc viết \"Lịch sử nước ta\" bằng văn vần; tháng 2/1942 được Việt Minh tuyên truyền Bộ xuất bản lần đầu."
+  },
+  {
+    "id": "AV009",
+    "name": "Sưu tập hiện vật về Cách mạng Tháng Tám năm 1945 tại Bảo tàng Lịch sử quốc gia",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "19/08/2022",
+    "location": "Tầng 3 · Phòng A · Kệ 01",
+    "content": "Sưu tập gồm hơn 1000 hiện vật (1941-1945): truyền đơn, báo chí (~700), văn bản (~50), vũ khí (~60), hiện vật về các nhà cách mạng (~100), hiện vật về nhân dân nuôi giấu bảo vệ cách mạng (~100), tài liệu địch theo dõi (~20)..."
+  },
+  {
+    "id": "AV010",
+    "name": "Sách \"Bản án chế độ Thực dân Pháp\" lưu giữ tại Bảo tàng lịch sử quốc gia",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "16/08/2022",
+    "location": "Tầng 1 · Phòng A · Kệ 04",
+    "content": "Cuốn sách hiện trưng bày tại triển lãm \"Quan hệ hữu nghị vĩ đại, đoàn kết đặc biệt Việt Nam - Lào, Lào - Việt Nam\" chứa đựng câu chuyện thú vị về hành trình về với bảo tàng."
+  },
+  {
+    "id": "AV011",
+    "name": "Vở học bằng mo tre lưu giữ tại BTLSQG",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Lịch sử",
+    "date": "02/06/2022",
+    "location": "Tầng 2 · Phòng B · Kệ 02",
+    "content": "Trong trưng bày \"Việt Bắc - Thủ đô gió ngàn\" (kỷ niệm 75 năm toàn quốc kháng chiến), nổi bật là những quyển vở bằng mo tre của học sinh trường Hàn Thuyên (Bắc Ninh)."
+  },
+  {
+    "id": "AV012",
+    "name": "Tuyên ngôn của Ủy ban Dân tộc Giải phóng Việt Nam",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "10/05/2021",
+    "location": "Tầng 3 · Phòng B · Kệ 05",
+    "content": "Ủy ban Dân tộc Giải phóng Việt Nam do Hồ Chí Minh làm Chủ tịch, thành lập tại Đại hội quốc dân Tân Trào, tháng 8/1945 – tiền thân của Quốc hội Việt Nam."
+  },
+  {
+    "id": "AV013",
+    "name": "Về bốn số báo Thân Ái do Chủ tịch Hồ Chí Minh sáng lập tại Thái Lan",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "26/06/2019",
+    "location": "Tầng 1 · Phòng C · Kệ 03",
+    "content": "Từ báo Gia Định (1865) đến báo Thanh Niên (1925) do Nguyễn Ái Quốc sáng lập, báo chí cách mạng Việt Nam liên tục phát triển."
+  },
+  {
+    "id": "AV014",
+    "name": "Chiếc gầu Chủ tịch Hồ Chí Minh dùng để tát nước chống hạn lưu giữ tại BTLSQG",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "21/06/2019",
+    "location": "Tầng 2 · Phòng C · Kệ 01",
+    "content": "BTLSQG lưu giữ nhiều tài liệu, hiện vật về Chủ tịch Hồ Chí Minh, mỗi hiện vật là câu chuyện sống động về cuộc đời, sự nghiệp của Người."
+  },
+  {
+    "id": "AV015",
+    "name": "Đôi nét về những Tympan Cấm Mít đang được trưng bày, phát huy giá trị tại Bảo tàng Lịch sử Quốc gia",
+    "category": "Cổ vật đá",
+    "period": "Lịch sử",
+    "date": "25/12/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 04",
+    "content": "BTLSQG phối hợp Bảo tàng Điêu khắc Chăm Đà Nẵng khai quật Cấm Mít (Hòa Vang, Đà Nẵng), phát hiện 03 tympan hiện trưng bày tại bảo tàng."
+  },
+  {
+    "id": "AV016",
+    "name": "Áo, bà Nguyễn Thị Tạo (Phú Thọ)",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Cận đại",
+    "date": "08/12/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 02",
+    "content": "Áo làm từ vỏ cây sui, mặc trong thời kỳ kháng chiến chống thực dân Pháp."
+  },
+  {
+    "id": "AV017",
+    "name": "Đèn, học sinh trường Hàn Thuyên (Bắc Ninh)",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cận đại",
+    "date": "08/12/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 05",
+    "content": "Đèn tự chế dùng đi học ban đêm tránh máy bay địch, năm 1951-1954."
+  },
+  {
+    "id": "AV018",
+    "name": "Vở học bằng mo tre",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "08/12/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 03",
+    "content": "Vở học bằng mo tre của học sinh trường Hàn Thuyên (Bắc Ninh) trong kháng chiến chống Pháp."
+  },
+  {
+    "id": "AV019",
+    "name": "Trống đồng Cảnh Thịnh - tiếng vọng ngàn năm",
+    "category": "Cổ vật đồng",
+    "period": "Trung đại",
+    "date": "07/12/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 01",
+    "content": "Thời Tây Sơn (1778-1802) gắn với vua Quang Trung - Nguyễn Huệ; sau chiến thắng Kỷ Dậu 1789, hoàng đế Quang Trung phục hồi đất nước, phát triển văn hóa dân tộc."
+  },
+  {
+    "id": "AV020",
+    "name": "Ánh sáng từ Đường Kách mệnh",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "07/12/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 04",
+    "content": "Năm 1927, \"Đường Kách mệnh\" - tập bài giảng của Nguyễn Ái Quốc đào tạo cán bộ cách mạng (1925-1927) ở Quảng Châu - lần đầu xuất bản."
+  },
+  {
+    "id": "AV021",
+    "name": "Cuốn Đường Kách Mệnh của Nguyễn Ái Quốc: Sự xuất hiện và hành trình (Phần 3 và hết)",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "07/12/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 02",
+    "content": "Hành trình cuốn Đường Kách Mệnh, cảm nhận số phận và sức sống mãnh liệt của tác phẩm."
+  },
+  {
+    "id": "AV022",
+    "name": "Lá cờ của Việt kiều Paris (Pháp) treo mừng Lễ Độc lập 2-9-1945",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "06/12/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 05",
+    "content": "Ngày 2-9-1945, Chủ tịch Hồ Chí Minh đọc Tuyên ngôn Độc lập, khai sinh nước Việt Nam Dân chủ Cộng hòa tại Quảng trường Ba Đình."
+  },
+  {
+    "id": "AV023",
+    "name": "Tìm hiểu về các loại gạch in chữ đang trưng bày ở Bảo tàng Lịch sử quốc gia",
+    "category": "Cổ vật gốm",
+    "period": "Trung đại",
+    "date": "06/12/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 03",
+    "content": "Gạch in chữ là vật liệu kiến trúc phổ biến tại các di tích như thành Hoa Lư, thành Thăng Long, thành Nhà Hồ..."
+  },
+  {
+    "id": "AV024",
+    "name": "Về tấm bia đàn Nam Giao thời Lê ở Hà Nội",
+    "category": "Cổ vật đá",
+    "period": "Trung đại",
+    "date": "06/12/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 01",
+    "content": "Đàn tế trời xây dựng thời Lý (1152) ở An Thọ, Thọ Xương; đến thời Hậu Lê, đàn Nam Giao xây ở Thanh Hoa (nay Thọ Xuân, Thanh Hóa)."
+  },
+  {
+    "id": "AV025",
+    "name": "Chiếc ấm sắc thuốc cho lãnh tụ Hồ Chí Minh",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "06/12/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 04",
+    "content": "Chiếc ấm đất của đồng bào Chiến khu Việt Bắc dùng sắc thuốc cho Hồ Chí Minh khi Người hoạt động cách mạng ở Thái Nguyên năm 1945."
+  },
+  {
+    "id": "AV026",
+    "name": "Chiếc hòm phiếu bầu cử quốc hội khóa I",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "06/12/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 02",
+    "content": "Sau Tuyên ngôn độc lập 2/9/1945, ngày 3-9-1945 Hồ Chí Minh đề nghị tổ chức Tổng tuyển cử với chế độ phổ thông đầu phiếu."
+  },
+  {
+    "id": "AV027",
+    "name": "Sưu tập truyền đơn cách mạng trước tháng 9-1945 hiện lưu giữ tại BTLSQG",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "06/12/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 05",
+    "content": "Trong 15 năm (1930-1945), truyền đơn cách mạng giữ vai trò quan trọng trong tuyên truyền, vận động quần chúng theo Đảng."
+  },
+  {
+    "id": "AV028",
+    "name": "Đôi lọ lục bình giấu tài liệu bí mật của Đảng",
+    "category": "Cổ vật gốm",
+    "period": "Lịch sử",
+    "date": "06/12/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 03",
+    "content": "Đôi lọ gốm sứ Hoa lam Trung Quốc dùng cất giấu tài liệu Đảng chuyển từ nước ngoài về Hải Phòng năm 1932, gắn với đồng chí Nguyễn Lương Bằng."
+  },
+  {
+    "id": "AV029",
+    "name": "Tập chữ ký ủng hộ Việt Nam chống Mỹ cứu nước của nhân dân Bungari",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Hiện đại",
+    "date": "06/12/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 01",
+    "content": "Trong kháng chiến chống Mỹ, nhân dân Việt Nam nhận được sự giúp đỡ về tinh thần, vật chất từ nhiều nước như Mỹ, Anh, Pháp, Cuba, Bungari..."
+  },
+  {
+    "id": "AV030",
+    "name": "Chiếc đài bán dẫn Sony xác nhận thông tin \"miền Nam hoàn toàn giải phóng\" – đưa đến quyết định giải phóng Côn Đảo ngày 1/5/1975",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Hiện đại",
+    "date": "06/12/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 04",
+    "content": "Câu chuyện về chiếc radio Sony gắn với vị khách người Pháp André Menras, hé lộ thông tin về hiện vật."
+  },
+  {
+    "id": "AV031",
+    "name": "Sự ra đời bức ảnh \"Bác bắt nhịp bài ca Kết đoàn\"",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Cận đại",
+    "date": "06/12/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 02",
+    "content": "Ảnh do nghệ sĩ Lâm Hồng Long chụp, ghi lại Chủ tịch Hồ Chí Minh bắt nhịp bài Kết đoàn, cùng ảnh \"Mẹ con ngày gặp mặt\" nổi tiếng."
+  },
+  {
+    "id": "AV032",
+    "name": "Xe ô tô",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 05",
+    "content": "Xe biển số HN707 do Trung ương Đảng CS Liên Xô tặng Trung ương Đảng CSVN năm 1954."
+  },
+  {
+    "id": "AV033",
+    "name": "Lư sử tử",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 03",
+    "content": "Nhân dân Trung Quốc tặng Chủ tịch Hồ Chí Minh, năm 1959."
+  },
+  {
+    "id": "AV034",
+    "name": "Bức thêu",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 01",
+    "content": "Của phụ nữ tỉnh Quảng Trị tặng Đảng Lao động Việt Nam, năm 1960."
+  },
+  {
+    "id": "AV035",
+    "name": "Bộ đồ ăn bằng bạc",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 04",
+    "content": "Nhân dân Mông Cổ tặng Chủ tịch Hồ Chí Minh, năm 1955."
+  },
+  {
+    "id": "AV036",
+    "name": "Bộ đồ trà",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 02",
+    "content": "Thương binh miền Nam tặng Chủ tịch Hồ Chí Minh nhân kỷ niệm 70 năm ngày sinh (19/5/1890-19/5/1960)."
+  },
+  {
+    "id": "AV037",
+    "name": "Tượng phật, nhân dân Ấn Độ tặng",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 05",
+    "content": "Nhân dân Ấn Độ tặng Chủ tịch Hồ Chí Minh, năm 1958."
+  },
+  {
+    "id": "AV038",
+    "name": "Chế biến thủy sản đông lạnh xuất khẩu",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV039",
+    "name": "Sản xuất sứ vệ sinh",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV040",
+    "name": "Đập tràn Nhà máy Thủy điện Hoà Bình",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Hiện đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 04",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV041",
+    "name": "Đại hội đại biểu toàn quốc",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV042",
+    "name": "Quạt điện, thời kỳ bao cấp",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV043",
+    "name": "Tem phiếu mua hàng thời kỳ bao cấp",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV044",
+    "name": "Sổ mua lương thực thời kỳ bao cấp",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV045",
+    "name": "Xếp hàng mua lương thực",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 04",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV046",
+    "name": "Quốc hội khóa VI",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Hiện đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV047",
+    "name": "Hội nghị Hiệp thương",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV048",
+    "name": "Nhân dân Thủ đô Hà Nội mít tinh",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV049",
+    "name": "Xe tăng",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV050",
+    "name": "Lễ ký Hiệp định đình chiến",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 04",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV051",
+    "name": "Băng khẩu hiệu",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Hiện đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 02",
+    "content": "Dòng chữ \"Việt Nam là lương tâm thời đại\", nhân dân Ý dùng trong biểu tình ủng hộ Việt Nam chống Mỹ, năm 1970."
+  },
+  {
+    "id": "AV052",
+    "name": "Băng da",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 05",
+    "content": "Do tổ chức chống chiến tranh ở Việt Nam của Mỹ phát hành, thanh niên Mỹ dùng bịt đầu biểu tình ở Washington, 22/4/1970."
+  },
+  {
+    "id": "AV053",
+    "name": "Mũ của Hội cựu chiến binh Mỹ",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Hiện đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 03",
+    "content": "Đội trong cuộc biểu tình ở Washington ủng hộ Việt Nam chống Mỹ, ngày 20/12/1966."
+  },
+  {
+    "id": "AV054",
+    "name": "Trống của đoàn Phật giáo Nhật Bản",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 01",
+    "content": "Dùng đấu tranh ủng hộ nhân dân Việt Nam, thời kỳ 1965-1967."
+  },
+  {
+    "id": "AV055",
+    "name": "Lịch",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Hiện đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 04",
+    "content": "Công nhân dệt ở Berlin (Đức) in và phát hành bán lấy tiền ủng hộ Việt Nam chống Mỹ, năm 1969."
+  },
+  {
+    "id": "AV056",
+    "name": "Xích và khóa",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Hiện đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 02",
+    "content": "Công nhân Australia dùng khóa nhà Quốc hội, đấu tranh ủng hộ Việt Nam chống Mỹ."
+  },
+  {
+    "id": "AV057",
+    "name": "Tranh làm bằng xác máy bay Mỹ",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 05",
+    "content": "Đảng bộ Đảng Dân chủ Thành phố Vinh tặng Đảng Cộng sản Việt Nam, năm 1968."
+  },
+  {
+    "id": "AV058",
+    "name": "Cào cỏ",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 03",
+    "content": "Anh hùng Lao động Đinh Như Gia cùng xã viên HTX Gia Hồ, Vĩnh Linh, Quảng Trị làm từ xác máy bay Mỹ."
+  },
+  {
+    "id": "AV059",
+    "name": "Ca uống nước",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 01",
+    "content": "Chiến sĩ công an Đồn 56 Vĩnh Linh làm từ mảnh xác máy bay Mỹ bị bắn rơi, ngày 28-5-1965."
+  },
+  {
+    "id": "AV060",
+    "name": "Huy hiệu \"Sơn La quyết thắng\"",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 04",
+    "content": "Làm từ mảnh xác máy bay Mỹ bị bắn rơi tại Sơn La, ngày 14-6-1965."
+  },
+  {
+    "id": "AV061",
+    "name": "Đàn măngđôlin",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Hiện đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 02",
+    "content": "Anh hùng Liệt sĩ Nguyễn Văn Trỗi dùng khi còn sống."
+  },
+  {
+    "id": "AV062",
+    "name": "Anh hùng liệt sĩ Nguyễn Văn Trỗi",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Hiện đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV063",
+    "name": "Cờ \"Đi là chiến thắng, đánh là diệt gọn\"",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Hiện đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 03",
+    "content": "Có chữ ký của 182 cán bộ, chiến sĩ Sư đoàn II Quân Giải phóng Liên khu V, cắm trên cột cờ TP Đà Nẵng trong Tết Mậu Thân, 10-1-1968."
+  },
+  {
+    "id": "AV064",
+    "name": "Mõ",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV065",
+    "name": "Cưa",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 04",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV066",
+    "name": "Súng gỗ",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 02",
+    "content": "Nhân dân ấp Định Hưng (Bến Tre) tự tạo, dùng trong Đồng Khởi năm 1960."
+  },
+  {
+    "id": "AV067",
+    "name": "Súng ngựa trời",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 05",
+    "content": "Công binh xưởng xã Định Thủy, Mỏ Cày, Bến Tre tự chế, dùng trong phong trào Đồng Khởi 1960."
+  },
+  {
+    "id": "AV068",
+    "name": "Phong trào Đồng khởi",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV069",
+    "name": "Mũ rơm",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV070",
+    "name": "Đơn vị pháo cao xạ",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 04",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV071",
+    "name": "Hầm trú ẩn",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV072",
+    "name": "Dụng cụ làm đường",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV073",
+    "name": "Gàu tát nước",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV074",
+    "name": "Chủ tịch Hồ Chí Minh tát nước chống hạn",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV075",
+    "name": "Đũa nhạc trưởng",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 04",
+    "content": "Chủ tịch Hồ Chí Minh dùng bắt nhịp bài \"Kết đoàn\" tại Công viên Bách Thảo Hà Nội, tối 19-9-1960."
+  },
+  {
+    "id": "AV076",
+    "name": "Chủ tịch Hồ Chí Minh bắt nhịp bài \"Kết đoàn\"",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV077",
+    "name": "Tàu không số",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV078",
+    "name": "Đường Trường Sơn",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV079",
+    "name": "Cầu Hiền Lương",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV080",
+    "name": "Thứ trưởng Bộ Quốc phòng",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 04",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV081",
+    "name": "Gắn huy hiệu",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV082",
+    "name": "Huy hiệu \"Chiến sĩ Điện Biên\"",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 05",
+    "content": "Chủ tịch Hồ Chí Minh tặng thưởng cho các chiến sĩ chiến đấu, chiến thắng ở chiến dịch Điện Biên Phủ, năm 1954."
+  },
+  {
+    "id": "AV083",
+    "name": "Súng ĐKZ",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 03",
+    "content": "Anh hùng Trần Đình Hùng sử dụng tấn công địch trong chiến dịch Điện Biên Phủ, năm 1954."
+  },
+  {
+    "id": "AV084",
+    "name": "Mũi khoan",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 01",
+    "content": "Bộ đội công binh dùng mở đường tấn công địch ở Điện Biên Phủ, năm 1954."
+  },
+  {
+    "id": "AV085",
+    "name": "Máy vô tuyến điện",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 04",
+    "content": "Chiến sĩ thông tin Chu Văn Mùi dùng phục vụ liên lạc trong chiến dịch Điện Biên Phủ."
+  },
+  {
+    "id": "AV086",
+    "name": "Cuốc chim",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 02",
+    "content": "Bộ đội dùng đào hầm đánh cứ điểm Him Lam, tháng 3-1954."
+  },
+  {
+    "id": "AV087",
+    "name": "Cờ \"Quyết chiến quyết thắng\"",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV088",
+    "name": "Cọc tời",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 03",
+    "content": "Bộ đội pháo binh dùng kéo pháo ở Điện Biên Phủ, năm 1954."
+  },
+  {
+    "id": "AV089",
+    "name": "Chiến thắng lịch sử Điện Biên Phủ",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV090",
+    "name": "Xe đạp thồ",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 04",
+    "content": "Ông Bùi Tín, dân công tỉnh Thanh Hóa, dùng vận chuyển lương thực phục vụ chiến dịch Điện Biên Phủ, năm 1954."
+  },
+  {
+    "id": "AV091",
+    "name": "Đoàn xe đạp thồ",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV092",
+    "name": "Hai bộ phận của Đài Phát thanh",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV093",
+    "name": "Đài Phát thanh Tiếng nói Nam Bộ",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV094",
+    "name": "Lớp học văn hóa",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV095",
+    "name": "Máy dập thuốc viên",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 04",
+    "content": "Cán bộ nhân viên ngành y tế Trung ương dùng dập các loại thuốc, năm 1948."
+  },
+  {
+    "id": "AV096",
+    "name": "Đèn",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV097",
+    "name": "Áo",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV098",
+    "name": "Hũ gạo nuôi quân",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 03",
+    "content": "Của gia đình chị Vinh ở thôn Cổ Đô, huyện Quốc Oai, Hà Tây (nay là Hà Nội)."
+  },
+  {
+    "id": "AV099",
+    "name": "Chiến sĩ quyết tử",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV100",
+    "name": "Bom ba càng",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 04",
+    "content": "Quyết tử quân Hà Nội dùng chống xe tăng Pháp trong những ngày đầu toàn quốc kháng chiến, tháng 12-1946."
+  },
+  {
+    "id": "AV101",
+    "name": "Tranh \"Chủ tịch Hồ Chí Minh và thiếu nhi Bắc, Trung, Nam\"",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 02",
+    "content": "Họa sĩ Diệp Minh Châu vẽ bằng máu trên vải lụa, năm 1947."
+  },
+  {
+    "id": "AV102",
+    "name": "Chủ tịch Hồ Chí Minh tại Kỳ họp thứ Nhất Quốc hội khóa I",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV103",
+    "name": "Chính phủ Lâm thời",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV104",
+    "name": "Bản nhạc \"Tiến quân ca\"",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV105",
+    "name": "Tượng đồng Chủ tịch Hồ Chí Minh",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 04",
+    "content": "Tượng đồng Chủ tịch Hồ Chí Minh đọc Tuyên ngôn Độc lập tại Quảng trường Ba Đình, Hà Nội, ngày 2-9-1945."
+  },
+  {
+    "id": "AV106",
+    "name": "Lễ Độc lập tại Quảng trường Ba Đình",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV107",
+    "name": "Gậy tầm vông",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV108",
+    "name": "Mũi lao",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV109",
+    "name": "Mã tấu",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV110",
+    "name": "Kiếm",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 04",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV111",
+    "name": "Dao trường",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV112",
+    "name": "Nhân dân Hà Nội đánh chiếm Phủ Khâm sai",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV113",
+    "name": "Nhân dân Sài Gòn mít tinh",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV114",
+    "name": "Cờ đỏ sao vàng",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 01",
+    "content": "Treo tại Đại hội Quốc dân Tân Trào, huyện Sơn Dương, Tuyên Quang, tháng 8-1945."
+  },
+  {
+    "id": "AV115",
+    "name": "Đề án Nghị quyết",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 04",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV116",
+    "name": "La bàn",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV117",
+    "name": "Áo vét tông",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV118",
+    "name": "Lễ thành lập Đội Việt Nam Tuyên truyền Giải phóng Quân",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Hiện đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV119",
+    "name": "Bàn đá và rulô",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV120",
+    "name": "Báo Việt Nam Độc Lập",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 04",
+    "content": "Cơ quan tuyên truyền của Việt Minh Cao Bằng do Nguyễn Ái Quốc sáng lập, số 1 (101), ngày 1-8-1941."
+  },
+  {
+    "id": "AV121",
+    "name": "Máy chém",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 02",
+    "content": "Thực dân Pháp đặt tại nhà tù Hòa Lò (Hà Nội), dùng xử tử nhiều người Việt Nam yêu nước thời kỳ trước 1945."
+  },
+  {
+    "id": "AV122",
+    "name": "Trụ sở báo \"Tin tức\"",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV123",
+    "name": "Báo Lao Động",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV124",
+    "name": "Báo tin học",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 01",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV125",
+    "name": "Báo Dân Chúng",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 04",
+    "content": "Cơ quan trung ương của Đảng Cộng sản Đông Dương, số 41, ra ngày 3/1/1939."
+  },
+  {
+    "id": "AV126",
+    "name": "Đèn tọa đăng",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV127",
+    "name": "Nguyễn Ái Quốc",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV128",
+    "name": "Tranh \"Ba tầng áp bức\"",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV129",
+    "name": "Bia Mỹ Sơn 1",
+    "category": "Cổ vật đá",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 01",
+    "content": "Đá cát, thế kỷ 5, đền Mỹ Sơn A1, huyện Duy Xuyên, tỉnh Quảng Nam."
+  },
+  {
+    "id": "AV130",
+    "name": "Biển \"Chính Đông môn\", \"Tây Nam môn\"",
+    "category": "Cổ vật đá",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 04",
+    "content": "Thế kỷ 19, triều Nguyễn."
+  },
+  {
+    "id": "AV131",
+    "name": "Cây hương, đá",
+    "category": "Cổ vật đá",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 02",
+    "content": "Dựng vào tháng 10 năm Bính Ngọ, niên hiệu Cảnh Trị thứ 4 (1666), thôn Tứ Kỳ, Thanh Trì, Hà Nội."
+  },
+  {
+    "id": "AV132",
+    "name": "Cổng tam quan",
+    "category": "Cổ vật đá",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 05",
+    "content": "Đá, triều Lê - Nguyễn, cuối thế kỷ 18 - đầu thế kỷ 19, Hải Phòng."
+  },
+  {
+    "id": "AV133",
+    "name": "Tượng hổ",
+    "category": "Cổ vật đá",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 03",
+    "content": "Đá, dựng năm 1264, lăng Trần Thủ Độ, tỉnh Thái Bình."
+  },
+  {
+    "id": "AV134",
+    "name": "Bia chùa Báo Ân",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 01",
+    "content": "Đá, thời Lý, thế kỷ 12, xã An Hoạch, huyện Đông Sơn, tỉnh Thanh Hóa."
+  },
+  {
+    "id": "AV135",
+    "name": "Cặp chân đèn",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 04",
+    "content": "Gỗ chạm, đầu thế kỷ 20."
+  },
+  {
+    "id": "AV136",
+    "name": "Giá đèn hình tòa Cửu Long",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 02",
+    "content": "Sắt, đầu thế kỷ 20."
+  },
+  {
+    "id": "AV137",
+    "name": "Tượng bán thân thiếu nữ Hà Nội",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 05",
+    "content": "Đồng, đầu thế kỷ 20."
+  },
+  {
+    "id": "AV138",
+    "name": "Tượng người nông dân đi cày",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 03",
+    "content": "Đồng, đầu thế kỷ 20."
+  },
+  {
+    "id": "AV139",
+    "name": "Phù điêu sư tử",
+    "category": "Cổ vật đá",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 01",
+    "content": "Đá cát, thế kỷ 13, Tháp Mẫm, Bình Định."
+  },
+  {
+    "id": "AV140",
+    "name": "Đài thờ Uroja",
+    "category": "Đồ vàng bạc & trang sức",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 04",
+    "content": "Bạc, thế kỷ 11-12, văn hóa Champa."
+  },
+  {
+    "id": "AV141",
+    "name": "Phù điêu thần Siva",
+    "category": "Cổ vật đá",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 02",
+    "content": "Đá cát, thế kỷ 13, Tháp Mẫm, huyện An Nhơn, tỉnh Bình Định."
+  },
+  {
+    "id": "AV142",
+    "name": "Sưu tập tiền kim loại",
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 05",
+    "content": "Thế kỷ 5-6, văn hóa Óc Eo."
+  },
+  {
+    "id": "AV143",
+    "name": "Bình Kendi",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 03",
+    "content": "Gốm, thế kỷ 5-8, văn hóa Óc Eo."
+  },
+  {
+    "id": "AV144",
+    "name": "Nhẫn",
+    "category": "Đồ vàng bạc & trang sức",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 01",
+    "content": "Vàng, thế kỷ 5-6, văn hóa Óc Eo."
+  },
+  {
+    "id": "AV145",
+    "name": "Tượng Phật",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 04",
+    "content": "Gỗ, thế kỷ 5-7, văn hóa Óc Eo."
+  },
+  {
+    "id": "AV146",
+    "name": "Tượng thần Visnu",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 02",
+    "content": "Đá, thế kỷ 7-9, văn hóa Óc Eo."
+  },
+  {
+    "id": "AV147",
+    "name": "Sưu tập lư hương, đỉnh đồng",
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 05",
+    "content": "Triều Nguyễn, thế kỷ 19 - đầu thế kỷ 20."
+  },
+  {
+    "id": "AV148",
+    "name": "Sưu tập đồ gỗ khảm trai",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 03",
+    "content": "Triều Nguyễn, đầu thế kỷ 20."
+  },
+  {
+    "id": "AV149",
+    "name": "Sưu tập đồ sứ men trắng vẽ lam và đồ pháp lam",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 01",
+    "content": "(đồng tráng men), triều Nguyễn, thế kỷ 19 - đầu thế kỷ 20."
+  },
+  {
+    "id": "AV150",
+    "name": "Sưu tập đồ gỗ sơn son thếp vàng",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 04",
+    "content": "Triều Nguyễn, thế kỷ 19 - đầu thế kỷ 20."
+  },
+  {
+    "id": "AV151",
+    "name": "Sưu tập gốm Bát Tràng",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 02",
+    "content": "Triều Nguyễn, thế kỷ 19 - đầu thế kỷ 20."
+  },
+  {
+    "id": "AV152",
+    "name": "Hộp đựng sách, nghiên mài mực",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 05",
+    "content": "Triều Nguyễn, thế kỷ 19 - đầu thế kỷ 20."
+  },
+  {
+    "id": "AV153",
+    "name": "Thước gỗ, quả cân đồng, đấu đong",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 03",
+    "content": "Triều Nguyễn, thế kỷ 19 - đầu thế kỷ 20."
+  },
+  {
+    "id": "AV154",
+    "name": "Sưu tập chuông",
+    "category": "Cổ vật đồng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 01",
+    "content": "Đồng, triều Nguyễn, thế kỷ 19 - 20."
+  },
+  {
+    "id": "AV155",
+    "name": "Bộ tranh lục Bộ",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Cận đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 04",
+    "content": "Giấy dó vẽ nhiều màu, năm 1885, triều Nguyễn, tác giả Nguyễn Văn Nhân."
+  },
+  {
+    "id": "AV156",
+    "name": "Đôi bát thờ",
+    "category": "Cổ vật gốm",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 02",
+    "content": "Gốm hoa lam, niên hiệu Quang Trung, triều Tây Sơn (1789-1792), Bát Tràng, Gia Lâm, Hà Nội."
+  },
+  {
+    "id": "AV157",
+    "name": "Lệnh chỉ",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 05",
+    "content": "Giấy dó, ngày 15 tháng 5 niên hiệu Quang Trung 3, triều Tây Sơn (năm 1790)."
+  },
+  {
+    "id": "AV158",
     "name": "Trống đồng Cảnh Thịnh",
-    "title": "Bảo vật Quốc gia: Trống đồng Cảnh Thịnh (Thời Tây Sơn, năm 1800)",
-    "period": "Thời Tây Sơn (1778 - 1802)",
-    "date": "Năm 1800 (Niên hiệu Cảnh Thịnh thứ 8)",
-    "location": "Phòng trưng bày Triều đại Tây Sơn - Bảo tàng Lịch sử Quốc gia",
-    "content": "Trống đồng Cảnh Thịnh là một Bảo vật Quốc gia đặc biệt quý hiếm, được đúc vào năm Canh Thân (1800) dưới thời vua Cảnh Thịnh (Nguyễn Quang Toản) triều Tây Sơn. Khác với trống đồng Đông Sơn cổ đại có hình dáng thon thắt, Trống đồng Cảnh Thịnh được đúc phỏng theo kiểu dáng của trống da truyền thống (hình tang trống hơi phình ở giữa, hai đầu thon nhỏ). Thân trống đúc nổi 4 quai hình rồng uốn lượn tinh xảo, xung quanh trang trí hoa văn rồng mây, họa tiết cánh sen, nhũ đinh và sóng nước sống động. Thân trống khắc bài minh văn chữ Hán gồm 272 chữ ghi lại công đức của bà Nguyễn Thị Lộc (phu nhân Thượng tướng quân Cẩm Y vệ Đô chỉ huy sứ Ngụy Vĩnh Liên) cùng các thiện nam tín nữ đã hỷ cúng tiền của đúc trống đồng phụng cúng vào chùa Linh Nhân (chùa Nành, Gia Lâm, Hà Nội)."
+    "category": "Cổ vật đồng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 03",
+    "content": "Đồng, niên hiệu Cảnh Thịnh 8, triều Tây Sơn (năm 1800)."
   },
   {
-    "id": "ART_02",
-    "category": "Hiện vật & Bảo vật Quốc gia",
+    "id": "AV159",
+    "name": "Sưu tập gốm Phù Lãng",
+    "category": "Cổ vật gốm",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 01",
+    "content": "Gốm Phù Lãng (Bắc Ninh) và Thổ Hà (Bắc Giang), thế kỷ 17-18."
+  },
+  {
+    "id": "AV160",
+    "name": "Ấm trang trí chữ Thọ",
+    "category": "Cổ vật đồng",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 04",
+    "content": "Đồng, thời Lê Trung Hưng, thế kỷ 17-18."
+  },
+  {
+    "id": "AV161",
+    "name": "Sưu tập đồ đồng, thế kỉ 15-18",
+    "category": "Cổ vật đồng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 02",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV162",
+    "name": "Sưu tập tranh thờ",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 05",
+    "content": "Giấy, thời Lê Trung Hưng, thế kỷ 17-18, sưu tầm tại đền Độc Lôi, huyện Nam Đàn, tỉnh Nghệ An, năm 1959."
+  },
+  {
+    "id": "AV163",
+    "name": "Bộ tranh \"Thập điện diêm vương\"",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 03",
+    "content": "Gỗ sơn son thếp vàng, thời Lê Trung Hưng, thế kỷ 17-18."
+  },
+  {
+    "id": "AV164",
+    "name": "Tượng Phật nhập niết bàn",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 01",
+    "content": "Gỗ sơn son thếp vàng, thời Lê Trung Hưng, thế kỷ 17-18, chùa Chèm, Bắc Từ Liêm, Hà Nội."
+  },
+  {
+    "id": "AV165",
+    "name": "Thuyền thờ",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 04",
+    "content": "Gỗ sơn son thếp vàng, thế kỷ 17, thời Lê Trung Hưng, chùa Keo, huyện Vũ Thư, tỉnh Thái Bình."
+  },
+  {
+    "id": "AV166",
+    "name": "Đôi vẹt thờ",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 02",
+    "content": "Gỗ sơn son thếp vàng, thế kỷ 16-17, Thanh Hóa."
+  },
+  {
+    "id": "AV167",
+    "name": "Lư hương",
+    "category": "Cổ vật gốm",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 05",
+    "content": "Gốm men nhiều màu, thời Mạc - Lê Trung Hưng, thế kỷ 16-17, Bát Tràng, Hà Nội."
+  },
+  {
+    "id": "AV168",
+    "name": "Đạn đá",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 03",
+    "content": "Triều Hồ, thế kỷ 15."
+  },
+  {
+    "id": "AV169",
+    "name": "Đầu phượng",
+    "category": "Cổ vật gốm",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 01",
+    "content": "Đất nung, triều Trần - Hồ, thế kỷ 14-15."
+  },
+  {
+    "id": "AV170",
+    "name": "Cọc Bạch Đằng",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 04",
+    "content": "Năm 1288, gỗ lim, phát hiện tại sông Chanh, huyện Yên Hưng, tỉnh Quảng Ninh, năm 1976."
+  },
+  {
+    "id": "AV171",
+    "name": "Mộc bài Đa Bối",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 02",
+    "content": "Gỗ, dựng năm 1269, phát hiện tại Thụy Anh, Thái Bình."
+  },
+  {
+    "id": "AV172",
+    "name": "Ấn \"Môn Hạ sảnh ấn\"",
+    "category": "Cổ vật đồng",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 05",
+    "content": "Đồng, niên hiệu Long Khánh 5, Trần Duệ Tông (năm 1337), phát hiện tại Hương Khê, Hà Tĩnh, năm 1962."
+  },
+  {
+    "id": "AV173",
+    "name": "Sưu tập gốm hoa nâu",
+    "category": "Cổ vật gốm",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 03",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV174",
+    "name": "Sưu tập vật liệu trang trí kiến trúc đất nung",
+    "category": "Cổ vật gốm",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 01",
+    "content": "Thời Trần, thế kỷ 13-14."
+  },
+  {
+    "id": "AV175",
+    "name": "Sưu tập gốm Lý - Trần, thế kỷ 11-14",
+    "category": "Đồ ngọc & đá quý",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 04",
+    "content": "Thời kỳ Lý-Trần hình thành và phát triển những dòng gốm men nổi tiếng: men ngọc, men ngà, men nâu, hoa nâu..."
+  },
+  {
+    "id": "AV176",
+    "name": "Bia Linh Xứng",
+    "category": "Cổ vật đá",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 02",
+    "content": "Đá, dựng năm Thiên Phù Duệ Vũ 7 (1126), chùa Linh Xứng, huyện Hà Trung, tỉnh Thanh Hóa."
+  },
+  {
+    "id": "AV177",
+    "name": "Tượng đầu người mình chim đánh trống (Kinnari)",
+    "category": "Cổ vật đá",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 05",
+    "content": "Đá cát, năm 1057, chùa Phật Tích, huyện Tiên Du, tỉnh Bắc Ninh."
+  },
+  {
+    "id": "AV178",
+    "name": "Bệ kê chân cột",
+    "category": "Cổ vật đá",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 03",
+    "content": "Đá, năm 1057, chùa Phật Tích, huyện Tiên Du, tỉnh Bắc Ninh."
+  },
+  {
+    "id": "AV179",
+    "name": "Cọc đóng móng thành Hoa Lư",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 01",
+    "content": "Gỗ, thế kỷ 10, phát hiện tại Phủ Đầu Tường, Hoa Lư, Ninh Bình."
+  },
+  {
+    "id": "AV180",
+    "name": "Tượng uyên ương trang trí kiến trúc",
+    "category": "Cổ vật gốm",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 04",
+    "content": "Đất nung, thế kỷ 10, Hoa Lư, Ninh Bình."
+  },
+  {
+    "id": "AV181",
+    "name": "Gạch in chữ \"Đại Việt quốc quân thành chuyên\" / \"Giang Tây quân\"",
+    "category": "Cổ vật gốm",
+    "period": "Trung đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 02",
+    "content": "Đất nung, thế kỷ 10, Hoa Lư, Ninh Bình."
+  },
+  {
+    "id": "AV182",
+    "name": "Bia Trường Xuân",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 05",
+    "content": "Đá, dựng năm Đại Nghiệp thứ 14 triều Tùy (618), thôn Trường Xuân, xã Đông Ninh, huyện Đông Sơn, tỉnh Thanh Hóa."
+  },
+  {
+    "id": "AV183",
+    "name": "Ấm vòi hình đầu gà",
+    "category": "Cổ vật gốm",
+    "period": "Lịch sử",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 03",
+    "content": "Gốm men, thế kỷ 7-8, lò gốm Tam Thọ (Thanh Hóa)."
+  },
+  {
+    "id": "AV184",
+    "name": "Khay",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 01",
+    "content": "Gốm, thế kỷ 2, phát hiện ở Lạch Trường, Thanh Hóa."
+  },
+  {
+    "id": "AV185",
+    "name": "Chậu trống",
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 04",
+    "content": "Đồng, thế kỷ 2-3, phát hiện ở Lạch Trường, Thanh Hóa."
+  },
+  {
+    "id": "AV186",
+    "name": "Trống Tân Long (loại Heger II)",
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "04/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 02",
+    "content": "Đồng, thế kỷ 2-3, phát hiện ở Hòa Bình."
+  },
+  {
+    "id": "AV187",
+    "name": "Bộ phận kết cấu nhà sàn",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 05",
+    "content": "Gỗ, di chỉ Bưng Thơm (Bà Rịa, Vũng Tàu), khoảng 2.500-2.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV188",
+    "name": "Chuỗi hạt, mã não",
+    "category": "Cổ vật đá",
+    "period": "Lịch sử",
+    "date": "03/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 03",
+    "content": "Di chỉ Giồng Cá Vồ (Cần Giờ, TP.HCM)."
+  },
+  {
+    "id": "AV189",
+    "name": "Khuyên tai hai đầu thú, đá",
+    "category": "Cổ vật đá",
+    "period": "Lịch sử",
+    "date": "03/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 01",
+    "content": "Đá, di chỉ Giồng Cá Vồ (Cần Giờ, TP.HCM)."
+  },
+  {
+    "id": "AV190",
+    "name": "Chân đèn",
+    "category": "Cổ vật gốm",
+    "period": "Lịch sử",
+    "date": "03/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 04",
+    "content": "Chân đèn gốm dính sắt."
+  },
+  {
+    "id": "AV191",
+    "name": "Nồi",
+    "category": "Cổ vật gốm",
+    "period": "Lịch sử",
+    "date": "03/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 02",
+    "content": "Gốm, Duy Xuyên, Quảng Nam."
+  },
+  {
+    "id": "AV192",
+    "name": "Hạt chuỗi, thủy tinh",
+    "category": "Cổ vật đá",
+    "period": "Lịch sử",
+    "date": "03/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV193",
+    "name": "Trâm cài",
+    "category": "Đồ vàng bạc & trang sức",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 03",
+    "content": "Sưu tập đồ trang sức văn hóa Đông Sơn: trâm cài, vòng tay, vòng chân, khóa thắt lưng..."
+  },
+  {
+    "id": "AV194",
+    "name": "Vòng ống tay gắn lục lạc",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 01",
+    "content": "Sưu tập đồ trang sức văn hóa Đông Sơn."
+  },
+  {
+    "id": "AV195",
+    "name": "Vòng tay thủy tinh",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 04",
+    "content": "Sưu tập đồ trang sức văn hóa Đông Sơn."
+  },
+  {
+    "id": "AV196",
+    "name": "Dấu in (Bàn dập) hoa văn",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 02",
+    "content": "Gốm, văn hóa Hoa Lộc (Thanh Hóa), khoảng 4.000-3.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV197",
+    "name": "Công cụ tra lắp cán",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 05",
+    "content": "Khoảng 4.000-3.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV198",
+    "name": "Chuỗi hạt",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 03",
+    "content": "Vỏ nhuyễn thể, khoảng 4.000-3.000 năm cách ngày nay, di chỉ Xóm Thâm, xã Trung Hóa, huyện Minh Hóa, tỉnh Quảng Bình."
+  },
+  {
+    "id": "AV199",
+    "name": "Xẻng",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 01",
+    "content": "Sưu tập công cụ đá miền núi phía Bắc, khoảng 4.000-3.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV200",
+    "name": "Rìu bôn",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 04",
+    "content": "Sưu tập công cụ đá miền núi phía Bắc, khoảng 4.000-3.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV201",
+    "name": "Cuốc",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 02",
+    "content": "Sưu tập công cụ đá miền núi phía Bắc, khoảng 4.000-3.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV202",
+    "name": "Sưu tập vỏ nhuyễn thể",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 05",
+    "content": "Văn hóa Đa Bút (Thanh Hóa), văn hóa Quỳnh Văn (Nghệ An), khoảng 7.000-4.500 năm cách ngày nay."
+  },
+  {
+    "id": "AV203",
+    "name": "Gốm đáy nhọn",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 03",
+    "content": "Văn hóa Quỳnh Văn (Nghệ An), khoảng 7.000-5.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV204",
+    "name": "Bàn mài lưỡi công cụ (dấu Bắc Sơn)",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 01",
+    "content": "Đá Schiste, văn hóa Bắc Sơn, khoảng 11.000-6.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV205",
+    "name": "Rìu tay",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 04",
+    "content": "Đá bazan, khoảng 400.000-300.000 năm cách ngày nay, phát hiện tại Núi Đọ, xã Triệu Khánh, huyện Thiệu Hóa, tỉnh Thanh Hóa, năm 1960."
+  },
+  {
+    "id": "AV206",
+    "name": "Chày và bàn nghiền thức ăn",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 02",
+    "content": "Đá, văn hóa Hòa Bình, khoảng 18.000-7.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV207",
+    "name": "Rìu ngắn",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "03/11/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 05",
+    "content": "Đá cuội, văn hóa Hòa Bình, khoảng 18.000-7.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV208",
+    "name": "Bộ phận kết cấu nhà sàn",
+    "category": "Đồ gỗ mỹ nghệ & kiến trúc cổ",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 03",
+    "content": "Gỗ, di chỉ Bưng Thơm (Bà Rịa, Vũng Tàu), khoảng 2.500-2.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV209",
+    "name": "Khuyên tai hai đầu thú",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 01",
+    "content": "Văn hóa Đồng Nai có nhiều đồ trang sức: khuyên tai hai đầu thú..."
+  },
+  {
+    "id": "AV210",
+    "name": "Mộ vò",
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 04",
+    "content": "Văn hóa Đồng Nai, khoảng 2.500-2.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV211",
+    "name": "Nồi",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 02",
+    "content": "Cư dân Sa Huỳnh chế tác gốm phong phú, được phát hiện trong mộ táng: bát bồng, nồi, bình, đèn..."
+  },
+  {
+    "id": "AV212",
+    "name": "Khuyên tai ba mấu, bốn mấu",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 05",
+    "content": "Đồ trang sức văn hóa Sa Huỳnh: hạt chuỗi, khuyên tai, vòng đeo tay..."
+  },
+  {
+    "id": "AV213",
+    "name": "Mộ chum",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 03",
+    "content": "Gốm, văn hóa Sa Huỳnh, Gò Dừa, Duy Xuyên, Quảng Nam, khoảng 2.500-2.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV214",
+    "name": "Hộ tâm phiến",
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 1 · Phòng C · Kệ 01",
+    "content": "Đồng, văn hóa Đông Sơn, khoảng 2.500-2.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV215",
+    "name": "Mũi tên",
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 04",
+    "content": "Đồng, khoảng 2.500-2.000 năm cách ngày nay, phát hiện ở Cổ Loa, Đông Anh, Hà Nội."
+  },
+  {
+    "id": "AV216",
+    "name": "Vũ khí Đông Sơn",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 3 · Phòng D · Kệ 02",
+    "content": "Sưu tập vũ khí Đông Sơn phong phú, chia 2 loại: vũ khí tiến công và vũ khí phòng thủ."
+  },
+  {
+    "id": "AV217",
+    "name": "Lưỡi hái",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 05",
+    "content": "Nông cụ thu hoạch lúa của cư dân Đông Sơn."
+  },
+  {
+    "id": "AV218",
+    "name": "Rìu",
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 2 · Phòng A · Kệ 03",
+    "content": "Đồng, khoảng 2.500-2.000 năm cách ngày nay, phát hiện tại Hà Đông, Hà Nội."
+  },
+  {
+    "id": "AV219",
+    "name": "Thạp Đào Thịnh",
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 3 · Phòng B · Kệ 01",
+    "content": "Đồng, văn hóa Đông Sơn, khoảng 2.500-2.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV220",
+    "name": "Trống đồng Hoàng Hạ",
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 1 · Phòng B · Kệ 04",
+    "content": "Văn hóa Đông Sơn, khoảng 2.500-2.000 năm cách ngày nay."
+  },
+  {
+    "id": "AV221",
     "name": "Trống đồng Ngọc Lũ",
-    "title": "Bảo vật Quốc gia: Trống đồng Ngọc Lũ (Văn hóa Đông Sơn)",
-    "period": "Văn hóa Đông Sơn",
-    "date": "Khoảng thế kỷ III - II trước Công nguyên (cách ngày nay khoảng 2500 năm)",
-    "location": "Phòng trưng bày Văn hóa Đông Sơn - Cơ sở 1",
-    "content": "Trống đồng Ngọc Lũ được công nhận là Bảo vật Quốc gia số 1 của Việt Nam, là hiện vật tiêu biểu và hoàn hảo nhất của đỉnh cao nghệ thuật đúc đồng Văn hóa Đông Sơn. Trống có chiều cao 63cm, đường kính mặt trống 79.3cm. Chính giữa mặt trống đúc nổi ngôi sao 14 cánh biểu tượng của Mặt Trời - nguồn sống của cư dân nông nghiệp lúa nước. Bao quanh ngôi sao là 16 vành hoa văn tinh mỹ miêu tả chân thực đời sống cư dân Việt cổ: cảnh người giã gạo đôi chày, người múa cồng chiêng cài lông chim, nhà sàn mái cong, cảnh chiến binh cầm giáo mác chèo thuyền chiến mũi cong và đàn chim Lạc, chim bồ nông bay lượn ngược chiều kim đồng hồ."
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 2 · Phòng C · Kệ 02",
+    "content": "Văn hóa Đông Sơn, khoảng 2.500-2.000 năm cách ngày nay."
   },
   {
-    "id": "ART_03",
-    "category": "Hiện vật & Bảo vật Quốc gia",
-    "name": "Thạp đồng Đào Thịnh",
-    "title": "Bảo vật Quốc gia: Thạp đồng Đào Thịnh (Văn hóa Đông Sơn)",
-    "period": "Văn hóa Đông Sơn",
-    "date": "Khoảng 2500 năm trước",
-    "location": "Phòng trưng bày Văn hóa Đông Sơn - Cơ sở 1",
-    "content": "Thạp đồng Đào Thịnh được phát hiện tại ven sông Hồng thuộc xã Đào Thịnh, huyện Trấn Yên, tỉnh Yên Bái năm 1961. Đây là chiếc thạp đồng có kích thước lớn nhất từng tìm thấy của nền văn hóa Đông Sơn (cao 98cm, đường kính miệng 61cm). Điểm độc đáo có một không hai của thạp đồng Đào Thịnh là trên nắp thạp gắn 4 khối tượng tròn đôi nam nữ đang thực hiện hành vi giao phối - biểu tượng phồn thực thiêng liêng thể hiện khát vọng cầu mong mưa thuận gió hòa, vạn vật và con người sinh sôi nảy nở của cư dân nông nghiệp cổ xưa."
+    "id": "AV222",
+    "name": "Lưỡi câu",
+    "category": "Cổ vật đồng",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 3 · Phòng C · Kệ 05",
+    "content": "Đồng, văn hóa Gò Mun, khoảng 3.000-2.500 năm cách ngày nay."
   },
   {
-    "id": "ART_04",
-    "category": "Hiện vật & Bảo vật Quốc gia",
-    "name": "Ấn vàng 'Đại Việt quốc Nguyễn chúa vĩnh trấn chi bảo'",
-    "title": "Bảo vật Quốc gia: Ấn vàng Đại Việt quốc Nguyễn chúa vĩnh trấn chi bảo (1709)",
-    "period": "Thời Chúa Nguyễn (Đàng Trong)",
-    "date": "Năm Kỷ Sửu 1709 (Thời Chúa Nguyễn Phúc Chu)",
-    "location": "Phòng trưng bày Cổ vật Hoàng cung triều Nguyễn",
-    "content": "Ấn vàng 'Đại Việt quốc Nguyễn chúa vĩnh trấn chi bảo' là bảo ấn bằng vàng có niên đại sớm nhất trong lịch sử các vương triều phong kiến Việt Nam, được đúc vào năm 1709 thời Quốc chúa Nguyễn Phúc Chu. Ấn đúc bằng vàng ròng nặng gần 2.35kg, núm ấn tạo hình lân vờn ngọc ngồi xổm oai phong. Mặt ấn khắc 12 chữ Hán lối triện: 'Đại Việt quốc Nguyễn chúa vĩnh trấn chi bảo'. Đây được coi là quốc bảo truyền ngôi của dòng họ Chúa Nguyễn và sau này là Hoàng triều nhà Nguyễn."
+    "id": "AV223",
+    "name": "Chì lưới",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 1 · Phòng D · Kệ 03",
+    "content": "Gốm, văn hóa Gò Mun, khoảng 3.000-2.500 năm cách ngày nay."
   },
   {
-    "id": "ART_05",
-    "category": "Hiện vật & Bảo vật Quốc gia",
-    "name": "Tác phẩm 'Đường Kách mệnh'",
-    "title": "Bảo vật Quốc gia: Cuốn sách 'Đường Kách mệnh' của Nguyễn Ái Quốc (1927)",
-    "period": "Phong trào Cách mạng Việt Nam (1925 - 1930)",
-    "date": "Năm 1927",
-    "location": "Phòng trưng bày Lịch sử Đảng và Cách mạng - Cơ sở 2",
-    "content": "Cuốn sách 'Đường Kách mệnh' là tác phẩm lý luận cách mạng kinh điển của Lãnh tụ Nguyễn Ái Quốc (Chủ tịch Hồ Chí Minh), tập hợp các bài giảng của Người tại các lớp huấn luyện cán bộ của Hội Việt Nam Cách mạng Thanh niên tại Quảng Châu (Trung Quốc) từ năm 1925 đến 1927. Tác phẩm in thạch trên giấy dó, bìa màu nâu nhạt, xuất bản bí mật năm 1927 và được chuyển về nước để truyền bá chủ nghĩa Mác - Lênin vào phong trào công nhân và phong trào yêu nước Việt Nam, đặt nền tảng tư tưởng cho sự thành lập Đảng Cộng sản Việt Nam ngày 3/2/1930."
+    "id": "AV224",
+    "name": "Tượng bò, gà",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 2 · Phòng D · Kệ 01",
+    "content": "Gốm, văn hóa Đồng Đậu, khoảng 3.500-3.000 năm cách ngày nay."
   },
   {
-    "id": "ART_06",
-    "category": "Hiện vật & Bảo vật Quốc gia",
-    "name": "Lời kêu gọi Toàn quốc kháng chiến của Chủ tịch Hồ Chí Minh",
-    "title": "Bảo vật Quốc gia: Bản thảo Lời kêu gọi Toàn quốc kháng chiến (19/12/1946)",
-    "period": "Thời kỳ Kháng chiến chống Pháp (1945 - 1954)",
-    "date": "Ngày 19 tháng 12 năm 1946",
-    "location": "Phòng trưng bày Lịch sử Kháng chiến - Cơ sở 2",
-    "content": "Bản thảo 'Lời kêu gọi Toàn quốc kháng chiến' do Chủ tịch Hồ Chí Minh soạn thảo tại làng Vạn Phúc, Hà Đông vào đêm ngày 19/12/1946 khi thực dân Pháp bội ước gửi tối hậu thư đòi tước vũ khí của ta. Bản thảo viết tay với những câu văn đanh thép đi vào lịch sử: 'Chúng ta thà hy sinh tất cả, chứ nhất định không chịu mất nước, nhất định không chịu làm nô lệ! Bất kỳ đàn ông, đàn bà, bất kỳ người già, người trẻ, không chia tôn giáo, đảng phái, hễ là người Việt Nam thì phải đứng lên đánh thực dân Pháp để cứu Tổ quốc!'."
+    "id": "AV225",
+    "name": "Dọi xe sợi",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 3 · Phòng A · Kệ 04",
+    "content": "Gốm, văn hóa Phùng Nguyên, khoảng 4.000-3.500 năm cách ngày nay."
   },
   {
-    "id": "ART_07",
-    "category": "Hiện vật & Kỷ vật lịch sử",
-    "name": "Vở học bằng mo tre của học sinh trường Hàn Thuyên",
-    "title": "Kỷ vật kháng chiến: Vở học bằng mo tre thời kỳ 1946 - 1954",
-    "period": "Kháng chiến chống thực dân Pháp",
-    "date": "Năm 1947 - 1952",
-    "location": "Phòng trưng bày Đời sống thời chiến - Cơ sở 2",
-    "content": "Trong hoàn cảnh kháng chiến chống thực dân Pháp vô cùng thiếu thốn tại chiến khu Việt Bắc, học sinh trường Trung học kháng chiến Hàn Thuyên (tản cư từ Bắc Ninh lên chiến khu) đã tận dụng những bẹ mo tre phơi khô, cán phẳng, dùng dây mây khâu lại thành từng quyển vở và lấy mực chế từ than củi hòa nước lá để ghi chép bài học văn hóa. Hiện vật thể hiện tinh thần hiếu học phi thường và ý chí vượt khó của thế hệ trẻ Việt Nam thời kỳ 'vừa kháng chiến, vừa kiến quốc'."
+    "id": "AV226",
+    "name": "Tượng người đàn ông",
+    "category": "Đồ ngọc & đá quý",
+    "period": "Cổ đại",
+    "date": "20/10/2017",
+    "location": "Tầng 1 · Phòng A · Kệ 02",
+    "content": "Đá ngọc, văn hóa Phùng Nguyên, khoảng 4.000-3.500 năm cách ngày nay, phát hiện ở di chỉ Văn Điển, Thanh Trì, Hà Nội."
   },
   {
-    "id": "ART_08",
-    "category": "Hiện vật & Kỷ vật lịch sử",
-    "name": "Cuốn sổ tay dân công xe thồ chiến dịch Điện Biên Phủ",
-    "title": "Kỷ vật chiến trường: Cuốn sổ tay của dân công xe thồ Phú Thọ (1954)",
-    "period": "Chiến dịch Điện Biên Phủ (1954)",
-    "date": "Tháng 3 đến tháng 5 năm 1954",
-    "location": "Phòng trưng bày Chiến thắng Điện Biên Phủ - Cơ sở 2",
-    "content": "Cuốn sổ tay ghi nhật ký công tác của một dân công thuộc Tiểu đội xe thồ Phú Thọ II trong chiến dịch lịch sử Điện Biên Phủ 1954. Cuốn sổ ghi chép lại các cung đường vượt đèo Pha Đin, đèo Lũng Lô, số lượng tải hàng ngàn tạ gạo, đạn pháo chi viện cho mặt trận, cùng các câu thơ lạc quan, quyết tâm vượt qua mưa bom bão đạn để góp phần làm nên chiến thắng Điện Biên Phủ 'lừng lẫy năm châu, chấn động địa cầu'."
+    "id": "AV227",
+    "name": "Răng người vượn",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "09/10/2017",
+    "location": "Tầng 2 · Phòng B · Kệ 05",
+    "content": "Hiện vật thuộc sưu tập Bảo tàng Lịch sử Quốc gia Việt Nam."
+  },
+  {
+    "id": "AV228",
+    "name": "Chiếc ấm sắc thuốc cho lãnh tụ Hồ Chí Minh",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "08/08/2016",
+    "location": "Tầng 3 · Phòng B · Kệ 03",
+    "content": "Chiếc ấm đất của đồng bào Chiến khu Việt Bắc dùng sắc thuốc cho Hồ Chí Minh khi Người hoạt động cách mạng ở Thái Nguyên năm 1945."
+  },
+  {
+    "id": "AV229",
+    "name": "Về tấm bia đàn Nam Giao thời Lê ở Hà Nội",
+    "category": "Cổ vật đá",
+    "period": "Trung đại",
+    "date": "08/02/2016",
+    "location": "Tầng 1 · Phòng C · Kệ 01",
+    "content": "Đàn tế trời xây dựng thời Lý (1152) ở An Thọ, Thọ Xương; thời Hậu Lê, đàn Nam Giao xây ở Thanh Hoa (nay Thọ Xuân, Thanh Hóa)."
+  },
+  {
+    "id": "AV230",
+    "name": "Tìm hiểu về các loại gạch in chữ đang trưng bày ở Bảo tàng Lịch sử quốc gia",
+    "category": "Cổ vật gốm",
+    "period": "Trung đại",
+    "date": "26/11/2015",
+    "location": "Tầng 2 · Phòng C · Kệ 04",
+    "content": "Gạch in chữ phổ biến ở thành Hoa Lư, thành Thăng Long, thành Nhà Hồ..."
+  },
+  {
+    "id": "AV231",
+    "name": "Lá cờ của Việt kiều Paris (Pháp) treo mừng Lễ Độc lập 2-9-1945",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "17/08/2015",
+    "location": "Tầng 3 · Phòng D · Kệ 02",
+    "content": "Ngày 2-9-1945, Hồ Chí Minh đọc Tuyên ngôn Độc lập tại Quảng trường Ba Đình."
+  },
+  {
+    "id": "AV232",
+    "name": "Sự ra đời bức ảnh \"Bác bắt nhịp bài ca Kết đoàn\"",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "12/05/2015",
+    "location": "Tầng 1 · Phòng D · Kệ 05",
+    "content": "Ảnh do nghệ sĩ Lâm Hồng Long chụp."
+  },
+  {
+    "id": "AV233",
+    "name": "Chiếc đài bán dẫn Sony xác nhận thông tin \"miền Nam hoàn toàn giải phóng\"",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Hiện đại",
+    "date": "11/05/2015",
+    "location": "Tầng 2 · Phòng A · Kệ 03",
+    "content": "Câu chuyện về chiếc radio Sony gắn với vị khách người Pháp André Menras."
+  },
+  {
+    "id": "AV234",
+    "name": "Tập chữ ký ủng hộ Việt Nam chống Mỹ cứu nước của nhân dân Bungari",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Hiện đại",
+    "date": "15/04/2015",
+    "location": "Tầng 3 · Phòng A · Kệ 01",
+    "content": "Sự giúp đỡ của các nước anh em, bè bạn với Việt Nam trong kháng chiến chống Mỹ."
+  },
+  {
+    "id": "AV235",
+    "name": "Đôi lọ lục bình giấu tài liệu bí mật của Đảng",
+    "category": "Cổ vật gốm",
+    "period": "Lịch sử",
+    "date": "11/02/2015",
+    "location": "Tầng 1 · Phòng B · Kệ 04",
+    "content": "Đôi lọ gốm sứ Hoa lam Trung Quốc dùng giấu tài liệu Đảng chuyển từ nước ngoài về Hải Phòng, 1932."
+  },
+  {
+    "id": "AV236",
+    "name": "Sưu tập truyền đơn cách mạng trước tháng 9-1945 hiện lưu giữ tại BTLSQG",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "29/01/2015",
+    "location": "Tầng 2 · Phòng B · Kệ 02",
+    "content": "Truyền đơn giữ vai trò quan trọng trong tuyên truyền cách mạng suốt 15 năm (1930-1945)."
+  },
+  {
+    "id": "AV237",
+    "name": "Chiếc hòm phiếu bầu cử quốc hội khóa I",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "09/01/2015",
+    "location": "Tầng 3 · Phòng C · Kệ 05",
+    "content": "Gắn với cuộc Tổng tuyển cử đầu tiên sau Tuyên ngôn độc lập 2/9/1945."
+  },
+  {
+    "id": "AV238",
+    "name": "Kỷ vật của Đội trưởng Đội Việt Nam Tuyên truyền Giải phóng Quân Hoàng Sâm",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Hiện đại",
+    "date": "18/12/2014",
+    "location": "Tầng 1 · Phòng C · Kệ 03",
+    "content": "Ngày 22-12-1944, đồng chí Võ Nguyên Giáp tuyên bố thành lập Đội VN Tuyên truyền Giải phóng Quân do Hoàng Sâm làm Đội trưởng."
+  },
+  {
+    "id": "AV239",
+    "name": "Những kỷ vật của mẹ Suốt - người chèo thuyền trên sông Nhật Lệ",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Hiện đại",
+    "date": "27/10/2014",
+    "location": "Tầng 2 · Phòng D · Kệ 01",
+    "content": "Quảng Bình là tuyến đầu hậu phương miền Bắc, \"yết hầu\" giao thông chi viện cho miền Nam trong kháng chiến chống Mỹ."
+  },
+  {
+    "id": "AV240",
+    "name": "Sắc màu văn hóa qua sưu tập tặng phẩm của nhân dân Việt Nam, nhân dân thế giới tặng Chủ tịch Hồ Chí Minh và Đảng Cộng sản Việt Nam tại BTLSQG",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "18/10/2014",
+    "location": "Tầng 3 · Phòng D · Kệ 04",
+    "content": "Tặng quà là hành vi văn hóa, nghệ thuật, thể hiện tấm lòng người tặng."
+  },
+  {
+    "id": "AV241",
+    "name": "Đồ gốm thế kỷ 1-3 sau công nguyên lưu giữ tại Bảo tàng Lịch sử quốc gia",
+    "category": "Cổ vật gốm",
+    "period": "Cổ đại",
+    "date": "23/09/2014",
+    "location": "Tầng 1 · Phòng A · Kệ 02",
+    "content": "10 thế kỷ đầu công nguyên là thời kỳ chống ách thống trị phong kiến phương Bắc, từ khởi nghĩa Hai Bà Trưng (40 SCN) đến chiến thắng Bạch Đằng của Ngô Quyền (938)."
+  },
+  {
+    "id": "AV242",
+    "name": "Cây nhiệt đới - vũ khí trinh sát điện tử Mỹ sử dụng trong chiến tranh Việt Nam",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Lịch sử",
+    "date": "12/09/2014",
+    "location": "Tầng 2 · Phòng A · Kệ 05",
+    "content": "Quân đội Mỹ dùng hệ thống trinh sát điện tử hiện đại để ngăn chi viện từ miền Bắc vào miền Nam."
+  },
+  {
+    "id": "AV243",
+    "name": "Cờ bình dân học vụ của lớp Sơ cấp Thị trấn Gia Rai tặng Hồ Chí Minh",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "04/09/2014",
+    "location": "Tầng 3 · Phòng B · Kệ 03",
+    "content": "Gắn với sự kiện Tuyên ngôn độc lập 2-9-1945 tại Quảng trường Ba Đình."
+  },
+  {
+    "id": "AV244",
+    "name": "Báo \"Hồn Nước\" của thanh niên cứu quốc khu Hoàng Diệu năm 1945",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "15/08/2014",
+    "location": "Tầng 1 · Phòng B · Kệ 01",
+    "content": "Báo chí cách mạng trước 1945 tập trung đấu tranh chống đế quốc, thực dân, tay sai."
+  },
+  {
+    "id": "AV245",
+    "name": "Thú chơi cổ ngoạn của người Hà Nội xưa",
+    "category": "Ảnh tư liệu lịch sử",
+    "period": "Lịch sử",
+    "date": "16/05/2014",
+    "location": "Tầng 2 · Phòng C · Kệ 04",
+    "content": "Người Hà Nội xưa chơi cổ ngoạn theo lối thưởng ngoạn Trung Hoa: sập gụ, tủ chè, bình phong, đại tự, câu đối..."
+  },
+  {
+    "id": "AV246",
+    "name": "Sưu tập tranh tuyên truyền, cổ động trong kháng chiến chống thực dân Pháp (1946-1954)",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Cận đại",
+    "date": "16/05/2014",
+    "location": "Tầng 3 · Phòng C · Kệ 02",
+    "content": "BTLSQG lưu giữ số lượng lớn tranh tuyên truyền, cổ động, riêng giai đoạn 1946-1954 gần 200 bản."
+  },
+  {
+    "id": "AV247",
+    "name": "Chiếc Va li mây của chủ tịch Hồ Chí Minh",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "14/04/2014",
+    "location": "Tầng 1 · Phòng D · Kệ 05",
+    "content": "Ngày 28/1/1941, Nguyễn Ái Quốc từ Tĩnh Tây (Trung Quốc) về nước lãnh đạo cách mạng, cùng các đồng chí Phùng Chí Kiên, Lê Quảng Ba..."
+  },
+  {
+    "id": "AV248",
+    "name": "Về một kỷ vật của Anh hùng liệt sĩ Hoàng Lê Kha",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "25/09/2013",
+    "location": "Tầng 2 · Phòng D · Kệ 03",
+    "content": "Chiếc sắc cốt của anh hùng liệt sĩ Hoàng Lê Kha dùng trong những năm 1952-1954."
+  },
+  {
+    "id": "AV249",
+    "name": "Một số thông tin về tranh, tượng đề tài chiến tranh cách mạng đang trưng bày tại Bảo tàng Lịch sử Quốc gia (phần cuối)",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Lịch sử",
+    "date": "08/08/2013",
+    "location": "Tầng 3 · Phòng A · Kệ 01",
+    "content": "Giới thiệu tranh \"Trận Tầm Vu\" và các tác phẩm khác."
+  },
+  {
+    "id": "AV250",
+    "name": "Đồ gốm men thời Lý-Trần tìm được trong khu vực thành Thăng Long lưu giữ tại Bảo tàng Lịch sử Quốc gia",
+    "category": "Cổ vật gốm",
+    "period": "Trung đại",
+    "date": "02/08/2013",
+    "location": "Tầng 1 · Phòng A · Kệ 04",
+    "content": "Từ cuối thế kỷ 19 đầu 20, hoạt động sưu tầm khảo cổ tại thành Thăng Long thu được nhiều gốm men và đất nung mang đặc điểm nghệ thuật thời Lý-Trần."
+  },
+  {
+    "id": "AV251",
+    "name": "Một số thông tin về tranh, tượng đề tài chiến tranh cách mạng hiện đang trưng bày tại Bảo tàng Lịch sử Quốc gia",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Lịch sử",
+    "date": "30/07/2013",
+    "location": "Tầng 2 · Phòng B · Kệ 02",
+    "content": "BTLSQG lưu giữ nhiều hiện vật lịch sử cổ đại, trung đại và cận hiện đại, gồm sưu tập tranh nghệ thuật đề tài chiến tranh cách mạng."
+  },
+  {
+    "id": "AV252",
+    "name": "Bia Cấm tệ sách nhiễu dân (Thân cấm khử tệ)",
+    "category": "Cổ vật đá",
+    "period": "Lịch sử",
+    "date": "11/07/2013",
+    "location": "Tầng 3 · Phòng B · Kệ 05",
+    "content": "Bia đá (ký hiệu LSb.23347) khắc \"Thân cấm khử tệ\", dựng ngày 12 tháng 4 năm Tân Tỵ, niên hiệu Tự Đức thứ 34 (1881)."
+  },
+  {
+    "id": "AV253",
+    "name": "Bom ba càng, quyết tử quân Thủ đô dùng đánh xe tăng Pháp trong những ngày đầu toàn quốc kháng chiến, 12/1946",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Cận đại",
+    "date": "04/07/2013",
+    "location": "Tầng 1 · Phòng C · Kệ 03",
+    "content": "Ngày 18-19/12/1946, Ban Thường vụ Trung ương Đảng họp tại Vạn Phúc - Hà Đông, quyết định phát động toàn quốc kháng chiến vào 20 giờ ngày 19/12/1946."
+  },
+  {
+    "id": "AV254",
+    "name": "Kỷ niệm 88 năm ngày báo chí cách mạng Việt Nam (21/6/1925-21/6/2013) - Một số báo chí cách mạng thời kỳ 1936-1939",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Hiện đại",
+    "date": "20/06/2013",
+    "location": "Tầng 2 · Phòng C · Kệ 01",
+    "content": "Báo chí là vũ khí quan trọng trong đấu tranh giải phóng và bảo vệ độc lập dân tộc."
+  },
+  {
+    "id": "AV255",
+    "name": "Bức tranh \"Bác Hồ với ba cháu thiếu nhi Trung Nam Bắc\" được vẽ bằng máu của họa sĩ Diệp Minh Châu",
+    "category": "Tranh, tượng & tác phẩm nghệ thuật cách mạng",
+    "period": "Lịch sử",
+    "date": "15/06/2013",
+    "location": "Tầng 3 · Phòng D · Kệ 04",
+    "content": "Họa sĩ, nhà điêu khắc Diệp Minh Châu vẽ, nặn hàng trăm tác phẩm về Bác Hồ."
+  },
+  {
+    "id": "AV256",
+    "name": "Sưu tập báo chí cách mạng Việt Nam trước năm 1945 tại Bảo tàng Lịch sử Quốc gia",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "14/06/2013",
+    "location": "Tầng 1 · Phòng D · Kệ 02",
+    "content": "Hồ Chí Minh: \"Báo chí là một mặt trận\", \"Cây bút là vũ khí sắc bén, bài báo là tờ hịch cách mạng\"."
+  },
+  {
+    "id": "AV257",
+    "name": "Anh hùng liệt sĩ Bế Văn Đàn (1931-1954)",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "13/06/2013",
+    "location": "Tầng 2 · Phòng A · Kệ 05",
+    "content": "Khẩu súng trung liên anh lấy thân mình làm giá súng trong trận chiến đấu ở Mường Pồn (Lai Châu, nay thuộc Điện Biên), chiến dịch Đông Xuân 1953-1954."
+  },
+  {
+    "id": "AV258",
+    "name": "Sưu tập Báo của Trung Ương Đảng Cộng sản Việt Nam xuất bản trước tháng 12-1945",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "07/06/2013",
+    "location": "Tầng 3 · Phòng A · Kệ 03",
+    "content": "Báo của Trung ương và các Ban trực thuộc: Công Vận, Nông vận, Tuyên truyền... và các tổ chức tiền thân của Đảng."
+  },
+  {
+    "id": "AV259",
+    "name": "Nội dung bài ký khắc trên bia chùa Báo Ân, hiện vật Bảo tàng Lịch sử quốc gia",
+    "category": "Cổ vật đá",
+    "period": "Cổ đại",
+    "date": "23/05/2013",
+    "location": "Tầng 1 · Phòng B · Kệ 01",
+    "content": "Chùa Báo Ân dựng thời Lý ở núi An Hoạch (Đông Sơn, Thanh Hóa), hoàn thành năm 1100 để báo ơn Thái úy Lý Thường Kiệt."
+  },
+  {
+    "id": "AV260",
+    "name": "200 lượng vàng mua áo len của Hồ Chủ tịch",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Cận đại",
+    "date": "21/05/2013",
+    "location": "Tầng 2 · Phòng B · Kệ 04",
+    "content": "Áo len màu be Hồ Chí Minh tặng chiến sĩ mùa đông 1946, được đấu giá 18/12/1946 trong \"Tuần lễ vàng\"."
+  },
+  {
+    "id": "AV261",
+    "name": "Bằng khen của Tổng bộ Việt Minh truy tặng anh Kim Đồng – Người đội trưởng đầu tiên của Đội TNTP HCM",
+    "category": "Trang phục, huy hiệu & huân huy chương",
+    "period": "Lịch sử",
+    "date": "16/05/2013",
+    "location": "Tầng 3 · Phòng C · Kệ 02",
+    "content": "Kim Đồng (Nông Văn Dền), người Nùng ở Nà Mạ, Hà Quảng, Cao Bằng, đội viên đầu tiên của Đội nhi đồng Cứu quốc (1941)."
+  },
+  {
+    "id": "AV262",
+    "name": "Sưu tập Báo Cờ Giải phóng (1943-1945) của Bảo tàng Lịch sử Quốc gia",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "15/05/2013",
+    "location": "Tầng 1 · Phòng C · Kệ 05",
+    "content": "Cơ quan tuyên truyền cổ động Trung ương Đảng CS Đông Dương, số 1 ra ngày 10-10-1942; Tổng Bí thư Trường Chinh phụ trách."
+  },
+  {
+    "id": "AV263",
+    "name": "Sưu tập Báo Dân chúng (1938-1939) của Bảo tàng Lịch sử Quốc gia",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Lịch sử",
+    "date": "13/05/2013",
+    "location": "Tầng 2 · Phòng D · Kệ 03",
+    "content": "Cơ quan ngôn luận Trung ương Đảng CS Đông Dương, xuất bản công khai tại Sài Gòn thời kỳ vận động Dân chủ Đông Dương."
+  },
+  {
+    "id": "AV264",
+    "name": "Sưu tập Báo Việt Nam độc lập (1941-1945) của Bảo tàng Lịch sử Quốc gia",
+    "category": "Sách, báo & tài liệu cách mạng",
+    "period": "Cận đại",
+    "date": "12/05/2013",
+    "location": "Tầng 3 · Phòng D · Kệ 01",
+    "content": "Chủ tịch Hồ Chí Minh xuất bản làm cơ quan tuyên truyền cho Việt Minh tỉnh Cao Bằng."
+  },
+  {
+    "id": "AV265",
+    "name": "Địa bàn đội du kích Ba Tơ, tỉnh Quảng Ngãi thu được của Phát xít Nhật năm 1945",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Cận đại",
+    "date": "13/03/2013",
+    "location": "Tầng 1 · Phòng A · Kệ 04",
+    "content": "Đầu năm 1945, Hội nghị Tỉnh ủy Quảng Ngãi quyết định đẩy mạnh công tác chuẩn bị cách mạng lớn hơn."
+  },
+  {
+    "id": "AV266",
+    "name": "Súng trường do Cao Thắng chế tạo trong cuộc khởi nghĩa Hương Khê (1885-1896)",
+    "category": "Vũ khí & khí tài quân sự",
+    "period": "Cận đại",
+    "date": "04/03/2013",
+    "location": "Tầng 2 · Phòng A · Kệ 02",
+    "content": "Súng ký hiệu 327/Kl 140, một trong 350 khẩu nghĩa quân Cao Thắng chế tạo, trưng bày tại phòng số 1, 216 Trần Quang Khải, Hà Nội."
+  },
+  {
+    "id": "AV267",
+    "name": "Chiếc đài bán dẫn Sony dùng nghe tin miền Nam hoàn toàn giải phóng",
+    "category": "Vật dụng sinh hoạt & phương tiện",
+    "period": "Hiện đại",
+    "date": "22/02/2013",
+    "location": "Tầng 3 · Phòng B · Kệ 05",
+    "content": "Ký hiệu 6943/Kl 856, trưng bày tại phòng số 24 \"Đại thắng mùa xuân 1975\"."
+  },
+  {
+    "id": "AV268",
+    "name": "Nữ anh hùng Ngô Thị Tuyển trong trận chiến cầu Hàm Rồng",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Lịch sử",
+    "date": "14/02/2013",
+    "location": "Tầng 1 · Phòng B · Kệ 03",
+    "content": "Hòm đựng đạn của nữ anh hùng Ngô Thị Tuyển (ký hiệu 1827/ĐM 152), kích thước 92x36x18,3cm, trưng bày tại phòng số 22, 25 Tông Đản, Hà Nội."
+  },
+  {
+    "id": "AV269",
+    "name": "Cuốn sổ ghi cảm tưởng của quân dân Âu - Phi mừng thọ Bác Hồ",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Lịch sử",
+    "date": "28/12/2012",
+    "location": "Tầng 2 · Phòng C · Kệ 01",
+    "content": "Quân nhân Âu-Phi trong hàng ngũ Việt Nam kính tặng nhân kỷ niệm 60 năm ngày sinh Bác Hồ tại Việt Bắc, năm 1950."
+  },
+  {
+    "id": "AV270",
+    "name": "Tác phẩm \"Sửa đổi lối làm việc\" của Chủ tịch Hồ Chí Minh (kỷ niệm 65 năm ngày tác phẩm ra đời)",
+    "category": "Kỷ vật lãnh tụ & anh hùng cách mạng",
+    "period": "Cận đại",
+    "date": "08/11/2012",
+    "location": "Tầng 3 · Phòng C · Kệ 04",
+    "content": "Viết tháng 10/1947 tại ATK Định Hóa, Thái Nguyên, với bút danh X.Y.Z."
   }
 ]

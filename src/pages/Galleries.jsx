@@ -153,7 +153,7 @@ export const Galleries = () => {
       const nameClean = removeVietnameseTones(g.name || '');
       const descClean = removeVietnameseTones(g.description || '');
       const locClean = removeVietnameseTones(g.location || '');
-      const idClean = (g.id || '').toLowerCase();
+      const idClean = g.id ? String(g.id).toLowerCase() : '';
 
       const matchArtifacts = (g.highlightArtifacts || []).some((art) => {
         const artName = removeVietnameseTones(art.name || '');
@@ -345,11 +345,11 @@ export const Galleries = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="text-xs font-semibold text-gray-400 mb-1">
-            Tổng quan / <span className="text-museum-brown font-bold">Trưng bày chuyên đề</span>
+            Tổng quan / <span className="text-museum-brown font-bold">Chuyên đề nổi bật</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-museum-brown tracking-tight flex items-center gap-2.5">
             <BookOpen className="w-7 h-7 sm:w-8 sm:h-8 text-museum-gold" />
-            <span>TRƯNG BÀY CHUYÊN ĐỀ</span>
+            <span>CHUYÊN ĐỀ NỔI BẬT</span>
           </h2>
           <p className="text-xs sm:text-sm text-gray-500 mt-1">
             Không gian giới thiệu các chuyên đề văn hóa, lịch sử và hiện vật tiêu biểu của Bảo tàng.
@@ -851,7 +851,7 @@ export const Galleries = () => {
               <div className="flex items-center gap-2.5">
                 <BookOpen className="w-6 h-6 text-museum-gold" />
                 <h3 className="font-extrabold text-lg text-museum-brown">
-                  {editingItem ? 'CẬP NHẬT TRƯNG BÀY CHUYÊN ĐỀ' : 'THÊM TRƯNG BÀY CHUYÊN ĐỀ MỚI'}
+                  {editingItem ? 'CẬP NHẬT CHUYÊN ĐỀ NỔI BẬT' : 'THÊM CHUYÊN ĐỀ MỚI'}
                 </h3>
               </div>
               <button

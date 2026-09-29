@@ -39,7 +39,7 @@ export const VisitorHeader = () => {
   const navLinks = [
     { name: 'Trang chủ', path: '/', icon: Home },
     { name: 'Khám phá hiện vật', path: '/artifacts', icon: Compass },
-    { name: 'Chuyên đề', path: '/galleries', icon: BookOpen },
+    { name: 'Chuyên đề nổi bật', path: '/galleries', icon: BookOpen },
     { name: 'Triển lãm', path: '/exhibitions', icon: Archive },
     { name: 'Sự kiện', path: '/events', icon: CalendarDays },
     { name: 'Vé tham quan', path: '/#tickets', icon: Ticket },
@@ -56,29 +56,29 @@ export const VisitorHeader = () => {
     return location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path));
   };
 
-  return (
-    <header className="bg-white/95 backdrop-blur-md border-b border-amber-900/10 sticky top-0 z-40 shadow-[0_2px_15px_-3px_rgba(92,44,22,0.05)] font-sans transition-all">
+    return (
+    <header className="bg-white/80 backdrop-blur-xl border-b border-museum-gold/20 sticky top-0 z-40 shadow-sm font-sans transition-all duration-300">
       <div className="w-full max-w-full lg:max-w-[1500px] mx-auto px-3 sm:px-5 lg:px-6 xl:px-8 h-[74px] flex items-center justify-between gap-2 lg:gap-4 box-border">
         
         {/* 1. KHU VỰC LOGO BÊN TRÁI */}
         <div className="flex items-center shrink-0 min-w-0">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-gradient-to-br from-museum-brown to-museum-brown-dk group-hover:shadow-md flex items-center justify-center text-museum-gold border border-museum-gold/30 shadow-xs transition-all duration-300 group-hover:scale-105 shrink-0">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 lg:w-11 lg:h-11 rounded-2xl bg-gradient-to-br from-museum-brown to-amber-900 group-hover:shadow-lg group-hover:shadow-museum-gold/20 flex items-center justify-center text-museum-gold border border-museum-gold/40 transition-all duration-300 group-hover:scale-105 shrink-0">
               <Landmark className="w-4 h-4 lg:w-5 lg:h-5 text-museum-gold" />
             </div>
             <div className="flex flex-col justify-center">
-              <div className="font-black text-xs sm:text-sm lg:text-[14px] xl:text-[15px] tracking-wider text-museum-brown leading-tight group-hover:text-museum-gold transition-colors whitespace-nowrap">
+              <div className="font-black text-xs sm:text-sm lg:text-[15px] xl:text-[16px] tracking-wide text-museum-brown leading-tight group-hover:text-amber-700 transition-colors whitespace-nowrap">
                 BẢO TÀNG QUỐC GIA VIỆT NAM
               </div>
-              <div className="text-[8.5px] lg:text-[9.5px] font-bold text-museum-gold uppercase tracking-widest mt-0.5 whitespace-nowrap">
+              <div className="text-[8.5px] lg:text-[10px] font-bold text-museum-gold uppercase tracking-widest mt-0.5 whitespace-nowrap opacity-90">
                 DI SẢN VĂN HÓA DÂN TỘC
               </div>
             </div>
           </Link>
         </div>
 
-        {/* 2. KHU VỰC MENU Ở GIỮA (flex: 1, min-width: 0 chống tràn) */}
-        <nav className="hidden xl:flex items-center justify-center flex-1 min-w-0 gap-0.5 xl:gap-1.5 2xl:gap-2 px-1 overflow-hidden">
+        {/* 2. KHU VỰC MENU Ở GIỮA (Căn trái để không đè logo) */}
+        <nav className="hidden lg:flex items-center justify-start flex-1 min-w-0 gap-0.5 xl:gap-1.5 2xl:gap-2 px-1 lg:ml-4 xl:ml-8 2xl:justify-center overflow-x-auto no-scrollbar mask-image-fade">
           {navLinks.map((link) => {
             const active = isLinkActive(link);
             const Icon = link.icon;
@@ -87,24 +87,24 @@ export const VisitorHeader = () => {
             const buttonContent = (
               <>
                 <Icon
-                  className={`w-3.5 h-3.5 xl:w-4 xl:h-4 transition-colors duration-200 shrink-0 ${
+                  className={`w-3.5 h-3.5 xl:w-4 xl:h-4 transition-all duration-300 shrink-0 ${
                     active
-                      ? 'text-museum-gold'
-                      : 'text-stone-500 group-hover:text-museum-gold'
+                      ? 'text-amber-700'
+                      : 'text-stone-500 group-hover:text-amber-600'
                   }`}
                 />
                 <span className="whitespace-nowrap">{link.name}</span>
-                {/* Subtle active indicator bar */}
+                {/* Clean indicator dot instead of bar for a modern look */}
                 {active && (
-                  <span className="absolute bottom-1 left-2.5 right-2.5 h-0.5 bg-museum-gold rounded-full" />
+                  <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-amber-600 rounded-full shadow-[0_0_8px_rgba(217,119,6,0.6)]" />
                 )}
               </>
             );
 
-            const baseClasses = `relative h-9 xl:h-10 px-2 xl:px-3 2xl:px-3.5 rounded-xl text-[11.5px] xl:text-[12.5px] 2xl:text-[13px] font-semibold transition-all duration-200 flex items-center justify-center gap-1 xl:gap-1.5 group select-none cursor-pointer whitespace-nowrap shrink-0 ${
+            const baseClasses = `relative h-9 xl:h-10 px-2 lg:px-2.5 xl:px-3.5 2xl:px-4 rounded-xl xl:rounded-2xl text-[11px] lg:text-[11.5px] xl:text-[12.5px] 2xl:text-[13px] font-semibold transition-all duration-300 flex items-center justify-center gap-1 xl:gap-1.5 group select-none cursor-pointer whitespace-nowrap shrink-0 ${
               active
-                ? 'bg-museum-cream/90 text-museum-brown font-bold border border-museum-gold/40 shadow-2xs'
-                : 'bg-transparent text-stone-700 hover:text-museum-brown hover:bg-museum-cream/60 hover:-translate-y-0.5'
+                ? 'bg-gradient-to-r from-museum-gold/15 to-amber-500/5 text-museum-brown font-bold border border-museum-gold/30 shadow-sm'
+                : 'bg-transparent text-stone-600 hover:text-museum-brown hover:bg-black/5 hover:-translate-y-0.5'
             }`;
 
             return isInternal ? (
@@ -119,20 +119,20 @@ export const VisitorHeader = () => {
           })}
         </nav>
 
-        {/* 3. KHU VỰC TÀI KHOẢN BÊN PHẢI (flex-shrink: 0, gap: 12px, luôn nằm trong màn hình) */}
-        <div className="hidden md:flex items-center justify-end shrink-0">
+        {/* 3. KHU VỰC TÀI KHOẢN BÊN PHẢI */}
+        <div className="hidden md:flex items-center justify-end shrink-0 gap-2 lg:gap-3">
           {isAuthenticated ? (
-            <div className="flex items-center gap-2 bg-museum-cream/50 p-1 pr-2 rounded-2xl border border-museum-gold/30 shadow-2xs h-10">
+            <div className="flex items-center gap-1.5 xl:gap-2 bg-white/60 p-1 xl:p-1.5 pr-2 xl:pr-3 rounded-full border border-museum-gold/20 shadow-sm backdrop-blur-sm h-9 xl:h-11 hover:shadow-md transition-shadow">
               <img
                 src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
                 alt={currentUser?.name}
-                className="w-7 h-7 rounded-lg object-cover border border-museum-gold shadow-2xs"
+                className="w-7 h-7 xl:w-8 xl:h-8 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
               />
-              <div className="text-left leading-tight pr-1 hidden 2xl:block">
-                <div className="font-bold text-[11px] text-museum-brown truncate max-w-[100px]">
+              <div className="text-left leading-tight pr-1 xl:pr-2 hidden xl:block">
+                <div className="font-bold text-[11px] xl:text-[12px] text-museum-brown truncate max-w-[100px] xl:max-w-[120px]">
                   {currentUser?.name}
                 </div>
-                <div className="text-[8.5px] text-museum-gold font-bold uppercase tracking-wider">
+                <div className="text-[8.5px] xl:text-[9px] text-museum-gold font-bold uppercase tracking-wider">
                   {currentUser?.roleLabel || currentUser?.role}
                 </div>
               </div>
@@ -140,11 +140,11 @@ export const VisitorHeader = () => {
               {/* My Tickets Button */}
               <Link
                 to="/my-tickets"
-                className="h-7 px-2.5 bg-white hover:bg-museum-cream text-museum-brown text-[11px] font-bold rounded-lg border border-museum-gold/40 transition-all flex items-center gap-1 shadow-2xs hover:-translate-y-0.5"
+                className="h-7 xl:h-8 px-2 xl:px-3 bg-museum-brown/5 hover:bg-museum-brown/10 text-museum-brown text-[11px] xl:text-[12px] font-bold rounded-full transition-all flex items-center gap-1 xl:gap-1.5 hover:-translate-y-0.5 shrink-0"
                 title="Xem vé đã đặt"
               >
                 <Ticket className="w-3 h-3 text-museum-gold" />
-                <span className="hidden 2xl:inline">Vé của tôi</span>
+                <span className="hidden sm:inline">Vé của tôi</span>
                 {userTicketsCount > 0 && (
                   <span className="ml-0.5 px-1 py-0.2 bg-museum-gold text-white text-[9px] font-black rounded-full">
                     {userTicketsCount}
@@ -160,7 +160,7 @@ export const VisitorHeader = () => {
                   title="Cổng soát vé & thu tiền tại quầy"
                 >
                   <QrCode className="w-3 h-3 text-amber-200" />
-                  <span className="hidden 2xl:inline">Soát vé</span>
+                  <span>Soát vé</span>
                 </Link>
               )}
 
@@ -171,36 +171,36 @@ export const VisitorHeader = () => {
                   className="h-7 px-2.5 bg-museum-gold hover:bg-museum-gold-lt text-white text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 shadow-2xs hover:-translate-y-0.5"
                 >
                   <LayoutDashboard className="w-3 h-3" />
-                  <span className="hidden 2xl:inline">Quản trị</span>
+                  <span>Quản trị</span>
                 </Link>
               )}
 
               <button
                 onClick={logout}
-                className="p-1 text-stone-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                className="p-1.5 text-stone-400 hover:text-red-500 rounded-full hover:bg-red-50 transition-colors cursor-pointer ml-0.5 xl:ml-1 shrink-0"
                 title="Đăng xuất"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-3.5 h-3.5 xl:w-4 xl:h-4" />
               </button>
             </div>
           ) : (
-            <div className="flex items-center gap-3 shrink-0 whitespace-nowrap">
-              {/* Login Button (Refined Outline Style) */}
+            <div className="flex items-center gap-2 xl:gap-3 shrink-0 whitespace-nowrap">
+              {/* Login Button */}
               <Link
                 to="/login"
-                className="h-9 xl:h-10 px-3.5 xl:px-4.5 text-xs xl:text-[13px] font-bold text-museum-brown bg-transparent hover:bg-museum-cream/80 border border-museum-gold/50 rounded-xl transition-all duration-200 flex items-center justify-center gap-1.5 hover:-translate-y-0.5 cursor-pointer select-none whitespace-nowrap shrink-0"
+                className="h-9 xl:h-11 px-3 xl:px-5 text-[11.5px] xl:text-[14px] font-bold text-museum-brown bg-white/50 hover:bg-white border border-museum-gold/40 rounded-full shadow-sm hover:shadow-md transition-all duration-300 flex items-center justify-center gap-1.5 xl:gap-2 hover:-translate-y-0.5 cursor-pointer select-none"
               >
                 <LogIn className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-museum-gold shrink-0" />
-                <span className="hidden 2xl:inline">Đăng nhập</span>
+                <span>Đăng nhập</span>
               </Link>
 
-              {/* Register Button (Primary CTA Button) */}
+              {/* Register Button */}
               <Link
                 to="/register"
-                className="h-9 xl:h-10 px-4 xl:px-5 text-xs xl:text-[13px] font-bold text-white bg-gradient-to-r from-museum-gold to-amber-600 hover:from-museum-gold-lt hover:to-amber-500 rounded-xl shadow-xs hover:shadow-md transition-all duration-200 flex items-center justify-center gap-1.5 hover:-translate-y-0.5 cursor-pointer select-none whitespace-nowrap shrink-0"
+                className="h-9 xl:h-11 px-4 xl:px-6 text-[11.5px] xl:text-[14px] font-bold text-white bg-gradient-to-r from-museum-brown to-amber-800 hover:from-amber-800 hover:to-museum-brown rounded-full shadow-md hover:shadow-lg hover:shadow-amber-900/20 transition-all duration-300 flex items-center justify-center gap-1.5 xl:gap-2 hover:-translate-y-0.5 cursor-pointer select-none"
               >
-                <UserPlus className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-amber-100 shrink-0" />
-                <span className="hidden 2xl:inline">Đăng ký</span>
+                <UserPlus className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-amber-200 shrink-0" />
+                <span>Đăng ký</span>
               </Link>
             </div>
           )}
@@ -209,7 +209,7 @@ export const VisitorHeader = () => {
         {/* Mobile Hamburger Button */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="xl:hidden p-2 text-museum-brown hover:bg-museum-cream rounded-xl transition-colors cursor-pointer border border-museum-gold/30 shrink-0"
+          className="lg:hidden p-2 text-museum-brown hover:bg-museum-cream rounded-xl transition-colors cursor-pointer border border-museum-gold/30 shrink-0"
           aria-label="Toggle Menu"
         >
           {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -218,7 +218,7 @@ export const VisitorHeader = () => {
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="xl:hidden bg-white/98 backdrop-blur-md border-b border-amber-900/10 px-4 py-4 space-y-3 shadow-lg animate-fadeIn">
+        <div className="lg:hidden bg-white/98 backdrop-blur-md border-b border-amber-900/10 px-4 py-4 space-y-3 shadow-lg animate-fadeIn">
           <div className="flex flex-col gap-1.5 text-xs font-semibold text-stone-700">
             {navLinks.map((link) => {
               const active = isLinkActive(link);

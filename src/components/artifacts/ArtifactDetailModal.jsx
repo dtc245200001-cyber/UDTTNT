@@ -1,7 +1,10 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, MapPin, Calendar, Tag, Info, Landmark } from 'lucide-react';
 
 export const ArtifactDetailModal = ({ artifact, isOpen, onClose }) => {
+  const navigate = useNavigate();
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
@@ -28,7 +31,7 @@ export const ArtifactDetailModal = ({ artifact, isOpen, onClose }) => {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-xs animate-fadeIn"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-xs animate-fadeIn"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -140,7 +143,16 @@ export const ArtifactDetailModal = ({ artifact, isOpen, onClose }) => {
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex justify-end shrink-0">
+        <div className="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex items-center justify-between shrink-0">
+          <button
+            onClick={() => {
+              onClose();
+              navigate(`/artifacts/${artifact.id}`);
+            }}
+            className="px-4 py-2 text-museum-brown hover:text-museum-gold font-bold text-xs sm:text-sm transition-colors cursor-pointer"
+          >
+            Xem trang đầy đủ
+          </button>
           <button
             onClick={onClose}
             className="px-6 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs sm:text-sm rounded-xl transition-colors cursor-pointer shadow-md"

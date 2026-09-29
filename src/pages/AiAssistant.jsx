@@ -1,9 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bot, Send, Plus, MessageSquare, User, Sparkles, Copy, Check, BookOpen, RefreshCw, ChevronDown, ChevronUp, Compass } from 'lucide-react';
-import { sendChatQuery } from '@/services/aiChatService';
+import { sendChatQuery, streamChatQuery } from '@/services/aiChatService';
 import { MarkdownMessage } from '@/components/ai/MarkdownMessage';
+import { ChatArtifactCards } from '@/components/ai/ChatArtifactCards';
+import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal';
+import { searchArtifacts } from '@/utils/artifactSearch';
+import { getFollowUps } from '@/utils/followUpSuggestions';
+import { useApp } from '@/context/AppContext';
 
 export const AiAssistant = () => {
+  const navigate = useNavigate();
+  const { artifacts, events, tickets } = useApp();
+  const [selectedArtifact, setSelectedArtifact] = useState(null);
+  const [streamingText, setStreamingText] = useState('');
+  const [streamingMsgId, setStreamingMsgId] = useState(null);
+  const abortStreamRef = useRef(null);
   const [chatHistory, setChatHistory] = useState([
     { id: 1, title: 'Tìm hiểu Trống đồng Cảnh Thịnh', date: 'Hôm nay' },
     { id: 2, title: 'Gợi ý lộ trình tham quan 1 ngày', date: 'Hôm nay' },
@@ -26,13 +38,25 @@ export const AiAssistant = () => {
   const [expandedSources, setExpandedSources] = useState({});
   const chatEndRef = useRef(null);
 
-  const quickPrompts = [
-    'Gợi ý lộ trình tham quan bảo tàng cho gia đình',
-    'Trống đồng Cảnh Thịnh được đúc năm nào?',
-    'Kể câu chuyện về cuốn sách Đường Kách mệnh',
-    'Giá vé & thời gian mở cửa đón khách',
-    'Văn hóa Đông Sơn và Trống đồng Ngọc Lũ',
-  ];
+  const currentSuggests = React.useMemo(() => {
+    if (messages.length <= 1) return getFollowUps({});
+    const lastAiMsg = [...messages].reverse().find(m => m.sender === 'ai');
+    const lastUserMsg = [...messages].reverse().find(m => m.sender === 'user');
+    return getFollowUps({
+      userText: lastUserMsg?.text,
+      aiText: lastAiMsg?.text,
+      artifacts: lastAiMsg?.artifacts,
+      history: messages
+    });
+  }, [messages]);
+
+  const handlePromptClick = (prompt) => {
+    if (prompt === "Đặt vé ngay") {
+      navigate("/tickets");
+      return;
+    }
+    handleSend(prompt);
+  };
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -46,49 +70,117 @@ export const AiAssistant = () => {
     const query = (customQuery || input).trim();
     if (!query || isTyping) return;
 
+    if (abortStreamRef.current) {
+      abortStreamRef.current();
+      abortStreamRef.current = null;
+    }
+
+    const userMsgId = Date.now();
+    const aiMsgId = Date.now() + 1;
     const userMsg = {
-      id: Date.now(),
+      id: userMsgId,
       sender: 'user',
       text: query,
       sources: [],
+      artifacts: [],
     };
 
     const currentHistory = [...messages, userMsg];
     setMessages(currentHistory);
     if (!customQuery) setInput('');
     setIsTyping(true);
+    setStreamingText('');
+    setStreamingMsgId(aiMsgId);
 
-    try {
-      const res = await sendChatQuery(query, messages);
-      if (res.success && res.answer) {
+    let fullText = '';
+    let artifactIds = [];
+
+    const abort = streamChatQuery(
+      query,
+      messages,
+      (chunk) => {
+        fullText += chunk;
+        setStreamingText(fullText);
+      },
+      // onDone callback
+      () => {
+        const aiMsgText = fullText.trim();
+        const isErrorString = aiMsgText.includes('Mình đang gặp một chút gián đoạn khi kết nối với AI');
+        
+        if (isErrorString) {
+          abortStreamRef.current = null;
+          throw new Error('AI_CONNECTION_ERROR');
+        }
+
+        const mappedArtifacts = artifactIds.map(id => artifacts.find(a => a.id === id)).filter(Boolean);
         const aiMsg = {
-          id: Date.now() + 1,
+          id: aiMsgId,
           sender: 'ai',
-          text: res.answer,
-          sources: res.sources || [],
-        };
-        setMessages((prev) => [...prev, aiMsg]);
-      } else {
-        const aiMsg = {
-          id: Date.now() + 1,
-          sender: 'ai',
-          text: 'Rất tiếc, hệ thống đang bận hoặc chưa thể kết nối với máy chủ RAG. Bạn vui lòng thử lại sau giây lát nhé! 🏛️',
+          text: fullText || '...',
           sources: [],
+          artifacts: mappedArtifacts,
         };
         setMessages((prev) => [...prev, aiMsg]);
+        setStreamingText('');
+        setStreamingMsgId(null);
+        setIsTyping(false);
+        abortStreamRef.current = null;
+      },
+      // onError callback
+      async (errMsg) => {
+        console.warn('[AiAssistant] Stream lỗi, fallback non-stream:', errMsg);
+        setStreamingText('');
+        setStreamingMsgId(null);
+
+        try {
+          const res = await sendChatQuery(query, messages);
+          if (res.success && res.answer && !res.answer.includes('Mình đang gặp một chút gián đoạn khi kết nối với AI')) {
+            const mappedArtifacts = (res.artifactIds || []).map(id => artifacts.find(a => a.id === id)).filter(Boolean);
+            const aiMsg = {
+              id: aiMsgId,
+              sender: 'ai',
+              text: res.answer,
+              sources: res.sources || [],
+              artifacts: mappedArtifacts,
+            };
+            setMessages((prev) => [...prev, aiMsg]);
+          } else {
+            const localResult = searchArtifacts(artifacts, query, { events, tickets });
+            const aiMsg = {
+              id: aiMsgId,
+              sender: 'ai',
+              text: localResult.message,
+              sources: (localResult.matchedArtifacts || []).map((art) => ({
+                title: art.name,
+                category: art.period || 'Hiện vật bảo tàng',
+                snippet: art.description,
+                period: art.period || '',
+              })),
+              artifacts: localResult.matchedArtifacts || [],
+            };
+            setMessages((prev) => [...prev, aiMsg]);
+          }
+        } catch (err) {
+          console.error(err);
+          const aiMsg = {
+            id: aiMsgId,
+            sender: 'ai',
+            text: 'Đã xảy ra lỗi kết nối. Vui lòng kiểm tra lại dịch vụ backend.',
+            sources: [],
+            artifacts: [],
+          };
+          setMessages((prev) => [...prev, aiMsg]);
+        } finally {
+          setIsTyping(false);
+          abortStreamRef.current = null;
+        }
+      },
+      (ids) => {
+        artifactIds = ids;
       }
-    } catch (err) {
-      console.error(err);
-      const aiMsg = {
-        id: Date.now() + 1,
-        sender: 'ai',
-        text: 'Đã xảy ra lỗi kết nối. Vui lòng kiểm tra lại dịch vụ backend.',
-        sources: [],
-      };
-      setMessages((prev) => [...prev, aiMsg]);
-    } finally {
-      setIsTyping(false);
-    }
+    );
+
+    abortStreamRef.current = abort;
   };
 
   const startNewChat = () => {
@@ -120,6 +212,11 @@ export const AiAssistant = () => {
 
   return (
     <div className="space-y-4 animate-fadeIn max-w-7xl mx-auto">
+      <ArtifactDetailModal
+        artifact={selectedArtifact}
+        isOpen={!!selectedArtifact}
+        onClose={() => setSelectedArtifact(null)}
+      />
       <div className="text-xs font-semibold text-gray-500">
         Khám phá / <span className="text-museum-brown font-bold">Trợ lý AI Di sản (RAG)</span>
       </div>
@@ -284,11 +381,43 @@ export const AiAssistant = () => {
                       )}
                     </div>
                   )}
+
+                  <ChatArtifactCards 
+                    artifacts={msg.artifacts} 
+                    onViewDetail={setSelectedArtifact} 
+                  />
+
+                  {/* NÚT KỂ CHI TIẾT HƠN */}
+                  {msg.sender === 'ai' && (msg.sources?.length > 0 || msg.artifacts?.length > 0) && idx > 0 && messages[idx - 1]?.text && !String(messages[idx - 1].text).toLowerCase().includes('chi tiết') && !isTyping && (
+                    <div className="mt-2 text-right">
+                      <button
+                        onClick={() => handleSend(`Kể chi tiết hơn về: ${messages[idx - 1].text}`)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-semibold text-museum-brown bg-museum-gold/10 hover:bg-museum-gold/20 border border-museum-gold/30 transition-colors cursor-pointer"
+                      >
+                        <span>Kể chi tiết hơn</span>
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
 
-            {isTyping && (
+            {streamingMsgId && streamingText && (
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-2xl bg-museum-cream flex items-center justify-center text-museum-gold border border-museum-gold/30 flex-shrink-0">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <div className="flex flex-col max-w-[82%]">
+                  <div className="p-4 rounded-3xl rounded-tl-none text-xs sm:text-sm leading-relaxed shadow-xs bg-white text-gray-800 border border-museum-gold/20 font-normal">
+                    <MarkdownMessage content={streamingText} />
+                    <span className="inline-block w-1.5 h-3.5 ml-0.5 bg-museum-gold rounded-sm animate-pulse align-middle" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isTyping && !streamingText && (
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-2xl bg-museum-cream flex items-center justify-center text-museum-gold border border-museum-gold/30">
                   <Bot className="w-5 h-5" />
@@ -305,10 +434,10 @@ export const AiAssistant = () => {
           {/* Quick Prompts & Input */}
           <div className="p-4 border-t border-gray-100 bg-white space-y-3">
             <div className="flex flex-wrap gap-2">
-              {quickPrompts.map((prompt) => (
+              {currentSuggests.map((prompt) => (
                 <button
                   key={prompt}
-                  onClick={() => handleSend(prompt)}
+                  onClick={() => handlePromptClick(prompt)}
                   className="text-xs px-3.5 py-1.5 rounded-full border border-museum-gold/30 text-museum-brown bg-museum-cream/40 hover:bg-museum-gold hover:text-white transition-all font-medium shadow-2xs cursor-pointer"
                 >
                   {prompt}

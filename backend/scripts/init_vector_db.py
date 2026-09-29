@@ -24,10 +24,52 @@ def load_and_index_all_knowledge():
     # 1. Reset collection cũ để đảm bảo dữ liệu mới nhất
     vector_db_service.clear()
 
+    # Fetch live data from Supabase FIRST
     all_docs = []
     all_metas = []
     all_ids = []
 
+    try:
+        from core.supabase_client import supabase_admin
+        print("\n🔍 Đang tải dữ liệu thực tế từ Supabase...")
+        
+        # 1. Tải Phòng trưng bày / Chuyên đề nổi bật
+        galleries = supabase_admin.table('phong_trung_bay').select('*').execute()
+        for gal in galleries.data:
+            item_id = str(gal.get("id"))
+            title = gal.get("name", "")
+            category = "Chuyên đề nổi bật"
+            date_val = ""
+            location = gal.get("floor", "") or ""
+            content = gal.get("description", "") or ""
+            
+            # Tăng cường từ khóa "chuyên đề" để AI dễ tìm thấy
+            full_text = f"Danh sách các Chuyên đề nổi bật / Phòng trưng bày chuyên đề:\nTiêu đề chuyên đề: {title}\nPhân loại: {category}"
+            if location:
+                full_text += f"\nNơi trưng bày: {location}"
+            full_text += f"\nNội dung chi tiết: {content}"
+            
+            metadata = {
+                "id": item_id,
+                "title": str(title),
+                "category": str(category),
+                "period": "",
+                "date": str(date_val),
+                "location": str(location),
+                "source_file": "supabase:phong_trung_bay"
+            }
+            
+            all_docs.append(full_text)
+            all_metas.append(metadata)
+            all_ids.append(item_id)
+            
+        print(f"✅ Đã thêm {len(galleries.data)} chuyên đề từ Supabase")
+        
+    except Exception as e:
+        print(f"❌ Lỗi khi tải từ Supabase: {e}")
+
+    # Sau đó mới đọc từ file JSON tĩnh
+    print("\n🔍 Đang tải dữ liệu từ các file tĩnh JSON...")
     files_to_load = [
         "museum_info.json",
         "dynasties_history.json",
@@ -84,18 +126,31 @@ def load_and_index_all_knowledge():
         except Exception as e:
             print(f"❌ Lỗi khi đọc file {fname}: {e}")
 
-    print(f"\n⚡ Tổng số tài liệu/chunks chuẩn bị nạp: {len(all_docs)}")
+    print(f"\n⚡ Tổng cộng số tài liệu chuẩn bị nạp (file + supabase): {len(all_docs)}")
+
+    # Deduplicate by ID
+    print("🧹 Loại bỏ các mục trùng lặp...")
+    unique_ids = set()
+    final_docs, final_metas, final_ids = [], [], []
+    for doc, meta, iid in zip(all_docs, all_metas, all_ids):
+        if iid not in unique_ids:
+            unique_ids.add(iid)
+            final_docs.append(doc)
+            final_metas.append(meta)
+            final_ids.append(iid)
+
+    print(f"\n⚡ Tổng cộng số tài liệu chuẩn bị nạp (file + supabase, sau khi lọc trùng): {len(final_docs)}")
 
     # 2. Tạo vector embeddings theo batch
     print("🔄 Đang tạo vector embeddings...")
-    embeddings = get_embeddings_batch(all_docs)
+    embeddings = get_embeddings_batch(final_docs)
 
     # 3. Lưu vào ChromaDB
     print("💾 Đang ghi vào ChromaDB persistent storage...")
     vector_db_service.add_documents(
-        documents=all_docs,
-        metadatas=all_metas,
-        ids=all_ids,
+        documents=final_docs,
+        metadatas=final_metas,
+        ids=final_ids,
         embeddings=embeddings
     )
 
