@@ -7,6 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
+        primary: {
+          DEFAULT: '#8B5A1E',
+          hover: '#734814',
+          dark: '#5E360C',
+          light: '#F4EFEA',
+        },
         museum: {
           brown: '#5B3A1F',
           'brown-dk': '#3E2712',
@@ -14,6 +20,7 @@ export default {
           'gold-lt': '#D9A441',
           cream: '#F5EFE0',
           ivory: '#FBF8F1',
+          page: '#FBF7F0',
         },
         success: '#16A34A',
         danger: '#DC2626',

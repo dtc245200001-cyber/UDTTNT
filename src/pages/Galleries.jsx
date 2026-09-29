@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import {
   BookOpen,
@@ -22,6 +23,9 @@ import {
   CheckCircle2,
   Layers,
   FileText,
+  Bookmark,
+  SlidersHorizontal,
+  LayoutGrid,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -70,6 +74,24 @@ export const Galleries = () => {
 
   // Delete Confirm State
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Bookmark state
+  const [bookmarkedIds, setBookmarkedIds] = useState(() => new Set());
+
+  const handleToggleBookmark = (id, e) => {
+    if (e) e.stopPropagation();
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+        addToast?.('Đã bỏ lưu chuyên đề', 'info');
+      } else {
+        next.add(id);
+        addToast?.('Đã lưu chuyên đề vào danh sách quan tâm', 'success');
+      }
+      return next;
+    });
+  };
 
   // Helper: Extract image URL and caption from string or object
   const parseImage = (item) => {
@@ -297,14 +319,14 @@ export const Galleries = () => {
     switch (status) {
       case 'Đang diễn ra':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-full shadow-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#d4f5e3] text-[#065f46] text-[10.5px] font-bold rounded-full shadow-xs">
+            <span className="w-2 h-2 rounded-full bg-[#10b981]" />
             Đang diễn ra
           </span>
         );
       case 'Sắp diễn ra':
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold rounded-full shadow-xs">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-sky-100 text-sky-800 text-[10.5px] font-bold rounded-full shadow-xs">
             <Clock className="w-3 h-3 text-sky-600" />
             Sắp diễn ra
           </span>
@@ -312,8 +334,8 @@ export const Galleries = () => {
       case 'Đã diễn ra':
       default:
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-gray-100 text-gray-700 border border-gray-200 text-xs font-bold rounded-full shadow-xs">
-            <CheckCircle2 className="w-3 h-3 text-gray-500" />
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/95 text-stone-700 text-[10.5px] font-bold rounded-full shadow-xs">
+            <Clock className="w-3 h-3 text-stone-500" />
             Đã diễn ra
           </span>
         );
@@ -340,60 +362,102 @@ export const Galleries = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn font-sans pb-8">
-      {/* 1. Header Section with Breadcrumb */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="text-xs font-semibold text-gray-400 mb-1">
-            Tổng quan / <span className="text-museum-brown font-bold">Trưng bày chuyên đề</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-museum-brown tracking-tight flex items-center gap-2.5">
-            <BookOpen className="w-7 h-7 sm:w-8 sm:h-8 text-museum-gold" />
-            <span>TRƯNG BÀY CHUYÊN ĐỀ</span>
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            Không gian giới thiệu các chuyên đề văn hóa, lịch sử và hiện vật tiêu biểu của Bảo tàng.
-          </p>
-        </div>
+    <div className="min-h-screen bg-[#FBF7F0] animate-fadeIn font-sans pb-12 relative overflow-hidden">
 
-        {isAdmin && (
-          <button
-            onClick={openAdd}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs sm:text-sm rounded-xl shadow-md transition-colors shrink-0 cursor-pointer"
-          >
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span>+ Thêm chuyên đề mới</span>
-          </button>
-        )}
+      {/* ── Hero Banner: Chiều cao ~215px, nền một màu nâu tối, ảnh mờ dần ── */}
+      <div className="relative h-[215px] bg-[#200e05] overflow-hidden select-none">
+        {/* Right side museum image with glass cabinets & statues */}
+        <div className="absolute right-0 top-0 bottom-0 w-full md:w-[70%] opacity-35 md:opacity-100 pointer-events-none">
+          <img
+            src="/images/museum-gallery-banner.jpg"
+            alt="Phòng trưng bày hiện vật"
+            className="w-full h-full object-cover object-center"
+            style={{
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 10%, rgba(0,0,0,0.25) 22%, rgba(0,0,0,0.50) 36%, rgba(0,0,0,0.78) 52%, #000 72%)',
+              maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 10%, rgba(0,0,0,0.25) 22%, rgba(0,0,0,0.50) 36%, rgba(0,0,0,0.78) 52%, #000 72%)'
+            }}
+            onError={(e) => { e.target.src = '/images/museum-hero.jpg'; }}
+          />
+        </div>
+        
+        {/* Lớp phủ gradient mềm lên trên ảnh (pointer-events-none) */}
+        <div 
+          className="absolute inset-0 pointer-events-none hidden md:block"
+          style={{
+            background: 'linear-gradient(to right, #200e05 0%, #200e05 35%, rgba(32,14,5,0.85) 44%, rgba(32,14,5,0.60) 54%, rgba(32,14,5,0.30) 66%, rgba(32,14,5,0.10) 78%, transparent 90%)'
+          }}
+        />
+
+        {/* Content container */}
+        <div className="relative z-10 max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
+          <div className="max-w-full md:max-w-[60%] relative z-10">
+            {/* Breadcrumb: TRANG CHỦ / TRƯNG BÀY CHUYÊN ĐỀ in gold uppercase */}
+            <div className="text-[#D4A359] text-[11px] font-bold tracking-widest uppercase mb-1.5 flex items-center gap-1.5 relative z-10">
+              <Link to="/" className="hover:underline">TRANG CHỦ</Link>
+              <span className="text-[#D4A359]/60">/</span>
+              <span className="text-white/90">TRƯNG BÀY CHUYÊN ĐỀ</span>
+            </div>
+
+            {/* Title: Serif bold, large, white, no icon */}
+            <h1 
+              className="text-3xl sm:text-[40px] lg:text-[44px] font-serif font-extrabold text-white tracking-wide leading-tight relative z-10"
+              style={{ textShadow: '0 2px 12px rgba(0,0,0,.45)' }}
+            >
+              TRƯNG BÀY CHUYÊN ĐỀ
+            </h1>
+
+            {/* Description: cream/white, ~16px, max 2 lines */}
+            <p className="text-[#F5EFE0]/80 text-[14px] sm:text-[15px] leading-relaxed line-clamp-2 mt-2 max-w-lg relative z-10">
+              Không gian giới thiệu các chuyên đề văn hóa, lịch sử và hiện vật tiêu biểu của Bảo tàng.
+            </p>
+
+            {/* Short gold divider bar */}
+            <div className="w-14 h-[2px] bg-[#D4A359] mt-3 rounded-full relative z-10" />
+          </div>
+
+          {/* Admin Add button */}
+          {isAdmin && (
+            <div className="absolute right-6 top-6 z-20">
+              <button
+                onClick={openAdd}
+                className="btn-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-full shadow-md cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Thêm chuyên đề</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* 2. Filter Tabs & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 pt-5 relative z-10">
+
+      {/* ── Filter Tabs & Search Bar ── */}
+      <div className="bg-white px-5 py-3 rounded-2xl md:rounded-full border border-stone-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Status Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 [&::-webkit-scrollbar]:hidden">
           {[
-            { key: 'all', label: 'Tất cả' },
-            { key: 'Đang diễn ra', label: 'Đang diễn ra' },
-            { key: 'Sắp diễn ra', label: 'Sắp diễn ra' },
-            { key: 'Đã diễn ra', label: 'Đã diễn ra' },
+            { key: 'all', label: 'Tất cả', icon: <LayoutGrid className="w-3.5 h-3.5" /> },
+            { key: 'Đang diễn ra', label: 'Đang diễn ra', icon: <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> },
+            { key: 'Sắp diễn ra', label: 'Sắp diễn ra', icon: <Clock className="w-3.5 h-3.5" /> },
+            { key: 'Đã diễn ra', label: 'Đã diễn ra', icon: <Clock className="w-3.5 h-3.5" /> },
           ].map((tab) => {
             const active = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-2 ${
+                className={`relative px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-1.5 ${
                   active
-                    ? 'bg-museum-brown text-white shadow-xs'
-                    : 'bg-museum-ivory/70 text-gray-600 hover:bg-museum-cream hover:text-museum-brown'
+                    ? 'bg-[#8B5A1E] text-white shadow-xs'
+                    : 'bg-[#F4EFEA] hover:bg-[#EAE2D8] text-[#5C4535]'
                 }`}
               >
+                <span className={active ? 'text-amber-200' : 'text-stone-400'}>{tab.icon}</span>
                 <span>{tab.label}</span>
-                <span
-                  className={`px-2 py-0.5 text-[11px] rounded-full font-bold transition-colors ${
-                    active ? 'bg-museum-gold text-white' : 'bg-gray-200 text-gray-600'
-                  }`}
-                >
+                <span className={`px-2 py-0.5 text-[11px] rounded-full font-bold ml-1 ${
+                  active ? 'bg-[#B8860B] text-white' : 'bg-stone-200/80 text-stone-600'
+                }`}>
                   {counts[tab.key] || 0}
                 </span>
               </button>
@@ -401,24 +465,33 @@ export const Galleries = () => {
           })}
         </div>
 
-        {/* Search Input */}
-        <div className="relative w-full md:w-80 shrink-0">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo tên chuyên đề, hiện vật..."
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold focus:bg-white transition-all"
-          />
+        {/* Search Input & Sliders Filter Button */}
+        <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0">
+          <div className="relative flex-1 md:w-72">
+            <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Tìm theo tên chuyên đề, hiện vật..."
+              className="w-full pl-9 pr-4 py-2 bg-[#F7F3EE] text-xs text-stone-800 rounded-full border border-stone-200/70 focus:outline-none focus:ring-2 focus:ring-[#8B5A1E]/30 focus:bg-white transition-all placeholder:text-stone-400"
+            />
+          </div>
+          <button
+            type="button"
+            className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-600 hover:text-[#8B5A1E] hover:bg-stone-50 shadow-2xs shrink-0 cursor-pointer transition-colors"
+            title="Bộ lọc nâng cao"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* 3. Thematic Galleries Cards Grid */}
+      {/* 3. Thematic Galleries Cards Grid: 5 columns on desktop */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((n) => (
-            <div key={n} className="bg-white rounded-2xl border border-gray-100 p-4 space-y-3 shadow-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-5">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+            <div key={n} className="bg-white rounded-[14px] border border-stone-100 p-4 space-y-3 shadow-xs">
               <Skeleton className="aspect-[4/3] w-full rounded-xl" />
               <Skeleton className="h-5 w-3/4 rounded" />
               <Skeleton className="h-4 w-full rounded" />
@@ -432,7 +505,7 @@ export const Galleries = () => {
           subtitle="Hiện tại không tìm thấy chuyên đề trưng bày nào theo bộ lọc hoặc từ khóa đã chọn. Vui lòng thử chuyển tab trạng thái khác."
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-5">
           {filteredGalleries.map((g) => {
             const coverUrl = getCoverImageUrl(g);
             const artifactsCount = g.highlightArtifacts?.length || 0;
@@ -442,85 +515,96 @@ export const Galleries = () => {
               <div
                 key={g.id}
                 onClick={() => openDetail(g)}
-                className="bg-white rounded-2xl border border-gray-100 shadow-xs hover:shadow-lg hover:border-museum-gold/40 transition-all duration-300 flex flex-col overflow-hidden group cursor-pointer"
+                className="bg-white rounded-[14px] border border-stone-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full overflow-hidden group cursor-pointer"
               >
-                {/* Fixed 4:3 Aspect Ratio Image Banner with lazy load */}
-                <div className="relative aspect-[4/3] overflow-hidden bg-museum-cream/30">
+                {/* Image area */}
+                <div className="relative h-44 overflow-hidden rounded-t-[14px] bg-stone-100">
                   <img
                     src={coverUrl}
                     alt={g.name}
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      e.target.src = '/images/museum-hero.jpg';
-                    }}
+                    onError={(e) => { e.target.src = '/images/museum-hero.jpg'; }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent opacity-70 group-hover:opacity-85 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
 
-                  {/* Status Badge floating on top-left corner */}
-                  <div className="absolute top-3 left-3 z-10">
+                  {/* Status badge top-left */}
+                  <div className="absolute top-2.5 left-2.5 z-10">
                     {getStatusBadge(g.status)}
                   </div>
 
-                  {/* Highlight Artifacts count badge on top-right corner */}
+                  {/* Artifact count top-right */}
                   {artifactsCount > 0 && (
-                    <div className="absolute top-3 right-3 z-10 px-2.5 py-1 bg-black/60 backdrop-blur-md text-amber-200 border border-amber-400/30 text-[11px] font-semibold rounded-lg shadow-xs flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-amber-400" />
+                    <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-xs text-[#F5E6B3] border border-white/10 text-[10px] font-medium rounded flex items-center gap-1">
+                      <Layers className="w-2.5 h-2.5 text-[#F5E6B3]" />
                       <span>{artifactsCount} hiện vật tiêu biểu</span>
                     </div>
                   )}
 
-                  {/* Period Text at bottom of cover */}
-                  <div className="absolute bottom-3 left-3 right-3 text-white text-xs flex items-center gap-1.5 font-medium drop-shadow-md z-10">
-                    <CalendarDays className="w-3.5 h-3.5 text-museum-gold shrink-0" />
-                    <span className="truncate">{periodStr}</span>
+                  {/* Category tag at bottom-left */}
+                  <div className="absolute bottom-2.5 left-2.5 z-10">
+                    <span className="px-2 py-0.5 bg-black/60 backdrop-blur-xs text-white text-[9px] font-extrabold rounded tracking-wider uppercase">
+                      HIỆN VẬT
+                    </span>
                   </div>
                 </div>
 
                 {/* Card Body */}
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                  <div className="space-y-2">
-                    {/* Title (Truncated 2 lines) */}
-                    <h3 className="font-bold text-base text-museum-brown line-clamp-2 group-hover:text-museum-gold transition-colors leading-snug">
+                <div className="p-3.5 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1.5">
+                    {/* Period */}
+                    <div className="flex items-center gap-1.5 text-[11px] text-stone-400 font-medium">
+                      <CalendarDays className="w-3.5 h-3.5 text-[#8B5A1E] shrink-0" />
+                      <span className="truncate">{periodStr}</span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="font-bold text-[13.5px] text-[#2D241E] line-clamp-2 group-hover:text-[#8B5A1E] transition-colors leading-snug">
                       {g.name}
                     </h3>
 
-                    {/* Short Description (Truncated 2-3 lines) */}
-                    <p className="text-xs text-gray-600 line-clamp-2 sm:line-clamp-3 leading-relaxed text-justify">
+                    {/* Short Description */}
+                    <p className="text-[11.5px] text-stone-500 line-clamp-2 leading-relaxed">
                       {g.description}
                     </p>
                   </div>
 
                   {/* Card Footer */}
-                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-                    <span className="text-museum-brown font-bold flex items-center gap-1 group-hover:text-museum-gold transition-colors">
+                  <div className="pt-2.5 border-t border-stone-100 flex items-center justify-between text-xs mt-3">
+                    <span className="text-[#8B5A1E] font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
                       <span>Xem chi tiết</span>
-                      <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      <ChevronRight className="w-3.5 h-3.5" />
                     </span>
 
-                    {/* Admin Action Buttons */}
-                    {isAdmin && (
-                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={(e) => openEdit(g, e)}
-                          className="p-1.5 text-gray-500 hover:text-museum-brown hover:bg-museum-cream rounded-lg transition-colors cursor-pointer"
-                          title="Sửa chuyên đề"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteTarget(g);
-                          }}
-                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                          title="Xóa chuyên đề"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={(e) => handleToggleBookmark(g.id, e)}
+                        className="p-1 text-[#8B5A1E] hover:text-[#734814] rounded-lg transition-colors cursor-pointer"
+                        title="Đánh dấu chuyên đề"
+                      >
+                        <Bookmark className={`w-4 h-4 ${bookmarkedIds.has(g.id) ? 'fill-[#8B5A1E]' : ''}`} />
+                      </button>
+
+                      {isAdmin && (
+                        <>
+                          <button
+                            onClick={(e) => openEdit(g, e)}
+                            className="p-1 text-stone-400 hover:text-[#8B5A1E] hover:bg-[#F5EFE0] rounded-lg transition-colors cursor-pointer"
+                            title="Sửa"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(g); }}
+                            className="p-1 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title="Xóa"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -528,6 +612,25 @@ export const Galleries = () => {
           })}
         </div>
       )}
+
+      {/* Footer Quote: "Bảo tồn giá trị quá khứ – Kiến tạo tương lai" */}
+      <div className="flex items-center justify-center gap-3 sm:gap-4 my-10 text-stone-600 text-[13px] font-medium select-none">
+        <div className="h-[1px] w-20 sm:w-36 bg-stone-300" />
+        <span>Bảo tồn giá trị quá khứ – Kiến tạo tương lai</span>
+        <div className="h-[1px] w-20 sm:w-36 bg-stone-300" />
+      </div>
+
+      {/* Decorative Lotus Watermark in Bottom Left */}
+      <div className="fixed bottom-0 left-0 pointer-events-none opacity-20 z-0 select-none">
+        <svg width="220" height="180" viewBox="0 0 240 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M120 180C120 180 80 120 80 80C80 40 120 10 120 10C120 10 160 40 160 80C160 120 120 180 120 180Z" stroke="#B8860B" strokeWidth="1.5" strokeOpacity="0.5"/>
+          <path d="M120 180C120 180 50 140 40 100C30 60 70 30 70 30C70 30 90 70 120 180Z" stroke="#B8860B" strokeWidth="1.2" strokeOpacity="0.4"/>
+          <path d="M120 180C120 180 190 140 200 100C210 60 170 30 170 30C170 30 150 70 120 180Z" stroke="#B8860B" strokeWidth="1.2" strokeOpacity="0.4"/>
+          <path d="M120 180C120 180 20 160 10 130C0 100 30 80 30 80C30 80 60 110 120 180Z" stroke="#B8860B" strokeWidth="1.2" strokeOpacity="0.3"/>
+          <path d="M120 180C120 180 220 160 230 130C240 100 210 80 210 80C210 80 180 110 120 180Z" stroke="#B8860B" strokeWidth="1.2" strokeOpacity="0.3"/>
+          <path d="M40 185C80 175 160 175 200 185" stroke="#B8860B" strokeWidth="1.5" strokeOpacity="0.4"/>
+        </svg>
+      </div>
 
       {/* 4. Thematic Exhibition Detail Modal */}
       {selectedGallery && (() => {
@@ -809,9 +912,9 @@ export const Galleries = () => {
               <div className="p-4 sm:p-5 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
                 <button
                   onClick={(e) => handleShare(selectedGallery, e)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-xl transition-all cursor-pointer shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-stone-700 bg-white hover:bg-stone-50 border border-stone-200 rounded-full transition-all cursor-pointer shadow-xs"
                 >
-                  <Share2 className="w-3.5 h-3.5" />
+                  <Share2 className="w-3.5 h-3.5 text-[#8B5A1E]" />
                   <span>Chia sẻ chuyên đề</span>
                 </button>
 
@@ -823,7 +926,7 @@ export const Galleries = () => {
                         setSelectedGallery(null);
                         openEdit(item);
                       }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-museum-brown bg-museum-cream hover:bg-museum-gold hover:text-white rounded-xl transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-[#8B5A1E] bg-[#F5EFE0] hover:bg-[#8B5A1E] hover:text-white rounded-full transition-all cursor-pointer"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                       <span>Chỉnh sửa</span>
@@ -831,7 +934,7 @@ export const Galleries = () => {
                   )}
                   <button
                     onClick={() => setSelectedGallery(null)}
-                    className="px-6 py-2 text-xs font-bold text-white bg-museum-brown hover:bg-museum-brown-dk rounded-xl shadow-xs transition-colors cursor-pointer"
+                    className="btn-primary px-6 py-2 text-xs font-bold rounded-full cursor-pointer"
                   >
                     Đóng
                   </button>
@@ -1080,13 +1183,13 @@ export const Galleries = () => {
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-5 py-2 text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
+                  className="px-5 py-2 text-xs font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-full transition-colors cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 text-xs font-bold text-white bg-museum-brown hover:bg-museum-brown-dk rounded-xl shadow-md transition-colors cursor-pointer"
+                  className="btn-primary px-6 py-2 text-xs font-bold rounded-full shadow-md cursor-pointer"
                 >
                   {editingItem ? 'Lưu thay đổi' : 'Thêm chuyên đề'}
                 </button>
@@ -1176,6 +1279,7 @@ export const Galleries = () => {
           )}
         </div>
       )}
+      </div>{/* end max-w-7xl */}
     </div>
   );
 };

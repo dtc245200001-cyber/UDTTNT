@@ -353,24 +353,24 @@ export const MuseumAI = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-3 px-4 py-3 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold rounded-2xl shadow-2xl border border-museum-gold/50 transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
+          className="group relative flex items-center gap-2.5 px-4 py-2.5 bg-[#8B5A1E] hover:bg-[#734814] text-white font-bold rounded-full shadow-2xl border border-[#B8860B]/40 transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
           title="Mở Trợ lý AI - Khám phá bảo tàng (24/7)"
         >
           <div className="relative">
-            <div className="w-10 h-10 rounded-xl bg-museum-gold flex items-center justify-center text-white shadow-md group-hover:rotate-12 transition-transform duration-300">
-              <Bot className="w-6 h-6" />
+            <div className="w-8 h-8 rounded-full bg-[#B8860B] flex items-center justify-center text-white shadow-xs group-hover:rotate-12 transition-transform duration-300">
+              <Bot className="w-4.5 h-4.5 text-white" />
             </div>
-            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-museum-gold-lt opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-museum-gold-lt border-2 border-museum-brown"></span>
+            <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400"></span>
             </span>
           </div>
 
-          <div className="text-left hidden sm:block">
-            <div className="text-xs font-extrabold text-museum-gold-lt uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5" /> TRỢ LÝ AI
-            </div>
-            <div className="text-[11px] text-museum-cream/90 font-medium">Khám phá bảo tàng</div>
+          <div className="text-left hidden sm:flex items-center gap-1.5 pr-1">
+            <Sparkles className="w-3.5 h-3.5 text-[#F5E6B3]" />
+            <span className="text-xs font-extrabold text-white tracking-wider">
+              TRỢ LÝ AI
+            </span>
           </div>
         </button>
       )}

@@ -23,6 +23,7 @@ import { Exhibitions } from '@/pages/Exhibitions';
 import { Events } from '@/pages/Events';
 import { AiAssistant } from '@/pages/AiAssistant';
 import { MyTickets } from '@/pages/MyTickets';
+import { VisitorTickets } from '@/pages/VisitorTickets';
 
 // Protected Admin Pages (Admin Login Required)
 import { Dashboard } from '@/pages/Dashboard';
@@ -101,6 +102,7 @@ export const AppRoutes = () => {
             <Route path="/events" element={<Events />} />
             <Route path="/ai-assistant" element={<AiAssistant />} />
             <Route path="/my-tickets" element={<MyTickets />} />
+            <Route path="/tickets" element={<VisitorTickets />} />
             <Route path="/visitor-reviews" element={<Reviews />} />
             <Route path="/reviews" element={<Reviews />} />
           </Route>

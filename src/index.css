@@ -2,11 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #8B5A1E;
+  --color-primary-hover: #734814;
+  --color-primary-active: #5E360C;
+  --color-primary-light: #F4EFEA;
+  --color-gold: #B8860B;
+  --color-gold-light: #F5E6B3;
+  --color-bg-page: #FBF7F0;
+  --color-text-dark: #2D241E;
+}
+
 @layer base {
   html, body {
     font-family: 'Be Vietnam Pro', 'Inter', 'Segoe UI', Arial, sans-serif;
-    background-color: #FBF8F1;
-    color: #2D241E;
+    background-color: var(--color-bg-page);
+    color: var(--color-text-dark);
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -14,6 +25,44 @@
     letter-spacing: normal;
     word-spacing: normal;
   }
+}
+
+/* Primary Button / Active Pill Shared Styles */
+.btn-primary {
+  background-color: var(--color-primary) !important;
+  color: #FFFFFF !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(139, 90, 30, 0.22);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover) !important;
+  box-shadow: 0 4px 14px rgba(139, 90, 30, 0.32);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  background-color: var(--color-primary-active) !important;
+  transform: translateY(0);
+}
+
+.btn-primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 90, 30, 0.35);
+}
+
+.pill-primary-active {
+  background-color: var(--color-primary) !important;
+  color: #FFFFFF !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(139, 90, 30, 0.22) !important;
 }
 
 /* Card titles and headings - Reset letter-spacing and word-spacing for natural Vietnamese text */
