@@ -387,17 +387,71 @@ export const MuseumAI = () => {
       
       if (response.ok && data.success) {
         const results = data.results || [];
-        const aiMsg = {
-          id: aiMsgId,
-          sender: 'ai',
-          text: results.length > 0 
-            ? `Dựa trên hình ảnh bạn tải lên, tôi xác định đây là hiện vật:` 
-            : 'Rất tiếc, tôi không tìm thấy hiện vật nào giống với hình ảnh bạn gửi.',
-          sources: [],
-          artifacts: results,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setMessages((prev) => [...prev, aiMsg]);
+        
+        if (results.length > 0) {
+          const artifact = results[0];
+          const hiddenPrompt = `(Prompt Ẩn) Tôi vừa tìm kiếm bằng hình ảnh và hệ thống xác định đây là hiện vật: "${artifact.name}". Hãy đóng vai trợ lý AI của bảo tàng, viết 1-2 câu thật tự nhiên, hấp dẫn, xưng "mình" gọi "bạn" để giới thiệu về hiện vật này dựa trên kết quả tìm kiếm. Không cần nhắc lại việc tôi tải ảnh lên.`;
+          
+          let fullText = '';
+          const abort = streamChatQuery(
+            hiddenPrompt,
+            messages,
+            (chunk) => {
+              fullText += chunk;
+              setStreamingText(fullText);
+            },
+            () => {
+              const aiMsgText = fullText.trim();
+              const isErrorString = aiMsgText.includes('Mình đang gặp một chút gián đoạn khi kết nối với AI');
+              
+              const aiMsg = {
+                id: aiMsgId,
+                sender: 'ai',
+                text: isErrorString ? `Dựa trên hình ảnh bạn tải lên, đây là hiện vật được tìm thấy:` : aiMsgText,
+                sources: [],
+                artifacts: results.map(normalizeArtifact),
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              };
+              setMessages((prev) => [...prev, aiMsg]);
+              setStreamingText('');
+              setStreamingMsgId(null);
+              setIsSearching(false);
+              abortStreamRef.current = null;
+            },
+            (err) => {
+              const aiMsg = {
+                id: aiMsgId,
+                sender: 'ai',
+                text: `Dựa trên hình ảnh bạn tải lên, tôi xác định đây là hiện vật:`,
+                sources: [],
+                artifacts: results.map(normalizeArtifact),
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              };
+              setMessages((prev) => [...prev, aiMsg]);
+              setStreamingText('');
+              setStreamingMsgId(null);
+              setIsSearching(false);
+              abortStreamRef.current = null;
+            },
+            () => {}
+          );
+          
+          abortStreamRef.current = abort;
+          setStreamingMsgId(aiMsgId);
+          setStreamingText('');
+          // Không gọi setIsSearching(false) ở đây vì đang chờ stream
+        } else {
+          const aiMsg = {
+            id: aiMsgId,
+            sender: 'ai',
+            text: 'Rất tiếc, mình không tìm thấy hiện vật nào giống với hình ảnh bạn gửi.',
+            sources: [],
+            artifacts: [],
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          };
+          setMessages((prev) => [...prev, aiMsg]);
+          setIsSearching(false);
+        }
       } else {
         throw new Error(data.detail || 'Lỗi tìm kiếm');
       }
@@ -411,7 +465,6 @@ export const MuseumAI = () => {
         artifacts: [],
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }]);
-    } finally {
       setIsSearching(false);
     }
   };
