@@ -107,7 +107,7 @@ export const AppProvider = ({ children }) => {
     if (savedUsers) {
       try {
         let parsed = JSON.parse(savedUsers);
-        const adminIndex = parsed.findIndex((u) => u.email.toLowerCase() === 'admin@gmail.com');
+        const adminIndex = parsed.findIndex((u) => u.email && String(u.email).toLowerCase() === 'admin@gmail.com');
         if (adminIndex !== -1) {
           parsed[adminIndex].password = 'Admin@123';
           parsed[adminIndex].role = 'admin';
@@ -174,7 +174,7 @@ export const AppProvider = ({ children }) => {
     if (savedCurrentUser) {
       try {
         let userObj = JSON.parse(savedCurrentUser);
-        if (userObj.email?.toLowerCase() === 'admin@gmail.com') {
+        if (userObj.email && String(userObj.email).toLowerCase() === 'admin@gmail.com') {
           userObj.role = 'admin';
           userObj.roleLabel = 'Quản trị viên';
         }
@@ -804,7 +804,7 @@ export const AppProvider = ({ children }) => {
     // Explicitly check unitPrice from ticketsList or bookingData.price
     let unitPrice = typeof bookingData.price === 'number' ? bookingData.price : 50000;
     const matchedType = ticketsList.find(
-      (t) => t.name.toLowerCase() === (bookingData.ticketType || '').toLowerCase()
+      (t) => t.name && String(t.name).toLowerCase() === (bookingData.ticketType || '').toLowerCase()
     );
     if (matchedType) {
       unitPrice = Number(matchedType.price);
@@ -979,10 +979,10 @@ export const AppProvider = ({ children }) => {
 
     const order = bookedTicketsList.find(
       (b) =>
-        (b.orderCode && b.orderCode.toLowerCase() === searchCode.toLowerCase()) ||
-        (b.order_code && b.order_code.toLowerCase() === searchCode.toLowerCase()) ||
-        (b.ticketCode && b.ticketCode.toLowerCase() === searchCode.toLowerCase()) ||
-        (b.id && b.id.toLowerCase() === searchCode.toLowerCase())
+        (b.orderCode && String(b.orderCode).toLowerCase() === searchCode.toLowerCase()) ||
+        (b.order_code && String(b.order_code).toLowerCase() === searchCode.toLowerCase()) ||
+        (b.ticketCode && String(b.ticketCode).toLowerCase() === searchCode.toLowerCase()) ||
+        (b.id && String(b.id).toLowerCase() === searchCode.toLowerCase())
     );
 
     if (!order) {
@@ -1097,10 +1097,10 @@ export const AppProvider = ({ children }) => {
     if (!code) return null;
     return bookedTicketsList.find(
       (b) =>
-        (b.orderCode && b.orderCode.toLowerCase() === code.toLowerCase()) ||
-        (b.order_code && b.order_code.toLowerCase() === code.toLowerCase()) ||
-        (b.ticketCode && b.ticketCode.toLowerCase() === code.toLowerCase()) ||
-        (b.id && b.id.toLowerCase() === code.toLowerCase())
+        (b.orderCode && String(b.orderCode).toLowerCase() === code.toLowerCase()) ||
+        (b.order_code && String(b.order_code).toLowerCase() === code.toLowerCase()) ||
+        (b.ticketCode && String(b.ticketCode).toLowerCase() === code.toLowerCase()) ||
+        (b.id && String(b.id).toLowerCase() === code.toLowerCase())
     ) || null;
   };
 

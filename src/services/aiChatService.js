@@ -42,6 +42,7 @@ export const sendChatQuery = async (message, history = []) => {
       success: true,
       answer: data.answer,
       sources: data.sources || [],
+      artifactIds: data.artifact_ids || [],
     };
   } catch (error) {
     console.warn('[AI Chat Service] Lỗi kết nối backend:', error.message);
@@ -61,10 +62,10 @@ export const sendChatQuery = async (message, history = []) => {
  * @param {Array} history  - Lịch sử tin nhắn
  * @param {function} onChunk - Callback nhận từng chunk text: (chunkText) => void
  * @param {function} onDone  - Callback khi hoàn thành: () => void
- * @param {function} onError - Callback khi lỗi: (errorMessage) => void
+ * @param {function} onArtifacts - Callback nhận mảng artifactIds: (ids) => void
  * @returns {function} Hàm hủy streaming (AbortController.abort)
  */
-export const streamChatQuery = (message, history = [], onChunk, onDone, onError) => {
+export const streamChatQuery = (message, history = [], onChunk, onDone, onError, onArtifacts) => {
   const controller = new AbortController();
 
   const run = async () => {
@@ -118,6 +119,10 @@ export const streamChatQuery = (message, history = [], onChunk, onDone, onError)
 
             if (parsed.chunk) {
               onChunk?.(parsed.chunk);
+            }
+            
+            if (parsed.artifacts) {
+              onArtifacts?.(parsed.artifacts);
             }
           } catch {
             // Bỏ qua dòng SSE không phải JSON hợp lệ

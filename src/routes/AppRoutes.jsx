@@ -44,9 +44,9 @@ export const AppRoutes = () => {
   const { currentUser, isAuthenticated } = useApp();
   const isAdmin = isAuthenticated && (
     currentUser?.role === 'admin' ||
-    currentUser?.roleLabel?.toLowerCase()?.includes('quản trị') ||
-    currentUser?.email?.toLowerCase() === 'admin@gmail.com' ||
-    currentUser?.email?.toLowerCase()?.includes('admin')
+    (currentUser?.roleLabel && String(currentUser.roleLabel).toLowerCase().includes('quản trị')) ||
+    (currentUser?.email && String(currentUser.email).toLowerCase() === 'admin@gmail.com') ||
+    (currentUser?.email && String(currentUser.email).toLowerCase().includes('admin'))
   );
 
   return (

@@ -34,11 +34,11 @@ export const ExploreArtifacts = () => {
     return artifacts.filter((item) => {
       const matchSearch =
         !searchTerm.trim() ||
-        (item.name && item.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (item.culture && item.culture.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (item.period && item.period.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (item.id && item.id.toLowerCase().includes(searchTerm.toLowerCase()));
+        (item.name && String(item.name).toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.description && String(item.description).toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.culture && String(item.culture).toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.period && String(item.period).toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (item.id && String(item.id).toLowerCase().includes(searchTerm.toLowerCase()));
 
       const matchCategory =
         selectedCategory === 'Tất cả' ||

@@ -3,6 +3,7 @@ echo ========================================================
 echo   KHOI DONG BACKEND FASTAPI + CHROMA DB + GEMINI RAG
 echo   Bao Tang Lich Su Quoc Gia Viet Nam
 echo ========================================================
+set PYTHONIOENCODING=utf-8
 cd /d "%~dp0backend"
 venv\Scripts\python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 pause

@@ -1,20 +1,154 @@
 [
   {
-    "id": "EXH_01",
-    "category": "Triển lãm & Trưng bày",
-    "title": "Hệ thống Không gian Trưng bày Thường trực của Bảo tàng",
-    "content": "Hệ thống trưng bày thường trực tại Bảo tàng Lịch sử Quốc gia được sắp xếp theo tiến trình thời gian khoa học và hiện đại:\n1. Chủ đề 1: Việt Nam thời Tiền sử và Sơ sử (các nền văn hóa Hòa Bình, Phùng Nguyên, Đồng Đậu, Gò Mun, Sa Huỳnh, Đồng Nai và Văn hóa Đông Sơn đỉnh cao).\n2. Chủ đề 2: Thời kỳ đấu tranh giành độc lập tự chủ (Thế kỷ I đến Thế kỷ X).\n3. Chủ đề 3: Thời kỳ phong kiến độc lập Đại Việt qua các triều đại Ngô, Đinh, Tiền Lê, Lý, Trần, Hồ, Hậu Lê, Mạc, Tây Sơn, Nguyễn.\n4. Chủ đề 4: Điêu khắc nghệ thuật Champa và Phù Nam - Óc Eo.\n5. Chủ đề 5: Lịch sử phong trào yêu nước và Cách mạng Việt Nam (1858 - 1945).\n6. Chủ đề 6: Kháng chiến chống thực dân Pháp (1945 - 1954) và Kháng chiến chống Mỹ cứu nước (1954 - 1975)."
+    "id": "EX001",
+    "category": "Triển lãm",
+    "title": "Tinh hoa văn hóa Việt",
+    "date": "2024-06-01 đến 2024-08-30",
+    "location": "Phòng trưng bày A",
+    "content": "Trạng thái: Đang diễn ra. Nội dung: Triển lãm tổng hợp trưng bày các hiện vật tiêu biểu đại diện cho 4.000 năm lịch sử dựng nước và giữ nước của dân tộc Việt Nam.. Số lượng hiện vật: 45."
   },
   {
-    "id": "EXH_02",
-    "category": "Triển lãm chuyên đề",
-    "title": "Các Trưng bày Chuyên đề Đặc biệt",
-    "content": "Bảo tàng thường xuyên tổ chức các triển lãm chuyên đề quy mô lớn thu hút đông đảo công chúng:\n- 'Bình dân học vụ – Thắp sáng tương lai': Giới thiệu hơn 150 tài liệu, hiện vật quý về phong trào xóa nạn mù chữ do Chủ tịch Hồ Chí Minh phát động sau Cách mạng Tháng Tám.\n- 'Bảo vật Hoàng cung triều Nguyễn': Trưng bày bộ sưu tập kim bảo, ngọc tỷ, kiếm báu, mũ miện và đồ ngự dụng bằng vàng ngọc của 13 vị vua triều Nguyễn.\n- 'Đảng Cộng sản Việt Nam – Những mốc son lịch sử': Giới thiệu các văn kiện, kỷ vật và tài liệu gốc gắn liền với quá trình lãnh đạo cách mạng của Đảng qua các thời kỳ.\n- 'Âm vang Đông Sơn': Trưng bày chuyên sâu về công nghệ luyện kim và đúc đồng cổ xưa của người Việt cổ."
+    "id": "EX002",
+    "category": "Triển lãm",
+    "title": "Di sản thời Lý",
+    "date": "2024-05-15 đến 2024-08-15",
+    "location": "Phòng trưng bày B",
+    "content": "Trạng thái: Đang diễn ra. Nội dung: Tập trung giới thiệu các bảo vật quốc gia thời Lý (1009 - 1225) như tượng Phật Tích, rồng thời Lý, bia đá và gốm men ngọc.. Số lượng hiện vật: 28."
   },
   {
-    "id": "EVT_01",
-    "category": "Sự kiện & Tour tham quan",
-    "title": "Hoạt động Giáo dục Di sản & Tour 3D Thực tế ảo",
-    "content": "1. Tour tham quan 3D tương tác đa phương tiện: Bảo tàng đã số hóa 3D toàn diện các không gian trưng bày và bảo vật quốc gia. Du khách có thể truy cập website bảo tàng để trải nghiệm Tour ảo 360 độ (Virtual Tour), ngắm nhìn hiện vật đa chiều sắc nét từ bất kỳ đâu.\n2. Câu lạc bộ 'Em yêu lịch sử': Tổ chức định kỳ vào cuối tuần dành cho các em học sinh tiểu học và trung học với các hoạt động tương tác thú vị: giải mật mã lịch sử, vẽ tranh di sản, in rập hoa văn trống đồng, nặn gốm đất nung truyền thống.\n3. Tọa đàm khoa học & Giao lưu nhân chứng lịch sử: Định kỳ tổ chức các buổi nói chuyện chuyên đề lịch sử văn hóa với các giáo sư, nhà sử học và các cựu chiến binh, nhân chứng lịch sử."
+    "id": "EX003",
+    "category": "Triển lãm",
+    "title": "Gốm Việt xưa và nay",
+    "date": "2024-07-01 đến 2024-09-30",
+    "location": "Phòng trưng bày C",
+    "content": "Trạng thái: Sắp diễn ra. Nội dung: Hành trình phát triển gốm Việt Nam từ gốm Đông Sơn, Chu Đậu, Bát Tràng cho tới phong cách thiết kế gốm nghệ thuật hiện đại.. Số lượng hiện vật: 60."
+  },
+  {
+    "id": "EX004",
+    "category": "Triển lãm",
+    "title": "Trang phục triều đình nhà Nguyễn",
+    "date": "2024-01-01 đến 2024-04-30",
+    "location": "Phòng trưng bày D",
+    "content": "Trạng thái: Đã kết thúc. Nội dung: Bộ sưu tập trang phục hoàng gia, long bào, mũ mão và trang sức của triều đại phong kiến cuối cùng tại Việt Nam.. Số lượng hiện vật: 35."
+  },
+  {
+    "id": "EV001",
+    "category": "Sự kiện",
+    "date": "2024-08-18 09:00 - 11:30",
+    "location": "Hội trường 1 - Bảo tàng Việt Nam",
+    "content": "Trạng thái: Sắp diễn ra. Nội dung: Chương trình tọa đàm chuyên sâu về kỹ thuật đúc đồng và hoa văn chim lạc trên trống đồng Đông Sơn.."
+  },
+  {
+    "id": "EV002",
+    "category": "Sự kiện",
+    "date": "2024-08-25 14:00 - 17:00",
+    "location": "Khu vực sáng tạo ngoài trời",
+    "content": "Trạng thái: Sắp diễn ra. Nội dung: Du khách được tự tay tạo hình và vẽ họa tiết men lam lên sản phẩm gốm dưới sự hướng dẫn của nghệ nhân.."
+  },
+  {
+    "id": "EV003",
+    "category": "Sự kiện",
+    "date": "2024-09-02 19:30 - 22:00",
+    "location": "Khuôn viên trung tâm",
+    "content": "Trạng thái: Sắp diễn ra. Nội dung: Trình diễn ánh sáng 3D Mapping tái hiện hình ảnh Thăng Long nghìn năm văn hiến.."
+  },
+  {
+    "id": "TBCD01",
+    "category": "Chuyên đề nổi bật",
+    "title": "Vũ khúc Thiền môn - Nghệ thuật Phật giáo thời Lý: Di sản và Công nghệ",
+    "date": "2025-05-16 đến 2026-11-30",
+    "location": "Phòng Trưng bày Chuyên đề số 1, Tầng 1 – Số 1 Tràng Tiền, Hoàn Kiếm, Hà Nội",
+    "content": "Trạng thái: Đang diễn ra. Giới thiệu ngắn: Ứng dụng công nghệ tương tác số hiện đại (3D mapping, hologram, AI, gauze projection) kết hợp trưng bày 14 hiện vật gốc tiêu biểu để diễn giải sinh động 4 trụ cột đỉnh cao: Kiến trúc chùa tháp, Điêu khắc đá, Đồ gốm men và Âm nhạc vũ đạo Phật giáo thời Lý.. Chi tiết: Trưng bày chuyên đề \"Vũ khúc Thiền môn - Nghệ thuật Phật giáo thời Lý: Di sản và Công nghệ\" do Bảo tàng Lịch sử Quốc gia phối hợp cùng Viện Nghiên cứu Văn minh Châu Á và Công ty TNHH C.M.Y.K Việt Nam tổ chức nhân dịp Ngày Quốc tế Bảo tàng, Ngày Khoa học Công nghệ Việt Nam (18/5) và kỷ niệm 135 năm Ngày sinh Chủ tịch Hồ Chí Minh.\n\nNghệ thuật Phật giáo thời Lý (thế kỷ XI - XIII) là đỉnh cao rực rỡ của mỹ thuật Đại Việt, là sự kết hợp độc đáo giữa tinh thần Thiền tông và văn hóa bản địa, nghệ thuật cung đình và dân gian tạo nên phong cách thanh thoát mà uy nghi, linh thiêng mà gần gũi.\n\nKhông gian trưng bày tập trung vào 4 lĩnh vực nghệ thuật tiêu biểu:\n1. Nghệ thuật kiến trúc chùa tháp: Các đại danh lam quốc tự như chùa Một Cột (Diên Hựu), tháp Báo Thiên, chùa Dạm, chùa Phật Tích, chùa Long Đọi...\n2. Nghệ thuật điêu khắc: Kỹ thuật chế tác tượng tròn, phù điêu, chạm nổi, chạm lộng mềm mại, uyển chuyển, cân đối, hài hòa với bệ đá chân cột, tượng Kim Cương, tượng Phật A Di Đà.\n3. Nghệ thuật trên đồ gốm: Các dòng gốm men trắng ngà, men nâu, hoa nâu, men ngọc (Celadon) với hoa văn hoa sen, cúc dây, chim phượng, rồng thiêng.\n4. Nghệ thuật âm nhạc và vũ đạo: Nghi lễ tôn giáo hòa quyện với vũ điệu dâng hoa, nhạc khí và điệu múa của các tiên nữ Gandharva, tượng Kinnari đánh trống tại chùa Phật Tích.\n\nĐặc biệt, sự kết hợp của các kỹ thuật công nghệ số đỉnh cao gồm 3D Mapping, Hologram 3 chiều, Phục dựng kỹ thuật số (Digital Revival), Gauze Projection (trình diễn sương mù) và Trí tuệ nhân tạo (AI) giúp tái sinh các \"mảnh vỡ di sản\", mang lại cho công chúng trải nghiệm đa giác quan sâu sắc và sống động."
+  },
+  {
+    "id": "TBCD02",
+    "category": "Chuyên đề nổi bật",
+    "title": "Non sông liền một dải",
+    "date": "2025-04-25 đến 2026-05-30",
+    "location": "Phòng Trưng bày số 2 – Số 216 Trần Quang Khải, Hoàn Kiếm, Hà Nội",
+    "content": "Trạng thái: Đang diễn ra. Giới thiệu ngắn: Trưng bày kỷ niệm 50 năm ngày Giải phóng miền Nam, thống nhất đất nước (30/4/1975 – 30/4/2025), giới thiệu gần 150 tài liệu, hiện vật lịch sử về khát vọng thống nhất và tình đoàn kết Bắc - Nam.. Chi tiết: Nhân dịp kỷ niệm 50 năm ngày Giải phóng miền Nam, thống nhất đất nước (30/4/1975 – 30/4/2025), trưng bày giới thiệu gần 150 tài liệu, hiện vật chia làm 2 phần chính: \"Khát vọng thống nhất\" và \"Nước Việt Nam là một – Dân tộc Việt Nam là một\". Trưng bày khắc họa những bước chuyển biến chiến lược, sự lãnh đạo tài tình của Đảng và tinh thần chiến đấu quả cảm của quân và dân hai miền Nam - Bắc."
+  },
+  {
+    "id": "TBCD03",
+    "category": "Chuyên đề nổi bật",
+    "title": "Rồng trên cổ vật qua sưu tập hiện vật Bảo tàng Lịch sử quốc gia",
+    "date": "2024-01-20 đến 2026-12-31",
+    "location": "Phòng Trưng bày Chuyên đề số 1, Tầng 1 – Số 1 Tràng Tiền, Hoàn Kiếm, Hà Nội",
+    "content": "Trạng thái: Đang diễn ra. Giới thiệu ngắn: Bộ sưu tập 25 hiện vật quý hiếm giới thiệu sự tiến hóa và ý nghĩa linh thiêng, quyền uy của hình tượng Rồng qua hơn 2.000 năm lịch sử văn hóa Việt Nam từ thời Đông Sơn, Lý, Trần, Lê, Mạc đến triều Nguyễn.. Chi tiết: Rồng là hình tượng có vị trí đặc biệt trong văn hóa, tín ngưỡng của nhiều dân tộc trên thế giới, trong đó có dân tộc Việt Nam. Ở Việt Nam, hình tượng rồng xuất hiện rất sớm vào buổi đầu dựng nước Văn Lang - Âu Lạc và trở thành biểu tượng linh thiêng gắn với Tổ Tiên, cội nguồn \"con Rồng cháu Tiên\" của dân tộc. Nằm trong khu vực là cái nôi của nền văn minh lúa nước, rồng Việt Nam còn giữ vai trò là một Phúc thần mang lại mưa thuận gió hòa, mùa màng tươi tốt.\n\nTrưng bày chuyên đề \"Rồng trên cổ vật\" do Bảo tàng Lịch sử Quốc gia tổ chức giới thiệu 25 hiện vật tiêu biểu phân theo 5 giai đoạn tiến hóa mỹ thuật đỉnh cao:\n\n1. Văn hóa Đông Sơn (khoảng 2.500 - 2.000 năm cách ngày nay): Xuất phát từ cư dân nông nghiệp ven sông, \"rồng\" được hình dung từ con vật thân dài có vẩy như cá sấu (Giao Long) trang trí trên họng rìu đồng, qua đồng và tấm che ngực (hộ tâm phiến).\n2. Thời kỳ 10 thế kỷ đầu Công nguyên (Thế kỷ I - X): Hình tượng rồng tiếp thu giao lưu văn hóa qua gương đồng đúc nổi Nghi Vệ (Bắc Ninh), bích đồng thần thú Thanh Long và trán bia chùa Trường Xuân (năm 618).\n3. Thời Lý - Trần (Thế kỷ XI - XIV): Rồng gắn với vương quyền và Phật giáo thiền môn; rồng thời Lý thân tròn lượn sóng hình sin mềm mại dạng lá đề, bờm bay uyển chuyển; rồng thời Trần khỏe khoắn, có sừng, móng vuốt vững chãi trên kiến trúc chùa tháp, bệ đá và cửa gỗ chùa Phổ Minh.\n4. Thời Lê Sơ - Mạc - Lê Trung Hưng (Thế kỷ XV - XVIII): Phân định nghiêm ngặt đồ ngự dụng của nhà vua (rồng 5 móng) và quan lại (rồng 4 móng), rồng mây đao lửa, rồng đuôi cá trên gạch điện miếu Lam Kinh, gốm hoa lam Cù Lao Chàm, cửa gỗ chùa Keo và lư hương gốm men tứ linh.\n5. Thời Nguyễn (Thế kỷ XIX - Đầu thế kỷ XX): Đỉnh cao quyền uy quân chủ với tượng rồng vàng, kim sách thời Gia Long, ấn vàng \"Sắc mệnh chi bảo\" (Bảo vật Quốc gia), tranh \"Đại Nam lịch đại long phi đồ\" khẳng định khí thế vươn lên và sự cường thịnh của non sông Đại Nam."
+  },
+  {
+    "id": "TBCD04",
+    "category": "Chuyên đề nổi bật",
+    "title": "Điện Biên Phủ – Tinh thần bất diệt",
+    "date": "2024-05-07 đến 2024-09-30",
+    "location": "Phòng Trưng bày Lịch sử Hiện đại – Số 216 Trần Quang Khải, Hà Nội",
+    "content": "Trạng thái: Đã diễn ra. Giới thiệu ngắn: Trưng bày gần 150 hiện vật, tài liệu quý tái hiện chiến thắng Điện Biên Phủ \"lừng lẫy năm châu, chấn động địa cầu\" nhân kỷ niệm 70 năm chiến thắng Điện Biên Phủ và Hiệp định Genève.. Chi tiết: Chiến thắng Điện Biên Phủ ngày 7/5/1954 là mốc son chói lọi trong lịch sử đấu tranh giữ nước của dân tộc Việt Nam. Trưng bày tái hiện toàn diện từ công tác chuẩn bị hậu cần, tinh thần \"tất cả cho tiền tuyến\", quyết tâm mở đường, kéo pháo vào trận địa cho đến các đợt tiến công tiêu diệt hoàn toàn tập đoàn cứ điểm của thực dân Pháp."
+  },
+  {
+    "id": "TBCD05",
+    "category": "Chuyên đề nổi bật",
+    "title": "Gốm cổ Bát Tràng – Tinh hoa ngàn năm",
+    "date": "2023-05-18 đến 2023-12-31",
+    "location": "Gian Trưng bày Cổ vật Tầng 2 – Số 1 Tràng Tiền, Hoàn Kiếm, Hà Nội",
+    "content": "Trạng thái: Đã diễn ra. Giới thiệu ngắn: Giới thiệu bộ sưu tập 39 hiện vật gốm cổ tinh hoa độc bản từ thế kỷ 14 đến thế kỷ 20, tôn vinh các dòng men lam, men rạn, men ngọc độc đáo của làng gốm Bát Tràng.. Chi tiết: Làng gốm Bát Tràng nằm bên tả ngạn sông Hồng là một trong những trung tâm sản xuất gốm sứ lâu đời và phồn vinh bậc nhất Việt Nam. Trưng bày tuyển chọn 39 hiện vật gốm cổ tiêu biểu từ thời Trần, Mạc, Lê Trung Hưng đến triều Nguyễn, thể hiện kỹ thuật chế tác men ngọc, men lam, men rạn đắp nổi điêu luyện của các nghệ nhân dân gian."
+  },
+  {
+    "id": "TBCD06",
+    "category": "Chuyên đề nổi bật",
+    "title": "Máu và Hoa – Hà Nội 12 ngày đêm",
+    "date": "2022-12-18 đến 2023-04-30",
+    "location": "Phòng Trưng bày Lịch sử Hiện đại – Số 216 Trần Quang Khải, Hà Nội",
+    "content": "Trạng thái: Đã diễn ra. Giới thiệu ngắn: Tái hiện 12 ngày đêm chiến đấu ngoan cường đánh bại cuộc tập kích chiến lược B-52 của không quân Mỹ, làm nên kỳ tích \"Điện Biên Phủ trên không\" vang dội của quân dân Thủ đô.. Chi tiết: Tháng 12/1972, không quân Mỹ tiến hành chiến dịch tập kích chiến lược đường không Linebacker II bằng pháo đài bay B-52 vào Hà Nội và Hải Phòng. Với lòng dũng cảm phi thường, quân dân ta đã lập nên kỳ tích bắn rơi 81 máy bay Mỹ (trong đó có 34 chiếc B-52), buộc chính quyền Mỹ phải ký Hiệp định Paris rút quân về nước."
+  },
+  {
+    "id": "TBCD07",
+    "category": "Chuyên đề nổi bật",
+    "title": "Bình dân học vụ – Thắp sáng tương lai",
+    "date": "2025-08-22 đến 2025-12-31",
+    "location": "Gian Trưng bày Giáo dục Văn hóa – Số 216 Trần Quang Khải, Hà Nội",
+    "content": "Trạng thái: Đã diễn ra. Giới thiệu ngắn: Giới thiệu nhiều tư liệu, hiện vật quý về phong trào xóa nạn mù chữ do Chủ tịch Hồ Chí Minh phát động ngay sau Cách mạng Tháng Tám năm 1945.. Chi tiết: Hưởng ứng lời kêu gọi \"Diệt giặc đói, diệt giặc dốt, diệt giặc ngoại xâm\" của Chủ tịch Hồ Chí Minh năm 1945, phong trào Bình dân học vụ đã trở thành cuộc vận động văn hóa sâu rộng bậc nhất, mang ánh sáng chữ quốc ngữ đến cho hàng triệu người dân nghèo trên khắp mọi miền Tổ quốc."
+  },
+  {
+    "id": "TBCD08",
+    "category": "Chuyên đề nổi bật",
+    "title": "Thi đua ái quốc – Ươm những mầm xanh",
+    "date": "2023-06-11 đến 2023-11-30",
+    "location": "Phòng Trưng bày Chuyên đề – Số 216 Trần Quang Khải, Hà Nội",
+    "content": "Trạng thái: Đã diễn ra. Giới thiệu ngắn: Trưng bày chuyên đề kỷ niệm 75 năm ngày Chủ tịch Hồ Chí Minh ra Lời kêu gọi thi đua ái quốc (11/6/1948 – 11/6/2023), lan tỏa các phong trào Ba sẵn sàng, Năm xung phong, Hũ gạo cứu đói.. Chi tiết: Ngày 11/6/1948, Chủ tịch Hồ Chí Minh ra Lời kêu gọi thi đua ái quốc, mở đầu cho phong trào thi đua yêu nước sôi nổi khắp cả nước, khơi dậy sức mạnh của toàn thể dân tộc vượt qua mọi gian khổ, hoàn thành thắng lợi sự nghiệp giải phóng dân tộc và xây dựng đất nước."
+  },
+  {
+    "id": "TK001",
+    "category": "Vé tham quan",
+    "date": "",
+    "location": "Quầy vé bảo tàng",
+    "content": "Loại vé: undefined. Giá: 50000 VNĐ. Đối tượng áp dụng: Áp dụng cho du khách từ 16 đến 60 tuổi. Ghi chú thêm: "
+  },
+  {
+    "id": "TK002",
+    "category": "Vé tham quan",
+    "date": "",
+    "location": "Quầy vé bảo tàng",
+    "content": "Loại vé: undefined. Giá: 20000 VNĐ. Đối tượng áp dụng: Cần xuất trình thẻ HS-SV còn hiệu lực. Ghi chú thêm: "
+  },
+  {
+    "id": "TK003",
+    "category": "Vé tham quan",
+    "date": "",
+    "location": "Quầy vé bảo tàng",
+    "content": "Loại vé: undefined. Giá: 0 VNĐ. Đối tượng áp dụng: Miễn phí cho trẻ em dưới 6 tuổi và người > 60 tuổi. Ghi chú thêm: "
+  },
+  {
+    "id": "TK004",
+    "category": "Vé tham quan",
+    "date": "",
+    "location": "Quầy vé bảo tàng",
+    "content": "Loại vé: undefined. Giá: 100000 VNĐ. Đối tượng áp dụng: Bao gồm máy thuyết minh đa ngôn ngữ. Ghi chú thêm: "
+  },
+  {
+    "id": "TK005",
+    "category": "Vé tham quan",
+    "date": "",
+    "location": "Quầy vé bảo tàng",
+    "content": "Loại vé: undefined. Giá: 120000 VNĐ. Đối tượng áp dụng: Tham quan toàn bộ phòng trưng bày + Triển lãm chuyên đề. Ghi chú thêm: "
   }
 ]

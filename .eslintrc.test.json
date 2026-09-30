@@ -1,0 +1,20 @@
+{
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "plugins": [
+    "react"
+  ],
+  "rules": {
+    "no-undef": "error",
+    "react/jsx-no-undef": "error"
+  }
+}

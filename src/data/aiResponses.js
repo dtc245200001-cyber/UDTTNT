@@ -9,7 +9,7 @@ import { ticketTypes } from './tickets';
  */
 const removeVietnameseTones = (str) => {
   if (!str) return '';
-  return str
+  return String(str)
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd')

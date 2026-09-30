@@ -19,6 +19,9 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+
 # Tải biến môi trường
 load_dotenv()
 
@@ -67,6 +70,9 @@ app.include_router(hien_vat_router)
 from routers.trien_lam import router as trien_lam_router
 app.include_router(trien_lam_router)
 
+from routers.webhooks import router as webhooks_router
+app.include_router(webhooks_router)
+
 # ── Schema dữ liệu ─────────────────────────────────────────────────────────
 
 class ChatRequest(BaseModel):
@@ -76,6 +82,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     answer: str = Field(..., description="Câu trả lời từ Trợ lý AI")
     sources: list[dict] = Field(default_factory=list, description="Danh sách các tài liệu nguồn được RAG tham chiếu")
+    artifact_ids: list[str] = Field(default_factory=list, description="Danh sách ID hiện vật liên quan")
 
 
 # ── Startup: Nạp kho tri thức tự động ─────────────────────────────────────
@@ -142,7 +149,8 @@ async def chat_endpoint(request: ChatRequest):
         )
         return ChatResponse(
             answer=result["answer"],
-            sources=result["sources"]
+            sources=result["sources"],
+            artifact_ids=result.get("artifact_ids", [])
         )
     except Exception as e:
         print(f"❌ [API Error] /api/chat error: {e}")
@@ -167,7 +175,11 @@ async def chat_stream_endpoint(request: ChatRequest):
                     user_message=user_msg,
                     history=request.history,
                 ):
-                    if chunk:
+                    if isinstance(chunk, dict) and "artifact_ids" in chunk:
+                        if chunk["artifact_ids"]:
+                            payload = json.dumps({"artifacts": chunk["artifact_ids"]}, ensure_ascii=False)
+                            yield f"data: {payload}\n\n"
+                    elif chunk:
                         # SSE format: "data: <payload>\n\n"
                         payload = json.dumps({"chunk": chunk}, ensure_ascii=False)
                         yield f"data: {payload}\n\n"
