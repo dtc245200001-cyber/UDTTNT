@@ -353,25 +353,15 @@ export const MuseumAI = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-2.5 px-4 py-2.5 bg-[#8B5A1E] hover:bg-[#734814] text-white font-bold rounded-full shadow-2xl border border-[#B8860B]/40 transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
+          className="group relative flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 bg-[#4a2c17] hover:bg-[#3a2213] text-white rounded-full shadow-[0_4px_16px_rgba(74,44,23,0.2)] transition-all duration-300 transform hover:-translate-y-1 cursor-pointer fixed bottom-6 right-6 z-50"
           title="Mở Trợ lý AI - Khám phá bảo tàng (24/7)"
         >
-          <div className="relative">
-            <div className="w-8 h-8 rounded-full bg-[#B8860B] flex items-center justify-center text-white shadow-xs group-hover:rotate-12 transition-transform duration-300">
-              <Bot className="w-4.5 h-4.5 text-white" />
-            </div>
-            <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-400"></span>
-            </span>
+          <div className="w-[36px] h-[36px] rounded-full bg-[#c8952e] flex items-center justify-center shadow-xs">
+            <Bot className="w-5 h-5 text-[#4a2c17]" />
           </div>
-
-          <div className="text-left hidden sm:flex items-center gap-1.5 pr-1">
-            <Sparkles className="w-3.5 h-3.5 text-[#F5E6B3]" />
-            <span className="text-xs font-extrabold text-white tracking-wider">
-              TRỢ LÝ AI
-            </span>
-          </div>
+          <span className="font-semibold text-[16px] text-white tracking-normal">
+            Trợ lý AI
+          </span>
         </button>
       )}
 

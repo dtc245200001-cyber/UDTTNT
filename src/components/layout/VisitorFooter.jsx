@@ -7,7 +7,7 @@ import {
 
 export const VisitorFooter = () => {
   return (
-    <footer className="relative font-sans select-none overflow-hidden bg-[#6B4424]" role="contentinfo">
+    <footer className="relative font-sans select-none overflow-hidden bg-[#23150C] border-t border-[rgba(184,134,11,0.35)]" role="contentinfo">
       {/* ── MAIN FOOTER ── */}
       <div className="max-w-6xl mx-auto px-6 sm:px-10 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -23,7 +23,7 @@ export const VisitorFooter = () => {
                 <div className="text-[#D9A441] text-xs font-bold uppercase tracking-[0.2em]">VIỆT NAM</div>
               </div>
             </div>
-            <p className="text-sm text-[#E9DCC6] leading-relaxed">
+            <p className="text-sm text-[#E8DCCB] leading-relaxed">
               Nơi lưu giữ, trưng bày và tôn vinh hơn 100.000 hiện vật lịch sử văn hóa vô giá của dân tộc Việt Nam qua các thời kỳ.
             </p>
           </div>
@@ -34,15 +34,15 @@ export const VisitorFooter = () => {
               THÔNG TIN LIÊN HỆ
             </h4>
             <ul className="space-y-3">
-              <li className="flex items-start gap-3 text-sm text-[#E9DCC6]">
+              <li className="flex items-start gap-3 text-sm text-[#E8DCCB]">
                 <MapPin className="w-4 h-4 text-[#D9A441] flex-none mt-0.5" />
                 <span>Số 1 Tràng Tiền, Hoàn Kiếm, Hà Nội</span>
               </li>
-              <li className="flex items-start gap-3 text-sm text-[#E9DCC6]">
+              <li className="flex items-start gap-3 text-sm text-[#E8DCCB]">
                 <Phone className="w-4 h-4 text-[#D9A441] flex-none mt-0.5" />
                 <span>(024) 3825 3557</span>
               </li>
-              <li className="flex items-start gap-3 text-sm text-[#E9DCC6]">
+              <li className="flex items-start gap-3 text-sm text-[#E8DCCB]">
                 <Mail className="w-4 h-4 text-[#D9A441] flex-none mt-0.5" />
                 <span>info@baotang.gov.vn</span>
               </li>
@@ -55,7 +55,7 @@ export const VisitorFooter = () => {
               GIỜ PHỤC VỤ
             </h4>
             <ul className="space-y-3">
-              <li className="flex items-start gap-3 text-sm text-[#E9DCC6]">
+              <li className="flex items-start gap-3 text-sm text-[#E8DCCB]">
                 <Clock className="w-4 h-4 text-[#D9A441] flex-none mt-0.5" />
                 <div className="space-y-0.5">
                   <strong className="block text-white font-bold">Thứ Ba - Chủ Nhật</strong>
@@ -76,22 +76,22 @@ export const VisitorFooter = () => {
             </h4>
             <ul className="space-y-3">
               <li>
-                <Link to="/galleries" className="text-sm text-[#E9DCC6] hover:text-white transition-colors">
+                <Link to="/galleries" className="text-sm text-[#E8DCCB] hover:text-[#F5B82E] transition-colors duration-200">
                   Bộ sưu tập Hiện vật cổ
                 </Link>
               </li>
               <li>
-                <Link to="/exhibitions" className="text-sm text-[#E9DCC6] hover:text-white transition-colors">
+                <Link to="/exhibitions" className="text-sm text-[#E8DCCB] hover:text-[#F5B82E] transition-colors duration-200">
                   Triển lãm chuyên đề
                 </Link>
               </li>
               <li>
-                <Link to="/events" className="text-sm text-[#E9DCC6] hover:text-white transition-colors">
+                <Link to="/events" className="text-sm text-[#E8DCCB] hover:text-[#F5B82E] transition-colors duration-200">
                   Sự kiện & Tọa đàm văn hóa
                 </Link>
               </li>
               <li>
-                <Link to="/tickets" className="text-sm text-[#E9DCC6] hover:text-white transition-colors">
+                <Link to="/tickets" className="text-sm text-[#E8DCCB] hover:text-[#F5B82E] transition-colors duration-200">
                   Đặt vé tham quan trực tuyến
                 </Link>
               </li>
@@ -102,8 +102,8 @@ export const VisitorFooter = () => {
       </div>
 
       {/* ── Bottom copyright bar ── */}
-      <div className="bg-[#4E3019] h-[50px] flex items-center justify-center px-6">
-        <p className="text-xs text-[#E9DCC6] text-center w-full">
+      <div className="bg-[#160D07] border-t border-[rgba(255,255,255,0.08)] h-[50px] flex items-center justify-center px-6">
+        <p className="text-xs text-[#BFAE98] text-center w-full">
           © 2026 Bảo Tàng Quốc Gia Việt Nam. Phát triển tích hợp Trợ lý Trí tuệ Nhân tạo AI.
         </p>
       </div>

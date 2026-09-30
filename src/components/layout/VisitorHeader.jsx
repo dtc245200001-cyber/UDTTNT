@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import {
@@ -83,10 +83,10 @@ export const VisitorHeader = () => {
   const isStaffOrAdmin = currentUser?.role === 'staff' || isAdmin;
 
   const navItemBase = (active) =>
-    `relative h-8 sm:h-9 px-3.5 rounded-full text-[0.8rem] font-medium transition-all duration-200 flex items-center gap-1.5 select-none cursor-pointer whitespace-nowrap flex-none ${
+    `relative h-8 sm:h-9 px-3.5 rounded-full text-[14px] font-medium transition-all duration-200 flex items-center gap-1.5 select-none cursor-pointer whitespace-nowrap flex-none ${
       active
-        ? 'bg-[#8B5A1E] text-white font-bold shadow-sm'
-        : 'bg-transparent text-[#2D241E] hover:text-[#8B5A1E] hover:bg-[#F5EFE0]/70'
+        ? 'bg-[#b8862b] text-white font-bold shadow-sm'
+        : 'bg-transparent text-[#2D241E] hover:text-[#b8862b] hover:bg-[#F5EFE0]/70'
     }`;
 
   return (
