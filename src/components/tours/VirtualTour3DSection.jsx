@@ -140,12 +140,10 @@ export const VirtualTour3DSection = () => {
             >
               {/* Khung ảnh đại diện với hiệu ứng zoom nhẹ khi hover */}
               <div
-                className="relative aspect-[4/3] w-full overflow-hidden bg-[#F5EFE0] cursor-pointer"
+                className={`relative aspect-[4/3] w-full overflow-hidden bg-[#F5EFE0] ${tour.cubeFaces ? 'cursor-pointer' : 'cursor-default'}`}
                 onClick={() => {
                   if (tour.cubeFaces) {
                     setActive3DModalTour(tour);
-                  } else {
-                    window.open(tour.link, '_blank', 'noopener,noreferrer');
                   }
                 }}
               >
@@ -210,28 +208,14 @@ export const VirtualTour3DSection = () => {
                       </svg>
                     </button>
                   ) : (
-                    <a
-                      href={tour.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#5B3A1F] hover:bg-[#B8860B] active:bg-[#3E2712] text-[#FBF8F1] hover:text-white text-sm font-medium tracking-normal shadow transition-all duration-300 group/btn focus:outline-none focus:ring-2 focus:ring-[#B8860B] focus:ring-offset-2"
-                      title={`Mở tour 3D: ${tour.title}`}
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#5B3A1F]/60 text-[#FBF8F1]/80 text-sm font-medium tracking-normal shadow transition-all duration-300 cursor-not-allowed"
+                      title="Tính năng đang được cập nhật"
                     >
-                      <span>Xem tour 3D</span>
-                      <svg
-                        className="w-4 h-4 transform group-hover/btn:translate-x-1 transition-transform duration-300"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                        />
-                      </svg>
-                    </a>
+                      <span>Sắp ra mắt</span>
+                    </button>
                   )}
                 </div>
               </div>

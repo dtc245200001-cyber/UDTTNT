@@ -119,6 +119,8 @@ export const PanoramaCubeViewer = ({
   const [debugMode, setDebugMode] = useState(initialDebugMode);
   const [isSceneTransitioning, setIsSceneTransitioning] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryToken, setRetryToken] = useState(0);
 
   // Tọa độ màn hình 2D của các hotspot được chiếu từ không gian 3D
   const [projectedHotspots, setProjectedHotspots] = useState([]);
@@ -148,6 +150,7 @@ export const PanoramaCubeViewer = ({
   const materialsRef = useRef([]);
   const cubeMeshRef = useRef(null);
   const textureLoaderRef = useRef(new THREE.TextureLoader());
+  const loadRequestRef = useRef(0);
 
   // Góc xoay & camera
   const isUserInteractingRef = useRef(false);
@@ -324,74 +327,100 @@ export const PanoramaCubeViewer = ({
     };
   }, []);
 
-  // 3. Tải & Áp dụng Texture cho Scene hiện tại (với Crossfade và Preload)
+  // 3. Tải & Áp dụng Texture cho Scene hiện tại
   useEffect(() => {
     if (!currentScene?.cubeFaces || materialsRef.current.length === 0) return;
 
+    const requestId = ++loadRequestRef.current;
     const normalizedFaces = normalizeCubeFaces(currentScene.cubeFaces);
     const textureLoader = textureLoaderRef.current;
+    const facesToLoad = CUBE_FACES_CONFIG.filter(({ key }) => normalizedFaces[key]);
+    let completed = 0;
+    let failed = false;
 
     setIsLoading(true);
-    let loadedLocal = 0;
+    setLoadError(facesToLoad.length === 0);
+
+    const completeFace = (error = false) => {
+      if (requestId !== loadRequestRef.current) return;
+      failed ||= error;
+      completed += 1;
+      if (completed === facesToLoad.length) {
+        setIsLoading(false);
+        setLoadError(failed);
+      }
+    };
+
+    if (facesToLoad.length === 0) {
+      CUBE_FACES_CONFIG.forEach((faceConfig, index) => {
+        const material = materialsRef.current[index];
+        if (!material) return;
+        material.map = createFallbackTexture(faceConfig);
+        material.needsUpdate = true;
+      });
+      setIsLoading(false);
+      return () => {
+        loadRequestRef.current += 1;
+      };
+    }
 
     CUBE_FACES_CONFIG.forEach((faceConfig, index) => {
-      const imageUrl = normalizedFaces[faceConfig.key];
       const material = materialsRef.current[index];
       if (!material) return;
+      const imageUrl = normalizedFaces[faceConfig.key];
 
       if (!imageUrl) {
         material.map = createFallbackTexture(faceConfig);
         material.needsUpdate = true;
-        loadedLocal += 1;
-        if (loadedLocal >= 6) setIsLoading(false);
+        completeFace();
         return;
       }
 
-      // Nếu đã có sẵn trong cache thì load ngay lập tức
-      if (textureCache.has(imageUrl)) {
-        const cachedTexture = textureCache.get(imageUrl);
+      const applyTexture = (texture) => {
+        if (requestId !== loadRequestRef.current) return;
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.minFilter = THREE.LinearMipmapLinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.generateMipmaps = true;
+        textureCache.set(imageUrl, texture);
         material.color.setHex(0xffffff);
-        material.map = cachedTexture;
+        material.map = texture;
         material.needsUpdate = true;
-        loadedLocal += 1;
-        if (loadedLocal >= 6) setIsLoading(false);
+        completeFace();
+      };
+
+      const cachedTexture = textureCache.get(imageUrl);
+      if (cachedTexture) {
+        applyTexture(cachedTexture);
       } else {
-        // Tải ảnh độ phân giải gốc, bật Texture filtering chống răng cưa và sắc nét
         textureLoader.load(
           imageUrl,
-          (tex) => {
-            tex.colorSpace = THREE.SRGBColorSpace;
-            tex.minFilter = THREE.LinearMipmapLinearFilter;
-            tex.magFilter = THREE.LinearFilter;
-            tex.generateMipmaps = true;
-            textureCache.set(imageUrl, tex);
-
-            material.color.setHex(0xffffff);
-            material.map = tex;
-            material.needsUpdate = true;
-            loadedLocal += 1;
-            if (loadedLocal >= 6) setIsLoading(false);
-          },
+          applyTexture,
           undefined,
-          (err) => {
-            console.warn(`[PanoramaCubeViewer] Lỗi tải ảnh mặt "${faceConfig.key}" (${imageUrl}):`, err);
-            material.color.setHex(0xffffff);
+          () => {
+            if (requestId !== loadRequestRef.current) return;
             material.map = createFallbackTexture(faceConfig);
             material.needsUpdate = true;
-            loadedLocal += 1;
-            if (loadedLocal >= 6) setIsLoading(false);
+            completeFace(true);
           }
         );
       }
     });
-  }, [currentScene]);
+
+    return () => {
+      loadRequestRef.current += 1;
+    };
+  }, [currentScene, retryToken]);
 
   // 4. Xử lý Chuyển Scene Mượt mà (Smooth Scene Transition via Hotspot / Menu)
   const navigateToScene = useCallback(
     (targetSceneId, targetYaw = null, targetPitch = null) => {
       if (targetSceneId === currentSceneId) return;
+      if (!scenes?.some((scene) => scene.id === targetSceneId)) {
+        console.warn(`[PanoramaCubeViewer] Không tìm thấy scene đích: ${targetSceneId}`);
+        return;
+      }
 
-      // Lưu lại scene trước đó vào lịch sử
       setSceneHistory((prev) => [...prev, currentSceneId]);
 
       // Kích hoạt hiệu ứng Dissolve Transition (~500ms)
@@ -570,14 +599,17 @@ export const PanoramaCubeViewer = ({
           if (!hs.isVisible) return null;
 
           return (
-            <div
+            <button
+              type="button"
               key={hs.id}
+              aria-label={hs.label}
+              title={hs.label}
               style={{
                 left: `${hs.screenX}px`,
                 top: `${hs.screenY}px`,
                 transform: 'translate(-50%, -50%)',
               }}
-              className="absolute z-20 pointer-events-auto cursor-pointer group/hs"
+              className="absolute z-20 pointer-events-auto cursor-pointer group/hs rounded-full focus:outline-none focus-visible:ring-4 focus-visible:ring-[#D9A441]"
               onClick={(e) => {
                 e.stopPropagation();
                 navigateToScene(hs.targetSceneId, hs.yaw, hs.pitch);
@@ -615,7 +647,7 @@ export const PanoramaCubeViewer = ({
                   </svg>
                 </div>
               </div>
-            </div>
+            </button>
           );
         })}
 
@@ -639,6 +671,22 @@ export const PanoramaCubeViewer = ({
           <p className="text-xs text-[#D9A441]/80 font-sans">
             Tối ưu hóa hình ảnh cube map sắc nét
           </p>
+        </div>
+      )}
+
+      {loadError && !isLoading && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-[#2B2825]/80 p-6 text-center">
+          <div className="max-w-sm rounded-2xl border border-[#B8860B]/50 bg-[#3E2712]/95 p-5 text-[#FBF8F1] shadow-2xl">
+            <p className="text-sm font-semibold">Một số ảnh không thể tải</p>
+            <p className="mt-2 text-xs text-[#F5EFE0]/80">Đang hiển thị mặt dự phòng. Kiểm tra lại tài nguyên tour rồi thử lại.</p>
+            <button
+              type="button"
+              onClick={() => setRetryToken((value) => value + 1)}
+              className="mt-4 rounded-xl bg-[#B8860B] px-4 py-2 text-xs font-bold hover:bg-[#D9A441]"
+            >
+              Thử lại
+            </button>
+          </div>
         </div>
       )}
 
@@ -710,13 +758,14 @@ export const PanoramaCubeViewer = ({
             {scenes.map((scene, idx) => {
               const isCurrent = scene.id === currentSceneId;
               return (
-                <button
-                  key={scene.id}
-                  type="button"
-                  onClick={() => {
-                    navigateToScene(scene.id);
-                    setIsSceneMenuOpen(false);
-                  }}
+            <button
+              type="button"
+              key={scene.id}
+              aria-current={isCurrent ? 'step' : undefined}
+              onClick={() => {
+                navigateToScene(scene.id);
+                setIsSceneMenuOpen(false);
+              }}
                   className={`w-full text-left p-2.5 rounded-xl text-xs font-medium transition-all flex items-center gap-2.5 cursor-pointer ${
                     isCurrent
                       ? 'bg-[#B8860B] text-white shadow-md font-semibold'

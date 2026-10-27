@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { Search, Sparkles, Filter, ChevronDown, RefreshCw } from 'lucide-react';
+import { Search, ChevronDown, RefreshCw, LayoutGrid, SlidersHorizontal } from 'lucide-react';
 import { ArtifactCard } from '@/components/cards/ArtifactCard';
 import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -81,59 +81,81 @@ export const ExploreArtifacts = () => {
   const hasMore = visibleCount < filteredArtifacts.length;
 
   return (
-    <div className="min-h-screen bg-museum-ivory py-8 px-4 sm:px-6 lg:px-8 font-sans animate-fadeIn">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header Title Banner */}
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-museum-cream border border-museum-gold/40 text-museum-brown text-xs font-extrabold uppercase tracking-wider shadow-xs">
-            <Sparkles className="w-4 h-4 text-museum-gold" />
-            <span>Kho Tàng Di Sản Quốc Gia</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-museum-brown tracking-tight">
-            KHÁM PHÁ HIỆN VẬT BẢO TÀNG
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600 leading-relaxed font-normal">
-            Khám phá hơn {artifacts.length} hiện vật, bảo vật quốc gia và tư liệu lịch sử quý hiếm qua {categories.length} danh mục đặc sắc, đại diện cho 4.000 năm văn hiến dân tộc.
-          </p>
+    <div className="min-h-screen bg-[#FBF7F0] animate-fadeIn font-sans pb-12 relative overflow-hidden">
+      {/* ── Hero Banner: Chiều cao ~215px, nền màu nâu tối, ảnh bảo tàng mờ dần ── */}
+      <div className="relative h-[215px] bg-[#200e05] overflow-hidden select-none">
+        {/* Right side museum image with glass cabinets & statues */}
+        <div className="absolute right-0 top-0 bottom-0 w-full md:w-[70%] opacity-35 md:opacity-100 pointer-events-none">
+          <img
+            src="/images/museum-gallery-banner.jpg"
+            alt="Khám phá hiện vật bảo tàng"
+            className="w-full h-full object-cover object-center"
+            style={{
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 10%, rgba(0,0,0,0.25) 22%, rgba(0,0,0,0.50) 36%, rgba(0,0,0,0.78) 52%, #000 72%)',
+              maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.08) 10%, rgba(0,0,0,0.25) 22%, rgba(0,0,0,0.50) 36%, rgba(0,0,0,0.78) 52%, #000 72%)'
+            }}
+            onError={(e) => { e.target.src = '/images/museum-hero.jpg'; }}
+          />
         </div>
 
-        {/* Search & Category Filter Section */}
-        <div className="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 space-y-5">
-          {/* Search Input */}
-          <div className="relative max-w-2xl mx-auto">
-            <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              placeholder="Tìm kiếm hiện vật theo tên, niên đại, văn hóa, chất liệu..."
-              className="w-full pl-12 pr-4 py-3 bg-gray-50 text-sm text-gray-800 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold focus:bg-white transition-all shadow-inner"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  searchParams.delete('q');
-                  setSearchParams(searchParams);
-                }}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 hover:text-museum-brown"
-              >
-                Xóa
-              </button>
-            )}
-          </div>
+        {/* Lớp phủ gradient mềm lên trên ảnh (pointer-events-none) */}
+        <div 
+          className="absolute inset-0 pointer-events-none hidden md:block"
+          style={{
+            background: 'linear-gradient(to right, #200e05 0%, #200e05 35%, rgba(32,14,5,0.85) 44%, rgba(32,14,5,0.60) 54%, rgba(32,14,5,0.30) 66%, rgba(32,14,5,0.10) 78%, transparent 90%)'
+          }}
+        />
 
-          {/* 8 Categories Filter Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+        {/* Content container */}
+        <div className="relative z-10 max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
+          <div className="max-w-full md:max-w-[60%] relative z-10">
+            {/* Breadcrumb: TRANG CHỦ / KHÁM PHÁ HIỆN VẬT */}
+            <div className="text-[#D4A359] text-[11px] font-bold tracking-widest uppercase mb-1.5 flex items-center gap-1.5 relative z-10">
+              <Link to="/" className="hover:underline">TRANG CHỦ</Link>
+              <span className="text-[#D4A359]/60">/</span>
+              <span className="text-white/90">KHÁM PHÁ HIỆN VẬT</span>
+            </div>
+
+            {/* Title: Serif bold, large, white */}
+            <h1 
+              className="text-3xl sm:text-[40px] lg:text-[44px] font-serif font-extrabold text-white tracking-wide leading-tight relative z-10"
+              style={{ textShadow: '0 2px 12px rgba(0,0,0,.45)' }}
+            >
+              KHÁM PHÁ HIỆN VẬT
+            </h1>
+
+            {/* Description */}
+            <p className="text-[#F5EFE0]/80 text-[14px] sm:text-[15px] leading-relaxed line-clamp-2 mt-2 max-w-xl relative z-10">
+              Không gian lưu giữ và giới thiệu hơn {artifacts.length} hiện vật, bảo vật quốc gia và tư liệu lịch sử qua {categories.length} danh mục đặc sắc của Bảo tàng.
+            </p>
+
+            {/* Short gold divider bar */}
+            <div className="w-14 h-[2px] bg-[#D4A359] mt-3 rounded-full relative z-10" />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Main Content Container ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 pt-5 relative z-10">
+        {/* ── Filter Tabs & Search Bar (Khung thanh lọc phong cách Chuyên đề) ── */}
+        <div className="bg-white px-5 py-3 rounded-2xl md:rounded-full border border-stone-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col md:flex-row items-center justify-between gap-4">
+          {/* Categories Horizontal Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 [&::-webkit-scrollbar]:hidden scroll-smooth flex-1 min-w-0">
             <button
               onClick={() => handleCategorySelect('Tất cả')}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-xs flex-shrink-0 cursor-pointer ${
+              className={`relative px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-1.5 ${
                 selectedCategory === 'Tất cả'
-                  ? 'bg-museum-brown text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-museum-cream hover:text-museum-brown'
+                  ? 'bg-[#8B5A1E] text-white shadow-xs'
+                  : 'bg-[#F4EFEA] hover:bg-[#EAE2D8] text-[#5C4535]'
               }`}
             >
-              Tất cả ({artifacts.length})
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Tất cả</span>
+              <span className={`px-2 py-0.5 text-[11px] rounded-full font-bold ml-1 ${
+                selectedCategory === 'Tất cả' ? 'bg-[#B8860B] text-white' : 'bg-stone-200/80 text-stone-600'
+              }`}>
+                {artifacts.length}
+              </span>
             </button>
             {categories.map((cat) => {
               const count = artifacts.filter((a) => a.category === cat.name || a.categoryId === cat.id).length;
@@ -142,33 +164,75 @@ export const ExploreArtifacts = () => {
                 <button
                   key={cat.id}
                   onClick={() => handleCategorySelect(cat.name)}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all shadow-xs flex-shrink-0 cursor-pointer ${
+                  className={`relative px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-1.5 ${
                     isSelected
-                      ? 'bg-museum-brown text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-museum-cream hover:text-museum-brown'
+                      ? 'bg-[#8B5A1E] text-white shadow-xs'
+                      : 'bg-[#F4EFEA] hover:bg-[#EAE2D8] text-[#5C4535]'
                   }`}
                 >
-                  {cat.name} ({count})
+                  <span>{cat.name}</span>
+                  <span className={`px-2 py-0.5 text-[11px] rounded-full font-bold ml-1 ${
+                    isSelected ? 'bg-[#B8860B] text-white' : 'bg-stone-200/80 text-stone-600'
+                  }`}>
+                    {count}
+                  </span>
                 </button>
               );
             })}
           </div>
+
+          {/* Search Input & Sliders Filter Button */}
+          <div className="flex items-center gap-2.5 w-full md:w-80 shrink-0">
+            <div className="relative flex-1">
+              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                placeholder="Tìm theo tên hiện vật, niên đại, văn hóa..."
+                className="w-full pl-9 pr-8 py-2 bg-[#F7F3EE] text-xs text-stone-800 rounded-full border border-stone-200/70 focus:outline-none focus:ring-2 focus:ring-[#8B5A1E]/30 focus:bg-white transition-all placeholder:text-stone-400"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('');
+                    searchParams.delete('q');
+                    setSearchParams(searchParams);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 text-xs font-bold cursor-pointer"
+                  title="Xóa tìm kiếm"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-600 hover:text-[#8B5A1E] hover:bg-stone-50 shadow-2xs shrink-0 cursor-pointer transition-colors"
+              title="Bộ lọc nâng cao"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Counter Summary */}
-        <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 font-medium px-1">
+        <div className="flex items-center justify-between text-xs sm:text-sm text-stone-500 font-medium px-1">
           <div>
-            Đang hiển thị: <strong className="text-museum-brown font-extrabold">{displayedArtifacts.length}</strong> / {filteredArtifacts.length} hiện vật phù hợp
+            Đang hiển thị: <strong className="text-[#8B5A1E] font-extrabold">{displayedArtifacts.length}</strong> / {filteredArtifacts.length} hiện vật phù hợp
             {selectedCategory !== 'Tất cả' && (
-              <span className="ml-2 text-museum-gold font-bold">({selectedCategory})</span>
+              <span className="ml-2 text-[#B8860B] font-bold">({selectedCategory})</span>
             )}
           </div>
         </div>
 
         {/* Artifacts Grid */}
         {displayedArtifacts.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-gray-100 shadow-xs">
-            <EmptyState message="Không tìm thấy hiện vật nào phù hợp với điều kiện tìm kiếm." />
+          <div className="bg-white rounded-2xl p-12 text-center border border-stone-100 shadow-xs">
+            <EmptyState
+              title="Chưa có hiện vật nào phù hợp"
+              subtitle="Hiện tại không tìm thấy hiện vật nào theo bộ lọc hoặc từ khóa đã chọn. Vui lòng thử chuyển danh mục khác."
+            />
             <button
               onClick={() => {
                 setSearchTerm('');
@@ -177,7 +241,7 @@ export const ExploreArtifacts = () => {
                 searchParams.delete('category');
                 setSearchParams(searchParams);
               }}
-              className="mt-4 px-5 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-md transition-colors inline-flex items-center gap-2 cursor-pointer"
+              className="mt-4 px-5 py-2.5 bg-[#8B5A1E] hover:bg-[#6e4616] text-white font-bold text-xs rounded-full shadow-md transition-colors inline-flex items-center gap-2 cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" />
               <span>Xem tất cả hiện vật</span>
@@ -200,13 +264,32 @@ export const ExploreArtifacts = () => {
           <div className="text-center pt-4">
             <button
               onClick={handleLoadMore}
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-white hover:bg-museum-cream text-museum-brown font-extrabold text-sm rounded-2xl border-2 border-museum-gold shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-white hover:bg-[#F4EFEA] text-[#8B5A1E] font-extrabold text-sm rounded-full border border-stone-200 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer"
             >
               <span>Xem thêm hiện vật ({filteredArtifacts.length - visibleCount} còn lại)</span>
-              <ChevronDown className="w-5 h-5 text-museum-gold animate-bounce" />
+              <ChevronDown className="w-4 h-4 text-[#8B5A1E] animate-bounce" />
             </button>
           </div>
         )}
+
+        {/* Bottom Quote Banner */}
+        <div className="flex items-center justify-center gap-3 pt-10 text-stone-400 text-xs tracking-wider uppercase select-none">
+          <div className="h-[1px] w-20 sm:w-36 bg-stone-300" />
+          <span>Bảo tồn di sản – Lan tỏa văn hóa dân tộc</span>
+          <div className="h-[1px] w-20 sm:w-36 bg-stone-300" />
+        </div>
+      </div>
+
+      {/* Decorative Lotus Watermark in Bottom Left (Giống trang Chuyên đề) */}
+      <div className="fixed bottom-0 left-0 pointer-events-none opacity-20 z-0 select-none">
+        <svg width="220" height="180" viewBox="0 0 240 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M120 180C120 180 80 120 80 80C80 40 120 10 120 10C120 10 160 40 160 80C160 120 120 180 120 180Z" stroke="#B8860B" strokeWidth="1.5" strokeOpacity="0.5"/>
+          <path d="M120 180C120 180 50 140 40 100C30 60 70 30 70 30C70 30 90 70 120 180Z" stroke="#B8860B" strokeWidth="1.2" strokeOpacity="0.4"/>
+          <path d="M120 180C120 180 190 140 200 100C210 60 170 30 170 30C170 30 150 70 120 180Z" stroke="#B8860B" strokeWidth="1.2" strokeOpacity="0.4"/>
+          <path d="M120 180C120 180 20 160 10 130C0 100 30 80 30 80C30 80 60 110 120 180Z" stroke="#B8860B" strokeWidth="1.2" strokeOpacity="0.3"/>
+          <path d="M120 180C120 180 220 160 230 130C240 100 210 80 210 80C210 80 180 110 120 180Z" stroke="#B8860B" strokeWidth="1.2" strokeOpacity="0.3"/>
+          <path d="M40 185C80 175 160 175 200 185" stroke="#B8860B" strokeWidth="1.5" strokeOpacity="0.4"/>
+        </svg>
       </div>
 
       {/* Artifact Detail Modal */}
