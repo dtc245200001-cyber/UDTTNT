@@ -14,60 +14,83 @@ from google.genai import types
 
 load_dotenv()
 
-GEMINI_API_KEY = (os.getenv("GEMINI_API_KEYS", "") or os.getenv("GEMINI_API_KEY", "")).split(",")[0].strip()
+API_KEYS = [
+    k.strip()
+    for k in (os.getenv("GEMINI_API_KEYS", "") or os.getenv("GEMINI_API_KEY", "")).split(",")
+    if k.strip() and k.strip() != "YOUR_GEMINI_API_KEY_HERE"
+]
 
 EMBEDDING_MODEL = "gemini-embedding-2"
 EMBEDDING_DIMENSION = 768
 
-client = None
+clients = []
+current_key_idx = 0
 
-if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
+for k in API_KEYS:
     try:
-        client = genai.Client(api_key=GEMINI_API_KEY)
-        print(f"[Embedding] Client đã sẵn sàng: {EMBEDDING_MODEL}")
+        clients.append(genai.Client(api_key=k))
     except Exception as e:
-        print(f"[Embedding] Không thể khởi tạo Gemini client: {e}")
-        client = None
+        print(f"[Embedding] Lỗi tạo client cho key: {e}")
+
+if clients:
+    print(f"[Embedding] Đã sẵn sàng {len(clients)} Gemini API keys cho: {EMBEDDING_MODEL}")
+else:
+    print("[Embedding] Không có API key hợp lệ cho embedding.")
+
+def _get_client():
+    global current_key_idx
+    if not clients:
+        return None
+    return clients[current_key_idx]
+
+def _rotate_client():
+    global current_key_idx
+    if len(clients) > 1:
+        current_key_idx = (current_key_idx + 1) % len(clients)
+        print(f"[Embedding] Chuyển sang Gemini API Key #{current_key_idx + 1}/{len(clients)}")
 
 
 import asyncio
 
-# B1 (buoc 1 duyet): MOT ham duy nhat cho moi cho goi embedding.
-# Dùng task_type CHÍNH THỨC của Gemini Embedding (google-genai SDK:
-# EmbedContentConfig.task_type: str, title: chỉ cho RETRIEVAL_DOCUMENT):
-#   - RETRIEVAL_DOCUMENT (+ title) khi index
-#   - RETRIEVAL_QUERY khi query
-# Bo prefix text tu che ("task: search result | query:", "title: | text:")
-# de index va query khong bao gio lech nhau nua.
-# Nguon: Google AI for Developers — Gemini Embedding guide (task types
-# RETRIEVAL_QUERY / RETRIEVAL_DOCUMENT), SDK types.EmbedContentConfig.
 TASK_RETRIEVAL_QUERY = "RETRIEVAL_QUERY"
 TASK_RETRIEVAL_DOCUMENT = "RETRIEVAL_DOCUMENT"
 
 
 def _embed_one(text: str, task_type: str, title: str | None = None) -> list[float]:
-    """Embed 1 text voi task_type cho truoc. Dung chung cho index va query."""
+    """Embed 1 text voi task_type cho truoc. Ho tro tu dong xoay key khi gap 429."""
     text = str(text or "").strip()
     if not text:
         return [0.0] * EMBEDDING_DIMENSION
-    if client is None:
+    if not clients:
         return _create_fallback_embedding(text)
-    try:
-        cfg = {"output_dimensionality": EMBEDDING_DIMENSION, "task_type": task_type}
-        if title and task_type == TASK_RETRIEVAL_DOCUMENT:
-            cfg["title"] = title[:500]
-        result = client.models.embed_content(
-            model=EMBEDDING_MODEL,
-            contents=text,
-            config=types.EmbedContentConfig(**cfg),
-        )
-        if result.embeddings:
-            return result.embeddings[0].values
-        print("[Embedding] Gemini không trả về vector.")
-        return _create_fallback_embedding(text)
-    except Exception as e:
-        print(f"[Embedding Warning] {e}")
-        return _create_fallback_embedding(text)
+
+    cfg = {"output_dimensionality": EMBEDDING_DIMENSION, "task_type": task_type}
+    if title and task_type == TASK_RETRIEVAL_DOCUMENT:
+        cfg["title"] = title[:500]
+
+    max_tries = max(1, len(clients))
+    for attempt in range(max_tries):
+        cli = _get_client()
+        try:
+            result = cli.models.embed_content(
+                model=EMBEDDING_MODEL,
+                contents=text,
+                config=types.EmbedContentConfig(**cfg),
+            )
+            if result.embeddings:
+                return result.embeddings[0].values
+            print("[Embedding] Gemini không trả về vector.")
+            return _create_fallback_embedding(text)
+        except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+                print(f"[Embedding Warning] Key #{current_key_idx + 1} gặp 429 Quota.")
+                _rotate_client()
+                continue
+            print(f"[Embedding Warning] {e}")
+            return _create_fallback_embedding(text)
+
+    return _create_fallback_embedding(text)
 
 
 def embed_query(text: str) -> list[float]:

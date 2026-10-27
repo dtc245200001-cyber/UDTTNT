@@ -147,6 +147,25 @@ export function searchArtifacts(rawArtifactsList = [], query = '', extraData = {
     }
   }
 
+  // Check 2b: Intent regarding Museum Statistics / Total Artifact Count
+  if (
+    cleanQuery.includes('bao nhieu hien vat') ||
+    cleanQuery.includes('tong so hien vat') ||
+    cleanQuery.includes('so luong hien vat') ||
+    cleanQuery.includes('bao tang co bao nhieu') ||
+    cleanQuery.includes('co bao nhieu hien vat') ||
+    cleanQuery.includes('co bao nhieu do vat') ||
+    cleanQuery.includes('co may hien vat') ||
+    cleanQuery.includes('thong ke hien vat')
+  ) {
+    const totalCount = artifactsList.length || 272;
+    return {
+      success: true,
+      message: `🏛️ Hiện tại Bảo tàng Quốc gia đang lưu giữ và trưng bày tổng cộng **${totalCount} hiện vật** thuộc 13 nhóm danh mục lịch sử (từ thời Tiền sử, Đông Sơn, các triều đại phong kiến đến thời kỳ cận - hiện đại). Bạn muốn tìm hiểu hiện vật thuộc giai đoạn nào?`,
+      matchedArtifacts: [],
+    };
+  }
+
   // Check 3: Query Artifacts Database
   // 1. Loại bỏ các cụm stopword cố định
   let processedQuery = cleanQuery.replace(/\b(tim hieu|bao tang)\b/g, ' ');
