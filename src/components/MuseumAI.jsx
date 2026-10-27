@@ -46,6 +46,7 @@ export const MuseumAI = () => {
   // Trạng thái streaming
   const [streamingText, setStreamingText] = useState('');
   const [streamingMsgId, setStreamingMsgId] = useState(null);
+  // C3: text trạng thái khi backend báo first token chậm
   const abortStreamRef = useRef(null);
 
   // Kích thước widget
@@ -194,7 +195,10 @@ export const MuseumAI = () => {
     setStreamingText('');
     setStreamingMsgId(aiMsgId);
 
-    const intent = detectIntent(textToSend, artifacts);
+    // L1: hien vat cua luot AI truoc de nhan dien cau noi tiep ("no o dau?")
+    const priorArtifacts = [...messages].reverse()
+      .find((m) => m.sender === 'ai' && m.artifacts && m.artifacts.length > 0)?.artifacts || [];
+    const intent = detectIntent(textToSend, artifacts, priorArtifacts);
     if (intent === 'book_ticket' || intent === 'ticket_info') {
       let aiText = "Bạn chọn loại vé nhé — mình mở sẵn form đặt vé cho bạn 🎫";
       if (intent === 'ticket_info') {
@@ -228,9 +232,12 @@ export const MuseumAI = () => {
       try {
         const res = await sendChatQuery(textToSend, messages);
         if (res.success && res.answer && !res.answer.includes('Mình đang gặp một chút gián đoạn khi kết nối với AI')) {
+          // L1: backend la nguon su that — chi bo sung local khi backend co
+          // artifact/sources (mo rong) hoac intent artifact_search co prior.
           let mappedArtifacts = (res.artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
-          if (intent === 'artifact_search' && mappedArtifacts.length === 0) {
-              const localResult = searchArtifacts(artifacts, textToSend);
+          if (intent === 'artifact_search' && mappedArtifacts.length === 0
+              && ((res.sources || []).length > 0 || priorArtifacts.length > 0)) {
+              const localResult = searchArtifacts(artifacts, textToSend, {}, { priorArtifacts });
               if (localResult && localResult.matchedArtifacts) {
                   mappedArtifacts = localResult.matchedArtifacts.slice(0, 4).map(normalizeArtifact);
               }
@@ -302,9 +309,10 @@ export const MuseumAI = () => {
             return;
           }
 
+          // L1: nhu tren — backend la nguon su that cho the hien vat.
           let mappedArtifacts = (artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
-          if (intent === 'artifact_search' && mappedArtifacts.length === 0) {
-              const localResult = searchArtifacts(artifacts, textToSend);
+          if (intent === 'artifact_search' && mappedArtifacts.length === 0 && priorArtifacts.length > 0) {
+              const localResult = searchArtifacts(artifacts, textToSend, {}, { priorArtifacts });
               if (localResult && localResult.matchedArtifacts) {
                   mappedArtifacts = localResult.matchedArtifacts.slice(0, 4).map(normalizeArtifact);
               }
@@ -333,8 +341,7 @@ export const MuseumAI = () => {
       // onArtifacts
       (ids) => {
         artifactIds = ids;
-      }
-    );
+      },
 
     abortStreamRef.current = abort;
   };
@@ -721,7 +728,7 @@ export const MuseumAI = () => {
                 </div>
                 <div className="bg-white p-3 rounded-2xl rounded-tl-none border border-museum-gold/30 shadow-2xs flex items-center gap-2 text-xs font-semibold text-museum-brown">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin text-museum-gold" />
-                  <span>Trợ lý AI đang suy nghĩ và tra cứu tư liệu...</span>
+                  <span>'Trợ lý AI đang suy nghĩ và tra cứu tư liệu...'}</span>
                 </div>
               </div>
             )}
