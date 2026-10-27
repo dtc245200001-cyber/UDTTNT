@@ -33,9 +33,9 @@ class Settings(BaseSettings):
     # Gemini API key cho RAG chatbot (giữ nguyên từ hệ thống cũ)
     GEMINI_API_KEY: str = Field(default="", description="Google Gemini API Key cho RAG")
     # NGUỒN CẤU HÌNH MODEL DUY NHẤT — services/gemini.py đọc từ đây, không os.getenv riêng
-    GEMINI_MODEL_NAME: str = Field(default="gemini-3.5-flash", description="Model Gemini chính")
+    GEMINI_MODEL_NAME: str = Field(default="gemini-3.5-flash-lite", description="Model Gemini chính")
     GEMINI_FALLBACK_MODELS: str = Field(
-        default="gemini-2.5-flash,gemini-2.5-flash-lite",
+        default="gemini-3.1-flash-lite,gemini-flash-lite-latest",
         description="Các model dự phòng, cách nhau bằng dấu phẩy",
     )
 
@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     # ── RAG (Nhóm B/D) ──
     RAG_COLLECTION_NAME: str = Field(default="museum_rag_knowledge", description="Ten collection Chroma (doi sang _v2 khi duyet)")
     RAG_DISTANCE_THRESHOLD: float = Field(default=0.85, description="Ngưỡng distance ChromaDB (D: chờ duyệt 0.33 moi doi)")
+    RAG_ZONE_MUSEUM_MAX: float = Field(default=0.30, description="Ngưỡng trên của Vùng 1 - chắc chắn Museum")
+    RAG_ZONE_GENERAL_MIN: float = Field(default=0.42, description="Ngưỡng dưới của Vùng 3 - chắc chắn General")
+    RAG_ZONE_LOG: bool = Field(default=True, description="Ghi log chi tiết quyết định định tuyến RAG")
     RAG_MAX_CONTEXT_CHARS: int = Field(default=4000, description="Trần độ dài context RAG nạp vào prompt")
     RAG_MAX_CHUNK_CHARS: int = Field(default=1200, description="Trần độ dài mỗi chunk RAG")
 
