@@ -511,14 +511,14 @@ export const MuseumAI = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-2.5 pl-1.5 pr-4 py-1.5 bg-[#4a2c17] hover:bg-[#3a2213] text-white rounded-full shadow-[0_4px_16px_rgba(74,44,23,0.2)] transition-all duration-300 transform hover:-translate-y-1 cursor-pointer fixed bottom-6 right-6 z-50"
-          title="Mở Trợ lý AI - Khám phá bảo tàng (24/7)"
+          className="group relative w-12 h-12 bg-[#4A2810] hover:bg-[#381D0B] text-[#D8A452] rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer fixed bottom-6 right-6 z-50 flex items-center justify-center"
+          title="Mở Trợ lý AI - Khám phá bảo tàng"
         >
-          <div className="w-[36px] h-[36px] rounded-full bg-[#c8952e] flex items-center justify-center shadow-xs">
-            <Bot className="w-5 h-5 text-[#4a2c17]" />
-          </div>
-          <span className="font-semibold text-[16px] text-white tracking-normal">
-            Trợ lý AI
+          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" />
+          </svg>
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+            1
           </span>
         </button>
       )}

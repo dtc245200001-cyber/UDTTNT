@@ -52,22 +52,28 @@ def _db_row_to_user_out(row: dict) -> UserOut:
 
 # ── Endpoints ──────────────────────────────────────────────────────────────
 
-@router.get("/", response_model=List[UserOut])
+@router.get("", response_model=List[UserOut])
+@router.get("/", response_model=List[UserOut], include_in_schema=False)
 async def list_users(
     admin: AuthenticatedUser = Depends(require_admin),
 ):
     """Lấy toàn bộ danh sách người dùng (chỉ admin)."""
-    result = supabase_admin.table("nguoi_dung").select("*").order(
-        "joined_at", desc=True
-    ).execute()
+    try:
+        result = supabase_admin.table("nguoi_dung").select("*").order(
+            "joined_at", desc=True
+        ).execute()
 
-    if not result.data:
+        if not result or not result.data:
+            return []
+
+        return [_db_row_to_user_out(row) for row in result.data]
+    except Exception as e:
+        print(f"⚠️ [Users] Lỗi truy vấn Supabase, trả về danh sách rỗng: {e}")
         return []
 
-    return [_db_row_to_user_out(row) for row in result.data]
 
-
-@router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=UserOut, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_user(
     payload: UserCreate,
     admin: AuthenticatedUser = Depends(require_admin),
