@@ -179,6 +179,15 @@ async def chat_stream_endpoint(request: ChatRequest):
                         if chunk["artifact_ids"]:
                             payload = json.dumps({"artifacts": chunk["artifact_ids"]}, ensure_ascii=False)
                             yield f"data: {payload}\n\n"
+                    elif isinstance(chunk, dict) and "status" in chunk:
+                        # C3/L2b2: forward event trang thai (processing/interrupted).
+                        # Contract cu giu nguyen: client cu bo qua key "status";
+                        # giu nguyen ca object de frontend dung them "error".
+                        payload = json.dumps(
+                            {k: chunk[k] for k in ("status", "error") if k in chunk},
+                            ensure_ascii=False,
+                        )
+                        yield f"data: {payload}\n\n"
                     elif chunk:
                         # SSE format: "data: <payload>\n\n"
                         payload = json.dumps({"chunk": chunk}, ensure_ascii=False)

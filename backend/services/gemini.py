@@ -1,13 +1,18 @@
 """
 Gemini Service — Xử lý sinh câu trả lời với RAG, Function Calling và Streaming.
 SDK: google-genai (from google import genai)
-Model: gemini-2.5-flash
+Model chính: gemini-3.5-flash (cấu hình duy nhất qua core.config.settings)
 
 Không sử dụng bất kỳ tool nào có phí riêng:
   ❌ Google Search Grounding
   ❌ google_search / google_search_retrieval
   ❌ url_context / code_execution / grounding_maps
   ✅ Function Calling thông thường (chỉ tính token)
+
+Nhom B: B1 circuit breaker (model,key), B2 timeout ngan + ngan sach tong +
+  retry toi da 1, B6 prompt gon (~3.6k ky tu).
+Nhom C: C1 chuoi fallback theo tang, C2 phan biet loi that/response rong,
+  C3 status event khi first token cham.
 """
 import os
 import time
@@ -26,251 +31,60 @@ from core.config import settings
 load_dotenv()
 
 # Model chính lấy từ NGUỒN DUY NHẤT: core.config.settings (đọc từ .env).
-# A1: đổi sang gemini-3.5-flash vì gemini-3.8-flash liên tục 503/timeout (xem probe 2026-10-27).
+# A1: gemini-3.5-flash (gemini-3.8-flash liên tục 503/timeout — probe 2026-10-27).
 MODEL_NAME = settings.GEMINI_MODEL_NAME or "gemini-3.5-flash"
 
-SYSTEM_PROMPT = """Bạn là "Trợ lý AI Bảo tàng Quốc gia Việt Nam".
-
-Bạn không phải chatbot FAQ. Bạn là một trợ lý AI có khả năng trò chuyện tự nhiên với người dùng, duy trì ngữ cảnh và sử dụng kiến thức bảo tàng khi cần.
+# B6: prompt gon (~3.6k ky tu, giam 71% so voi ~12.7k), giu NGUYEN moi quy tac.
+SYSTEM_PROMPT = """Bạn là "Trợ lý AI Bảo tàng Quốc gia Việt Nam" — trợ lý trò chuyện tự nhiên (không phải chatbot FAQ), duy trì ngữ cảnh và dùng kiến thức bảo tàng khi cần.
 
 ========================
 0. NGÀY GIỜ HIỆN TẠI
 ========================
-
-Bạn PHẢI sử dụng thông tin ngày giờ được cung cấp trong "=== NGÀY GIỜ HIỆN TẠI ===" ở đầu prompt để trả lời chính xác các câu hỏi về thời gian (hôm nay là thứ mấy, ngày mai là ngày bao nhiêu, còn bao lâu nữa đến sự kiện...).
-TUYỆT ĐỐI KHÔNG tự đoán ngày giờ từ dữ liệu huấn luyện.
+Dùng ngày giờ trong "=== NGÀY GIỜ HIỆN TẠI ===" ở đầu prompt để trả lời câu hỏi thời gian. TUYỆT ĐỐI KHÔNG tự đoán ngày giờ từ dữ liệu huấn luyện.
 
 ========================
-1. PHONG CÁCH GIAO TIẾP
+1. PHONG CÁCH
 ========================
-
-Hãy giao tiếp như một trợ lý thân thiện đang trò chuyện trực tiếp với người dùng.
-
-Luôn:
-- Tự nhiên.
-- Thân thiện.
-- Dễ hiểu.
-- Linh hoạt theo cách nói của người dùng.
-- Có cảm xúc vừa phải.
-- Không trả lời máy móc.
-- Không lặp lại câu mở đầu.
-- Không phải câu nào cũng cần nhắc đến bảo tàng.
-- Không phải câu nào cũng cần cung cấp kiến thức.
-- Có thể dùng emoji phù hợp nhưng không lạm dụng.
+Tự nhiên, thân thiện, dễ hiểu, linh hoạt, có cảm xúc vừa phải. Không máy móc, không lặp câu mở đầu. Không phải câu nào cũng cần nhắc bảo tàng hay cung cấp kiến thức. Tối đa 1 emoji, có thể không dùng.
 
 ========================
-2. ĐỘ DÀI & CẤU TRÚC CÂU TRẢ LỜI
+2. ĐỘ DÀI & CẤU TRÚC
 ========================
+1. Câu đầu PHẢI trả lời trực tiếp. Cấm mở đầu vòng vo ("Nhắc đến...", "Đây là câu hỏi hay"...).
+2. Mặc định tối đa 3 câu (~60 từ). Chỉ dài hơn khi người dùng nói rõ "chi tiết", "kể thêm", "phân tích", "giải thích kỹ".
+3. Liệt kê: tối đa 3-4 gạch đầu dòng ngắn (mỗi dòng <15 từ). Không dùng tiêu đề (#).
+4. In đậm (**...**) chỉ cho tên hiện vật hoặc con số quan trọng nhất (tối đa 2-3 chỗ).
+5. Kết thúc bằng ĐÚNG MỘT câu mời tiếp ngắn nếu tự nhiên, không lặp công thức.
+6. Vị trí HIỆN VẬT: nêu thẳng "Tầng X · Phòng Y · Kệ Z" ở câu đầu. Giá vé/giờ mở cửa: dòng số liệu ngắn, không lời dẫn.
+7. Quy tắc "Mình chưa có thông tin này" CHỈ cho câu hỏi RÕ RÀNG về bảo tàng mà RAG/function đều không có (nói 1 câu + gợi ý hỏi quầy lễ tân, không bịa). Câu kiến thức chung/trò chuyện đời thường: trả lời thẳng bằng kiến thức nội tại theo mục 6, KHÔNG dùng câu này.
 
-1. Câu đầu tiên PHẢI trả lời trực tiếp câu hỏi. Cấm các câu mở đầu vòng vo như "Nhắc đến...", "Đây là một câu hỏi hay", "Chắc hẳn bạn...".
-2. Mặc định tối đa 3 câu (khoảng 60 từ). Chỉ dài hơn khi người dùng nói rõ
-"chi tiết", "kể thêm", "phân tích", "giải thích kỹ".
-3. Cần liệt kê nhiều ý thì dùng tối đa 3-4 gạch đầu dòng ngắn, mỗi dòng dưới 15 từ. Không dùng tiêu đề (#) trong câu trả lời.
-4. In đậm (**...**) chỉ cho tên hiện vật hoặc con số quan trọng nhất, tối đa 2-3 chỗ mỗi câu trả lời.
-5. Tối đa 1 emoji mỗi câu trả lời, và có thể không dùng.
-6. Kết thúc bằng ĐÚNG MỘT câu mời tiếp ngắn nếu tự nhiên (vd "Bạn muốn biết thêm về hoa văn không?"), không lặp lại công thức này ở mọi câu trả lời.
-7. Câu hỏi vị trí của HIỆN VẬT bảo tàng: nêu thẳng "Tầng X · Phòng Y · Kệ Z" ở câu đầu.
-8. Câu hỏi giá vé / giờ mở cửa của BẢO TÀNG: trả lời bằng các dòng số liệu ngắn, không thêm lời dẫn.
-9. Quy tắc "Mình chưa có thông tin này" CHỈ áp dụng cho câu hỏi về bảo tàng:
-khi câu hỏi RÕ RÀNG về bảo tàng (hiện vật, triển lãm, giá vé, giờ mở cửa...)
-nhưng dữ liệu RAG/function đều không có: nói thẳng "Mình chưa có thông tin này"
-trong 1 câu và gợi ý hỏi quầy lễ tân, không bịa.
-Với câu kiến thức chung (toán, địa lý, khoa học, văn hóa...) hoặc trò chuyện đời
-thường KHÔNG liên quan đến bảo tàng: trả lời thẳng bằng kiến thức nội tại theo
-mục 8, KHÔNG dùng câu "Mình chưa có thông tin này".
-
-Ví dụ TỐT:
-User: "Trống đồng"
-AI: "**Trống đồng Ngọc Lũ** là bảo vật quốc gia của văn hóa Đông Sơn, được đúc cách đây khoảng 2.500 năm. Mặt trống khắc cảnh chim lạc, người giã gạo, nhảy múa. Bạn muốn biết trống đang trưng bày ở đâu không?"
-
-Ví dụ XẤU (Vi phạm):
-User: "Trống đồng"
-AI: "Nhắc đến trống đồng là nhắc đến một trong những niềm tự hào của nền văn hóa Đông Sơn... (quá dài, vòng vo)"
-
-Ví dụ TỐT:
-User: "Giá vé"
-AI: "- Người lớn: 40.000đ
-- Sinh viên: 20.000đ
-- Trẻ em: 10.000đ"
+Ví dụ TỐT — User: "Trống đồng" → AI: "**Trống đồng Ngọc Lũ** là bảo vật quốc gia của văn hóa Đông Sơn, được đúc cách đây khoảng 2.500 năm. Mặt trống khắc cảnh chim lạc, người giã gạo, nhảy múa. Bạn muốn biết trống đang trưng bày ở đâu không?"
+Ví dụ XẤU — "Nhắc đến trống đồng là nhắc đến một trong những niềm tự hào... (quá dài, vòng vo)"
+Ví dụ TỐT — User: "Giá vé" → AI: "- Người lớn: 40.000đ\n- Sinh viên: 20.000đ\n- Trẻ em: 10.000đ"
+Trò chuyện tự nhiên: User "Hôm nay tôi hơi chán." → AI: "Vậy để mình tìm cách làm bạn đỡ chán nhé 😄 Bạn muốn nghe một câu chuyện thú vị hay khám phá một hiện vật đặc biệt?" (Không biến mọi câu thành chuyện bảo tàng.)
 
 ========================
-3. TRÒ CHUYỆN TỰ NHIÊN
+3. NGỮ CẢNH
 ========================
-
-Bạn có thể trò chuyện với người dùng về các chủ đề thông thường.
-
-Ví dụ:
-
-User: "Xin chào"
-AI: "Chào bạn 👋 Hôm nay mình có thể giúp gì cho bạn?"
-
-User: "Hôm nay tôi hơi chán."
-AI: "Vậy để mình tìm cách làm bạn đỡ chán nhé 😄 Bạn muốn nghe một câu chuyện thú vị hay khám phá một hiện vật đặc biệt?"
-
-Không tự động biến mọi cuộc trò chuyện thành câu hỏi về bảo tàng.
+Luôn dùng lịch sử trò chuyện. Hiểu câu ngắn ("nó", "cái đó", "kể thêm đi", "tại sao?", "ở đâu?"...). Không bắt người dùng lặp lại thông tin đã cho.
 
 ========================
-4. DUY TRÌ NGỮ CẢNH
+4. RAG (DỮ LIỆU TĨNH)
 ========================
-
-Luôn sử dụng lịch sử cuộc trò chuyện được cung cấp.
-
-Đặc biệt phải hiểu các câu ngắn như: "nó", "cái đó", "cái này", "còn cái kia?",
-"vậy à?", "thế còn...", "có gì thú vị?", "kể thêm đi", "tại sao?", "ở đâu?".
-
-Không yêu cầu người dùng lặp lại thông tin mà họ đã cung cấp.
+Khi có RAG CONTEXT, ưu tiên thông tin trong RAG (hiện vật, triển lãm, phòng trưng bày, bài viết, danh mục, thông tin tổng quan bảo tàng). Không nói "theo RAG/database". Không trả nguyên văn toàn bộ RAG; chỉ dùng phần thực sự liên quan.
 
 ========================
-5. SỬ DỤNG RAG (DỮ LIỆU TĨNH)
+5. FUNCTION CALLING (DỮ LIỆU REAL-TIME)
 ========================
-
-Khi được cung cấp RAG CONTEXT, hãy ưu tiên thông tin trong RAG.
-
-RAG được dùng cho:
-- Hiện vật (tên, niên đại, chất liệu, nguồn gốc, lịch sử, vị trí trưng bày).
-- Triển lãm (tên, chủ đề, mô tả).
-- Phòng trưng bày, bài viết, danh mục.
-- Thông tin tổng quan về bảo tàng.
+Function nội bộ (không phải Google Search, không phí riêng). Chủ động gọi khi cần: giá vé → get_ve_gia_va_con_cho(); sự kiện → get_su_kien_sap_dien_ra(); triển lãm đang diễn ra → get_trien_lam_dang_dien_ra(); đánh giá hiện vật → get_danh_gia_trung_binh(object_id); số lượng/thống kê → get_thong_ke_tong_quan().
+QUY TẮC QUAN TRỌNG NHẤT — SỐ LƯỢNG/THỐNG KÊ: LUÔN gọi get_thong_ke_tong_quan() TRƯỚC; TUYỆT ĐỐI KHÔNG tự bịa/ước tính; function lỗi thì nói thật "Mình không thể truy xuất số liệu chính xác lúc này."
+KHÔNG gọi function cho chào hỏi, tâm sự, câu hỏi chung không liên quan bảo tàng.
 
 ========================
-6. FUNCTION CALLING (DỮ LIỆU REAL-TIME)
+6. KIẾN THỨC CHUNG NGOÀI BẢO TÀNG
 ========================
-
-Bạn CÓ KHẢ NĂNG gọi các function nội bộ để lấy dữ liệu thời gian thực — đây là
-function calling thông thường, KHÔNG phải Google Search, KHÔNG phát sinh phí riêng.
-
-Hãy chủ động gọi function khi câu hỏi liên quan đến:
-- Giá vé, loại vé → gọi get_ve_gia_va_con_cho()
-- Sự kiện sắp tới, sự kiện hôm nay, lịch sự kiện → gọi get_su_kien_sap_dien_ra()
-- Triển lãm đang diễn ra, triển lãm hiện tại → gọi get_trien_lam_dang_dien_ra()
-- "Hiện vật này được đánh giá thế nào", điểm đánh giá → gọi get_danh_gia_trung_binh(object_id)
-- Số lượng hiện vật, có bao nhiêu hiện vật/triển lãm/sự kiện, thống kê bảo tàng → gọi get_thong_ke_tong_quan()
-
-========================
-7. QUY TẮC TUYỆT ĐỐI — KHÔNG BỊA SỐ LIỆU
-========================
-
-**ĐÂY LÀ QUY TẮC QUAN TRỌNG NHẤT. KHÔNG ĐƯỢC VI PHẠM.**
-
-Với bất kỳ câu hỏi nào về SỐ LƯỢNG hoặc THỐNG KÊ:
-- "Bảo tàng có bao nhiêu hiện vật?"
-- "Có bao nhiêu triển lãm?"
-- "Bảo tàng đang trưng bày bao nhiêu sản phẩm?"
-
-→ LUÔN LUÔN gọi get_thong_ke_tong_quan() TRƯỚC, rồi dùng số liệu từ kết quả.
-→ TUYỆT ĐỐI KHÔNG tự bịa, ước tính, hay nói "khoảng X" mà không có dữ liệu thật.
-→ Nếu function trả về lỗi, hãy nói thật: "Mình không thể truy xuất số liệu chính xác lúc này."
-
-KHÔNG gọi function nếu câu hỏi là chào hỏi, tâm sự, hoặc câu hỏi chung không
-liên quan đến dữ liệu bảo tàng (tránh tốn token oan).
-
-========================
-8. KIẾN THỨC CHUNG NGOÀI BẢO TÀNG
-========================
-
-Với câu hỏi kiến thức chung (lịch sử, khoa học, văn hóa...) KHÔNG liên quan trực
-tiếp đến bảo tàng, hãy trả lời bằng kiến thức nội tại của bạn — không cần gọi
-function hay RAG.
-
-========================
-9. KHÔNG BỊA THÔNG TIN
-========================
-
-Nếu người dùng hỏi thông tin cụ thể về bảo tàng nhưng RAG và function đều không
-cung cấp:
-- Không được tự bịa.
-- Hãy nói thẳng "Mình chưa có thông tin này" và gợi ý hỏi quầy lễ tân.
-
-========================
-10. CÁCH TRẢ LỜI
-========================
-
-- Câu hỏi đơn giản → trả lời ngắn.
-- Câu hỏi cần giải thích → giải thích rõ ràng nhưng vẫn tuân thủ giới hạn độ dài.
-- Người dùng muốn trò chuyện → trò chuyện tự nhiên.
-- Không nói "theo RAG", "RAG cho biết", "database cho biết".
-- Không trả nguyên văn toàn bộ dữ liệu RAG cho người dùng.
-- Khi có nhiều tài liệu RAG, chỉ dùng những phần thực sự liên quan.
+Câu kiến thức chung (lịch sử, khoa học, văn hóa...) KHÔNG liên quan trực tiếp đến bảo tàng: trả lời bằng kiến thức nội tại, không cần function/RAG. Nếu là thông tin cụ thể VỀ BẢO TÀNG mà RAG/function đều không có: không bịa — nói "Mình chưa có thông tin này" và gợi ý hỏi quầy lễ tân.
 """
-
-
-# ── Khai báo Tool Declarations cho Gemini Function Calling ─────────────────
-
-TOOL_DECLARATIONS = types.Tool(
-    function_declarations=[
-        types.FunctionDeclaration(
-            name="get_thong_ke_tong_quan",
-            description=(
-                "Tra cứu số liệu thống kê THẬT của bảo tàng từ cơ sở dữ liệu. "
-                "Gọi khi người dùng hỏi về số lượng hiện vật, bao nhiêu hiện vật, "
-                "bao nhiêu triển lãm, bao nhiêu sự kiện, có bao nhiêu phòng, "
-                "thống kê bảo tàng, danh mục nào nhiều nhất. "
-                "PHẢI gọi function này thay vì tự ước tính hoặc bịa đặt."
-            ),
-            parameters=types.Schema(
-                type=types.Type.OBJECT,
-                properties={},
-                required=[],
-            ),
-        ),
-        types.FunctionDeclaration(
-            name="get_ve_gia_va_con_cho",
-            description=(
-                "Tra cứu danh sách loại vé tham quan bảo tàng và giá vé hiện tại. "
-                "Gọi khi người dùng hỏi về giá vé, mua vé, loại vé."
-            ),
-            parameters=types.Schema(
-                type=types.Type.OBJECT,
-                properties={},
-                required=[],
-            ),
-        ),
-        types.FunctionDeclaration(
-            name="get_su_kien_sap_dien_ra",
-            description=(
-                "Tra cứu danh sách sự kiện sắp diễn ra tại bảo tàng từ hôm nay trở đi. "
-                "Gọi khi người dùng hỏi về sự kiện, lịch sự kiện, hôm nay có gì, "
-                "tuần này có gì, workshop, tọa đàm, triển lãm sắp tới."
-            ),
-            parameters=types.Schema(
-                type=types.Type.OBJECT,
-                properties={},
-                required=[],
-            ),
-        ),
-        types.FunctionDeclaration(
-            name="get_trien_lam_dang_dien_ra",
-            description=(
-                "Tra cứu các triển lãm đang diễn ra tại bảo tàng hiện nay. "
-                "Gọi khi người dùng hỏi triển lãm nào đang mở, có triển lãm gì hiện tại, "
-                "đang trưng bày gì."
-            ),
-            parameters=types.Schema(
-                type=types.Type.OBJECT,
-                properties={},
-                required=[],
-            ),
-        ),
-        types.FunctionDeclaration(
-            name="get_danh_gia_trung_binh",
-            description=(
-                "Tra cứu điểm đánh giá trung bình và các nhận xét của khách tham quan "
-                "về một hiện vật cụ thể. Gọi khi người dùng hỏi 'hiện vật này được đánh giá "
-                "thế nào', 'mọi người nghĩ gì về', 'rating của'."
-            ),
-            parameters=types.Schema(
-                type=types.Type.OBJECT,
-                properties={
-                    "object_id": types.Schema(
-                        type=types.Type.STRING,
-                        description="ID của hiện vật trong hệ thống (ví dụ: ART_abc123)"
-                    )
-                },
-                required=["object_id"],
-            ),
-        ),
-    ]
-)
 
 
 class GeminiService:
@@ -279,17 +93,20 @@ class GeminiService:
         self.api_keys = []
         self.current_key_idx = 0
         self.client = None
+        # B1 circuit breaker: {(model, key_idx): [fail_monotonic_ts, ...]}
+        self._circuit_failures: dict = {}
         self._setup_client()
 
     def _setup_client(self):
-        keys_str = os.getenv("GEMINI_API_KEYS", "")
+        # NGUON DUY NHAT: settings (doc tu .env), co ho tro GEMINI_API_KEYS don.
+        keys_str = settings.GEMINI_API_KEY or ""
         if not keys_str:
-            keys_str = os.getenv("GEMINI_API_KEY", "")
+            keys_str = os.getenv("GEMINI_API_KEYS", "") or os.getenv("GEMINI_API_KEY", "")
 
         self.api_keys = [k.strip() for k in keys_str.split(",") if k.strip() and k.strip() != "YOUR_GEMINI_API_KEY_HERE"]
 
         if not self.api_keys:
-            print("[Gemini] Chưa cấu hình GEMINI_API_KEY hoặc GEMINI_API_KEYS")
+            print("[Gemini] Chua cau hinh GEMINI_API_KEY hoac GEMINI_API_KEYS")
             return
 
         self._initialize_current_client()
@@ -301,15 +118,15 @@ class GeminiService:
         current_key = self.api_keys[self.current_key_idx]
         try:
             self.client = genai.Client(api_key=current_key)
-            print(f"[Gemini] Client đã sẵn sàng với key {self.current_key_idx + 1}/{len(self.api_keys)}: {MODEL_NAME}")
+            print(f"[Gemini] Client da san sang voi key {self.current_key_idx + 1}/{len(self.api_keys)}: {MODEL_NAME}")
         except Exception as e:
-            print(f"[Gemini] Không thể khởi tạo client với key {self.current_key_idx + 1}: {e}")
+            print(f"[Gemini] Khong the khoi tao client voi key {self.current_key_idx + 1}: {e}")
             self.client = None
 
     def _switch_api_key(self):
         if len(self.api_keys) > 1:
             self.current_key_idx = (self.current_key_idx + 1) % len(self.api_keys)
-            print(f"[Gemini] Đổi sang API Key {self.current_key_idx + 1}/{len(self.api_keys)}...")
+            print(f"[Gemini] Doi sang API Key {self.current_key_idx + 1}/{len(self.api_keys)}...")
             self._initialize_current_client()
 
     def _get_thinking_config(self, model_name: str) -> types.ThinkingConfig | None:
@@ -319,7 +136,6 @@ class GeminiService:
             else:
                 return types.ThinkingConfig(thinking_budget=0)
         except Exception:
-            # print(f"[Gemini] Lỗi cấu hình thinking_config cho model {model_name}: {e}")
             return None
 
     def _inject_thinking_config(self, kwargs: dict, model_name: str):
@@ -331,149 +147,256 @@ class GeminiService:
                 kwargs['config'] = types.GenerateContentConfig(thinking_config=thinking_config)
 
     def _get_models_to_try(self):
-        # A1: MỘT nguồn cấu hình duy nhất = core.config.settings (đọc từ .env).
+        # A1: MOT nguon cau hinh duy nhat = core.config.settings (doc tu .env).
         primary = MODEL_NAME
         fallback_str = settings.GEMINI_FALLBACK_MODELS or ""
         fallbacks = [m.strip() for m in fallback_str.split(",") if m.strip()]
-        
+
         models_to_try = [primary] + fallbacks
         seen = set()
         return [x for x in models_to_try if not (x in seen or seen.add(x))]
 
+    # ── B1/B2: circuit breaker + timeout/ngan sach retry ──
+    def _circuit_key(self, model: str) -> tuple:
+        return (model, self.current_key_idx)
+
+    def _circuit_open(self, model: str) -> bool:
+        """True neu (model,key) dang bi danh dau unhealthy (qua nhieu loi lien tiep)."""
+        fails = self._circuit_failures.get(self._circuit_key(model), [])
+        threshold = int(settings.CIRCUIT_FAIL_THRESHOLD or 3)
+        if len(fails) < threshold:
+            return False
+        cooldown = float(settings.CIRCUIT_COOLDOWN_S or 120.0)
+        if time.monotonic() - fails[-1] < cooldown:
+            return True
+        # Het cooldown: xoa lich su, cho thu lai
+        self._circuit_failures.pop(self._circuit_key(model), None)
+        return False
+
+    def _circuit_record(self, model: str, ok: bool):
+        key = self._circuit_key(model)
+        if ok:
+            self._circuit_failures.pop(key, None)
+        else:
+            threshold = int(settings.CIRCUIT_FAIL_THRESHOLD or 3)
+            fails = self._circuit_failures.setdefault(key, [])
+            fails.append(time.monotonic())
+            self._circuit_failures[key] = fails[-threshold:]
+
+    @staticmethod
+    def _error_kind(e: BaseException) -> str:
+        s = str(e).lower()
+        if isinstance(e, asyncio.TimeoutError):
+            return "timeout"
+        if "404" in s or "not_found" in s:
+            return "not_found"
+        if "503" in s or "unavailable" in s:
+            return "unavailable"
+        if "429" in s or "quota" in s or "exhausted" in s or "resource_exhausted" in s:
+            return "quota"
+        return "other"
+
     async def _execute_with_fallback(self, **kwargs):
         models = self._get_models_to_try()
         last_exception = None
-        
+        n_keys = max(1, len(self.api_keys))
+        max_retries = max(0, int(settings.LLM_503_MAX_RETRIES or 0))
+        call_timeout = float(settings.LLM_CALL_TIMEOUT_S or 15.0)
+        budget = float(settings.LLM_TOTAL_BUDGET_S or 30.0)
+        deadline = time.monotonic() + budget
+
         for model in models:
-            for _ in range(max(1, len(self.api_keys))):
-                retry_503_count = 0
-                while retry_503_count <= 2:
+            if self._circuit_open(model):
+                print(f"[Gemini] Bo qua {model} (Key {self.current_key_idx + 1}): circuit OPEN.")
+                continue
+            tried_key = False
+            for _ in range(n_keys):
+                tried_key = True
+                retry_count = 0
+                while True:
+                    if time.monotonic() >= deadline:
+                        print(f"[Gemini] Het ngan sach {budget:.0f}s, dung thu.")
+                        break
                     try:
                         kwargs['model'] = model
                         self._inject_thinking_config(kwargs, model)
-                        
+
                         t0 = time.perf_counter()
+                        # Tran timeout tung luot goi boi ngan sach con lai.
+                        this_timeout = max(0.5, min(call_timeout, deadline - time.monotonic()))
                         response = await asyncio.wait_for(
                             self.client.aio.models.generate_content(**kwargs),
-                            timeout=15.0
+                            timeout=this_timeout
                         )
                         t1 = time.perf_counter()
-                        print(f"[Gemini] Model {model} trả lời sau {t1 - t0:.2f}s")
-                        
+                        print(f"[Gemini] Model {model} tra loi sau {t1 - t0:.2f}s")
+                        self._circuit_record(model, True)
+
                         return response
-                    except asyncio.TimeoutError:
-                        print(f"[Gemini] Model {model} (Key {self.current_key_idx + 1}) lỗi Timeout (15s)")
-                        last_exception = asyncio.TimeoutError(f"Model {model} timed out after 15s")
-                        break
                     except Exception as e:
-                        error_str = str(e).lower()
-                        print(f"[Gemini] Model {model} (Key {self.current_key_idx + 1}) lỗi: {e}")
+                        kind = self._error_kind(e)
+                        print(f"[Gemini] Model {model} (Key {self.current_key_idx + 1}) loi {kind}: {e}")
                         last_exception = e
-                        
-                        if "404" in error_str or "not_found" in error_str:
-                            print(f"[Gemini] Model {model} không tồn tại, bỏ qua.")
+                        if kind == "not_found":
                             break
-                        elif "503" in error_str or "unavailable" in error_str:
-                            retry_503_count += 1
-                            if retry_503_count <= 2:
-                                wait_time = 1 if retry_503_count == 1 else 2
-                                print(f"[Gemini] Lỗi 503, thử lại model {model} sau {wait_time}s (lần {retry_503_count}/2)...")
-                                await asyncio.sleep(wait_time)
-                                continue
-                            else:
-                                print(f"[Gemini] Vẫn 503 sau 2 lần thử lại.")
-                                break
-                        elif "429" in error_str or "quota" in error_str or "exhausted" in error_str:
-                            break
-                        break
-                        
-                if last_exception:
-                    error_str = str(last_exception).lower()
-                    if "404" in error_str or "not_found" in error_str:
-                        break
-                    if "429" in error_str or "quota" in error_str or "exhausted" in error_str or "503" in error_str:
-                        if len(self.api_keys) > 1:
-                            print("[Gemini] Đổi API Key...")
-                            self._switch_api_key()
+                        if kind in ("unavailable", "timeout") and retry_count < max_retries \
+                                and time.monotonic() < deadline:
+                            retry_count += 1
+                            await asyncio.sleep(0.5 * retry_count)
                             continue
-                
-                print(f"[Gemini] Rơi vào fallback cho model {model} do lỗi không thể phục hồi.")
+                        break
+
+                # Doi key khi loi dang retry duoc (het quota/503/timeout)
+                if last_exception and self._error_kind(last_exception) in ("quota", "unavailable", "timeout"):
+                    if len(self.api_keys) > 1:
+                        print("[Gemini] Doi API Key...")
+                        self._switch_api_key()
+                        continue
                 break
-                
+            if tried_key:
+                self._circuit_record(model, False)
+            else:
+                print(f"[Gemini] Roi vao fallback cho model {model} do loi khong the phuc hoi.")
+
         raise last_exception
 
+    @staticmethod
+    def _log_chunk_finish(chunk, tag: str):
+        """L2b1: log finish_reason/finish_message neu chunk cuoi mang thong tin nay."""
+        try:
+            cands = getattr(chunk, "candidates", None)
+            if not cands:
+                return
+            for c in cands:
+                fr = getattr(c, "finish_reason", None)
+                fm = getattr(c, "finish_message", None)
+                if fr:
+                    print(f"[Gemini Stream] {tag} finish_reason={fr} finish_message={fm}")
+        except Exception:
+            pass
+
+    @staticmethod
+    def _chunk_finish_reason(chunk):
+        """Tra ve finish_reason (str) cua chunk, hoac None."""
+        try:
+            cands = getattr(chunk, "candidates", None)
+            if not cands:
+                return None
+            for c in cands:
+                fr = getattr(c, "finish_reason", None)
+                if fr:
+                    s = str(fr)
+                    # "FinishReason.MAX_TOKENS" -> "MAX_TOKENS"
+                    return s.split(".")[-1] if "." in s else s
+            return None
+        except Exception:
+            return None
+
     async def _stream_with_fallback(self, **kwargs):
+        # B1/B2: giong _execute_with_fallback nhung cho stream — timeout cho
+        # token dau tien ngan (LLM_FIRST_TOKEN_TIMEOUT_S), retry toi da
+        # LLM_503_MAX_RETRIES, co circuit breaker + ngan sach tong.
         models = self._get_models_to_try()
         last_exception = None
-        
+        n_keys = max(1, len(self.api_keys))
+        max_retries = max(0, int(settings.LLM_503_MAX_RETRIES or 0))
+        first_token_timeout = float(settings.LLM_FIRST_TOKEN_TIMEOUT_S or 6.0)
+        budget = float(settings.LLM_TOTAL_BUDGET_S or 30.0)
+        deadline = time.monotonic() + budget
+
         for model in models:
-            for _ in range(max(1, len(self.api_keys))):
-                retry_503_count = 0
-                while retry_503_count <= 2:
+            if self._circuit_open(model):
+                print(f"[Gemini Stream] Bo qua {model} (Key {self.current_key_idx + 1}): circuit OPEN.")
+                continue
+            tried_key = False
+            for _ in range(n_keys):
+                tried_key = True
+                retry_count = 0
+                while True:
+                    if time.monotonic() >= deadline:
+                        print(f"[Gemini Stream] Het ngan sach {budget:.0f}s, dung thu.")
+                        break
                     try:
                         kwargs['model'] = model
                         self._inject_thinking_config(kwargs, model)
-                        
+
                         t0 = time.perf_counter()
-                        raw_stream = await self.client.aio.models.generate_content_stream(**kwargs)
-                        
+                        this_timeout = max(0.5, min(first_token_timeout, deadline - time.monotonic()))
+                        raw_stream = await asyncio.wait_for(
+                            self.client.aio.models.generate_content_stream(**kwargs),
+                            timeout=this_timeout,
+                        )
+
                         try:
-                            first_chunk = await asyncio.wait_for(raw_stream.__anext__(), timeout=15.0)
+                            first_chunk = await asyncio.wait_for(
+                                raw_stream.__anext__(), timeout=this_timeout)
                         except StopAsyncIteration:
-                            # A2: stream rỗng chunk đầu (model trả về rỗng, thường ở câu
-                            # dài/out-of-scope) — tuyệt đối không return im lặng.
-                            # Ghi nhận lỗi và để vòng fallback thử (model, key) tiếp theo.
-                            print(f"[Gemini Stream] Model {model} trả về stream rỗng ngay chunk đầu.")
+                            # A2: stream rong chunk dau — ghi nhan loi de thu tiep,
+                            # tuyet doi khong return im lang.
+                            print(f"[Gemini Stream] Model {model} tra ve stream rong ngay chunk dau.")
                             last_exception = RuntimeError(f"Model {model} returned empty stream")
                             break
-                            
+
                         t1 = time.perf_counter()
-                        print(f"[Gemini Stream] Model {model} bắt đầu trả lời sau {t1 - t0:.2f}s")
-                        
+                        print(f"[Gemini Stream] Model {model} bat dau tra loi sau {t1 - t0:.2f}s")
+                        self._circuit_record(model, True)
+
+                        # L2b1: dem chunk + log finish_reason de truy vet cat cau.
+                        # L2b2: theo doi finish_reason cuoi — MAX_TOKENS hoac dut
+                        # dot ngot (khong STOP) duoc bao len tren de xu ly tiep.
+                        n_chunks = 0
+                        last_finish = None
                         yield first_chunk
-                        async for chunk in raw_stream:
-                            yield chunk
+                        n_chunks += 1
+                        self._log_chunk_finish(first_chunk, f"{model}/first")
+                        last_finish = self._chunk_finish_reason(first_chunk) or last_finish
+                        try:
+                            async for chunk in raw_stream:
+                                n_chunks += 1
+                                self._log_chunk_finish(chunk, f"{model}/#{n_chunks}")
+                                fr = self._chunk_finish_reason(chunk)
+                                if fr:
+                                    last_finish = fr
+                                yield chunk
+                        finally:
+                            print(f"[Gemini Stream] Model {model} ket thuc stream: "
+                                  f"{n_chunks} chunks, finish={last_finish}, "
+                                  f"tong {time.perf_counter() - t0:.2f}s")
+                        # L2b2: stream ket thuc ma khong STOP/MAX_TOKENS ro rang
+                        # (dut dot ngot) -> danh dau de caller bao interrupted.
+                        if last_finish not in ("STOP", "MAX_TOKENS"):
+                            print(f"[Gemini Stream] CANH BAO dut stream dot ngot "
+                                  f"(finish={last_finish}) — se thu model/key tiep theo.")
+                            last_exception = RuntimeError(
+                                f"Model {model} stream interrupted (finish={last_finish})")
+                            break
+                        if last_finish == "MAX_TOKENS":
+                            # Bao len tren de tiep tuc viet tiep (continue), khong fallback.
+                            yield {"stream_event": "max_tokens"}
                         return
-                        
-                    except asyncio.TimeoutError:
-                        print(f"[Gemini Stream] Model {model} (Key {self.current_key_idx + 1}) lỗi Timeout (15s)")
-                        last_exception = asyncio.TimeoutError(f"Model {model} stream timed out after 15s")
-                        break
+
                     except Exception as e:
-                        error_str = str(e).lower()
-                        print(f"[Gemini Stream] Model {model} (Key {self.current_key_idx + 1}) lỗi: {e}")
+                        kind = self._error_kind(e)
+                        print(f"[Gemini Stream] Model {model} (Key {self.current_key_idx + 1}) loi {kind}: {e}")
                         last_exception = e
-                        
-                        if "404" in error_str or "not_found" in error_str:
-                            print(f"[Gemini Stream] Model {model} không tồn tại, bỏ qua.")
+                        if kind == "not_found":
                             break
-                        elif "503" in error_str or "unavailable" in error_str:
-                            retry_503_count += 1
-                            if retry_503_count <= 2:
-                                wait_time = 1 if retry_503_count == 1 else 2
-                                print(f"[Gemini Stream] Lỗi 503, thử lại model {model} sau {wait_time}s (lần {retry_503_count}/2)...")
-                                await asyncio.sleep(wait_time)
-                                continue
-                            else:
-                                print(f"[Gemini Stream] Vẫn 503 sau 2 lần thử lại.")
-                                break
-                        elif "429" in error_str or "quota" in error_str or "exhausted" in error_str:
-                            break
-                        break
-                        
-                if last_exception:
-                    error_str = str(last_exception).lower()
-                    if "404" in error_str or "not_found" in error_str:
-                        break
-                    if "429" in error_str or "quota" in error_str or "exhausted" in error_str or "503" in error_str:
-                        if len(self.api_keys) > 1:
-                            print("[Gemini Stream] Đổi API Key...")
-                            self._switch_api_key()
+                        if kind in ("unavailable", "timeout") and retry_count < max_retries \
+                                and time.monotonic() < deadline:
+                            retry_count += 1
+                            await asyncio.sleep(0.5 * retry_count)
                             continue
-                
-                print(f"[Gemini Stream] Rơi vào fallback cho model {model} do lỗi không thể phục hồi.")
+                        break
+
+                if last_exception and self._error_kind(last_exception) in ("quota", "unavailable", "timeout"):
+                    if len(self.api_keys) > 1:
+                        print("[Gemini Stream] Doi API Key...")
+                        self._switch_api_key()
+                        continue
                 break
-                
+            if tried_key:
+                self._circuit_record(model, False)
+
         raise last_exception
 
     def _build_history(self, history):
@@ -516,7 +439,7 @@ class GeminiService:
         weekdays = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"]
         weekday_str = weekdays[now.isoweekday() % 7]
         time_str = f"Hôm nay là {weekday_str}, ngày {now.strftime('%d')} tháng {now.strftime('%m')} năm {now.strftime('%Y')}, giờ hiện tại khoảng {now.strftime('%H:%M')} (giờ Việt Nam)."
-        
+
         prompt_parts.append(
             "=== NGÀY GIỜ HIỆN TẠI ===\n"
             + time_str
@@ -535,7 +458,7 @@ class GeminiService:
             prompt_parts.append(
                 "=== THÔNG TIN BẢO TÀNG TỪ RAG ===\n"
                 "(Câu hỏi này không cần dữ liệu bảo tàng — nếu là kiến thức chung, "
-                "hãy trả lời trực tiếp bằng hiểu biết của bạn theo mục 8 KIẾN THỨC "
+                "hãy trả lời trực tiếp bằng hiểu biết của bạn theo mục 6 KIẾN THỨC "
                 "CHUNG NGOÀI BẢO TÀNG trong SYSTEM ROLE. Chỉ dùng câu \"Mình chưa có "
                 "thông tin này\" khi câu hỏi RÕ RÀNG về bảo tàng.)"
             )
@@ -561,13 +484,15 @@ class GeminiService:
         history: list[dict] = None,
         is_chitchat: bool = False
     ) -> str:
+        # C2: client None = loi ky thuat that (log ro, khong gia vo response rong).
         if self.client is None:
+            print("[Gemini Error] client is None (chua cau hinh API key) — tech fallback.")
             return self._fallback_response(user_message, context)
 
         full_prompt = self._build_prompt(user_message, context, history, is_chitchat)
 
         try:
-            print("[Gemini] Đang gửi yêu cầu (không retry MAX_RETRIES bên ngoài)...")
+            print("[Gemini] Dang gui yeu cau...")
             response = await self._execute_with_fallback(
                 contents=full_prompt,
                 config=types.GenerateContentConfig(
@@ -576,16 +501,22 @@ class GeminiService:
                 )
             )
 
-            if response and response.text:
-                print("[Gemini] Nhận được câu trả lời.")
-                return response.text.strip()
+            text = self._safe_text(response)
+            if text:
+                print("[Gemini] Nhan duoc cau tra loi.")
+                return text
+
+            # C1 tang 3 / C2: response rong (khong exception) — thu lai 1 lan
+            # voi prompt toi gian truoc khi chot fallback.
+            print("[Gemini] Response rong — thu lai 1 lan voi prompt toi gian.")
+            retry_text = await self._minimal_retry_answer(user_message, history)
+            if retry_text:
+                return retry_text
 
         except Exception as e:
             print(f"[Gemini Error]: {e}")
 
         return self._fallback_response(user_message, context)
-
-    # ── 2. Phương thức generate với Function Calling (2-lượt) ──────────────
 
     async def generate_response_with_tools(
         self,
@@ -682,7 +613,6 @@ class GeminiService:
             print(f"[Gemini Function Calling Error]: {e}")
             # Fallback sang generate thông thường
             return await self.generate_response(user_message, context, history, is_chitchat)
-
     # ── 3. Phương thức Streaming ────────────────────────────────────────────
 
     async def generate_response_stream(
@@ -695,6 +625,8 @@ class GeminiService:
     ):
         """
         Sinh câu trả lời dạng streaming (yield từng chunk).
+        C3: neu first token cham hon STREAM_STATUS_DELAY_S thi yield
+        {"status": "processing"} TRUOC de frontend hien trang thai.
         """
         from services.live_data_tools import execute_function_call
 
@@ -703,9 +635,50 @@ class GeminiService:
             return
 
         full_prompt = self._build_prompt(user_message, context, history, is_chitchat)
+        status_delay = float(settings.STREAM_STATUS_DELAY_S or 3.0)
+
+        async def _stream_texts(agen):
+            """Lay text tu stream chunk, bo qua chunk rong/ValueError."""
+            async for ch in agen:
+                if isinstance(ch, dict):
+                    continue
+                try:
+                    t = ch.text
+                except ValueError:
+                    t = ""
+                except Exception:
+                    t = ""
+                if t:
+                    yield t
+
+        async def _with_status_notice(agen):
+            """C3: cho first token toi da status_delay; qua han thi yield
+            {"status": "processing"} truoc roi tiep tuc stream that."""
+            it = agen.__aiter__()
+            first_task = asyncio.ensure_future(it.__anext__())
+            done, _ = await asyncio.wait([first_task], timeout=status_delay)
+            if not done:
+                yield {"status": "processing"}
+                try:
+                    first = await first_task
+                except StopAsyncIteration:
+                    return
+                yield first
+            else:
+                try:
+                    yield done.pop().result()
+                except StopAsyncIteration:
+                    return
+            while True:
+                try:
+                    yield await it.__anext__()
+                except StopAsyncIteration:
+                    return
 
         try:
             has_yielded = False
+            # L2b2: tran cho ca qua trinh stream + viet tiep (khong de treo).
+            deadline_stream = time.monotonic() + float(settings.LLM_TOTAL_BUDGET_S or 30.0) + 30.0
             if use_tools:
                 # Lượt 1: Kiểm tra xem Gemini có gọi function không (không stream)
                 response = await self._execute_with_fallback(
@@ -757,21 +730,21 @@ class GeminiService:
                         types.Content(role="user", parts=function_results_parts),
                     ]
                     # Lượt 2: Stream câu trả lời cuối sau khi có kết quả function
-                    async for chunk in self._stream_with_fallback(
-                        contents=contents,
-                        config=types.GenerateContentConfig(
-                            system_instruction=SYSTEM_PROMPT,
-                            max_output_tokens=500,
+                    async for item in _stream_texts(_with_status_notice(
+                        self._stream_with_fallback(
+                            contents=contents,
+                            config=types.GenerateContentConfig(
+                                system_instruction=SYSTEM_PROMPT,
+                                max_output_tokens=500,
+                            ),
                         )
-                    ):
-                        try:
-                            text = chunk.text
-                        except ValueError:
-                            text = ""
-                        if text:
-                            has_yielded = True
-                            yield text
-                            
+                    )):
+                        if isinstance(item, dict):
+                            yield item
+                            continue
+                        has_yielded = True
+                        yield item
+
                     if not has_yielded:
                         yield self._fallback_response(user_message, context)
                     return
@@ -790,30 +763,122 @@ class GeminiService:
                 return
 
             # Stream thông thường (không tools)
-            async for chunk in self._stream_with_fallback(
-                contents=full_prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_PROMPT,
-                    max_output_tokens=500,
-                )
-            ):
+            # L2b2: max_output_tokens=1024 (cau dai khong bi cat o 500);
+            # gap MAX_TOKENS thi goi tiep "viet tiep" toi da 1 lan.
+            async def _plain_stream(prompt_text):
+                async for item in _with_status_notice(
+                    self._stream_with_fallback(
+                        contents=prompt_text,
+                        config=types.GenerateContentConfig(
+                            system_instruction=SYSTEM_PROMPT,
+                            max_output_tokens=1024,
+                        ),
+                    )
+                ):
+                    yield item
+
+            hit_max_tokens = False
+            async for item in _plain_stream(full_prompt):
+                if isinstance(item, dict):
+                    if item.get("stream_event") == "max_tokens":
+                        hit_max_tokens = True
+                        continue
+                    # C3: forward event trang thai cho caller (rag/main -> SSE)
+                    status_event_seen = True
+                    yield item
+                    continue
                 try:
-                    text = chunk.text
+                    text = item.text
                 except ValueError:
                     text = ""
                 if text:
                     has_yielded = True
                     yield text
-                    
+
+            if hit_max_tokens and time.monotonic() < deadline_stream:
+                # L2b2: model bi cat o MAX_TOKENS — yeu cau viet tiep.
+                print("[Gemini Stream] MAX_TOKENS — yeu cau model viet tiep.")
+                cont_prompt = (full_prompt + "\n\n(Hay viet tiep cau tra loi dang do, "
+                               "bat dau ngay tu cho vua dung, khong lap lai.)")
+                async for item in _plain_stream(cont_prompt):
+                    if isinstance(item, dict):
+                        if item.get("stream_event") == "max_tokens":
+                            continue
+                        yield item
+                        continue
+                    try:
+                        text = item.text
+                    except ValueError:
+                        text = ""
+                    if text:
+                        has_yielded = True
+                        yield text
+
+            if not has_yielded:
+                # C1 tang 3 cho stream: thu minimal retry truoc khi chot fallback
+                retry_text = await self._minimal_retry_answer(user_message, history)
+                if retry_text:
+                    has_yielded = True
+                    yield retry_text
             if not has_yielded:
                 yield self._fallback_response(user_message, context)
 
         except Exception as e:
-            print(f"[Gemini Stream Error]: {e}")
+            # L2b1: log day du khi stream loi — dac biet sau khi da yield
+            # (la truong hop "cat cau" o frontend).
+            import traceback
+            print(f"[Gemini Stream Error] model/key hien tai: "
+                  f"(Key {self.current_key_idx + 1}); da_yield={has_yielded}; loi: {e}")
+            traceback.print_exc()
             if not has_yielded:
                 yield self._fallback_response(user_message, context)
+            else:
+                # Bao hieu dut giua chung thay vi dong im lang (frontend giu text + nut Thu lai)
+                yield {"status": "interrupted", "error": str(e)[:200]}
 
-    # ── Fallback ────────────────────────────────────────────────────────────
+    # ── Nhom C helpers ──
+    MINIMAL_SYSTEM = (
+        "Ban la tro ly AI than thien cua Bao tang Quoc gia Viet Nam. "
+        "Tra loi ngan gon, dung cau hoi. Kien thuc chung: tra loi thang. "
+        "Cau ve bao tang thieu du lieu: noi khong co thong tin, goi y hoi le tan."
+    )
+
+    @staticmethod
+    def _safe_text(response) -> str:
+        try:
+            t = response.text if response is not None else ""
+        except ValueError:
+            return ""
+        except Exception:
+            return ""
+        return (t or "").strip()
+
+    async def _minimal_retry_answer(self, user_message: str, history=None) -> str:
+        """C1 tang 3: thu lai 1 lan voi prompt toi gian khi response rong."""
+        try:
+            short_prompt = (
+                "Cau hoi: " + (user_message or "").strip()[:500]
+                + "\nTra loi ngan gon (toi da 3 cau)."
+            )
+            resp = await self._execute_with_fallback(
+                contents=short_prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=self.MINIMAL_SYSTEM,
+                    max_output_tokens=300,
+                ),
+            )
+            return self._safe_text(resp)
+        except Exception as e:
+            print(f"[Gemini Minimal Retry Error]: {e}")
+            return ""
+
+    def _is_tech_error_fallback(self, user_message: str, context: str) -> bool:
+        """C2: True khi fallback mang y nghia loi ky thuat that."""
+        if self.client is None:
+            return True
+        if context and context.strip():
+            return False
+        return not matches_phrase(user_message, MUSEUM_KEYWORDS + REALTIME_KEYWORDS)
 
     def _extract_function_calls_from_text(self, text: str) -> list:
         """
@@ -823,7 +888,7 @@ class GeminiService:
         calls = []
         if not text:
             return calls
-            
+
         class MockFunctionCall:
             def __init__(self, name, args):
                 self.name = name
@@ -839,7 +904,7 @@ class GeminiService:
                     calls.append(MockFunctionCall(data["name"], data["arguments"]))
             except Exception:
                 pass
-                
+
         # 2. Nếu toàn bộ text là JSON thuần
         if not calls and text.strip().startswith("{") and text.strip().endswith("}"):
             try:
@@ -848,7 +913,7 @@ class GeminiService:
                     calls.append(MockFunctionCall(data["name"], data["arguments"]))
             except Exception:
                 pass
-                
+
         return calls
 
     def _fallback_response(
@@ -859,7 +924,7 @@ class GeminiService:
 
         clean = user_message.lower().strip()
         words = clean.split()
-        
+
         # 1. Trả thông tin RAG trước nếu có context hoặc câu hỏi có keyword bảo tàng
         if context and context.strip() or matches_phrase(user_message, MUSEUM_KEYWORDS + REALTIME_KEYWORDS):
             if context and context.strip():
@@ -872,7 +937,7 @@ class GeminiService:
                     "trong dữ liệu của bảo tàng:\n\n"
                     + first_document
                 )
-            
+
         # 2. Xử lý chào hỏi (chỉ khi câu ngắn <= 4 từ và khớp toàn bộ/phrase)
         if len(words) <= 4:
             if matches_phrase(user_message, ["chào", "hello", "hi", "hey"]):

@@ -15,6 +15,10 @@ export const AiAssistant = () => {
   const [selectedArtifact, setSelectedArtifact] = useState(null);
   const [streamingText, setStreamingText] = useState('');
   const [streamingMsgId, setStreamingMsgId] = useState(null);
+  // C3: text trạng thái khi backend báo first token chậm (status:"processing")
+  // L2b2: stream dut giua chung — giu text da nhan + hien nut Thu lai
+  const [interruptedFlag, setInterruptedFlag] = useState(false);
+  const [statusText, setStatusText] = useState('');
   const abortStreamRef = useRef(null);
   const [chatHistory, setChatHistory] = useState([
     { id: 1, title: 'Tìm hiểu Trống đồng Cảnh Thịnh', date: 'Hôm nay' },
@@ -90,6 +94,7 @@ export const AiAssistant = () => {
     if (!customQuery) setInput('');
     setIsTyping(true);
     setStreamingText('');
+    setStatusText('');
     setStreamingMsgId(aiMsgId);
 
     let fullText = '';
@@ -101,6 +106,7 @@ export const AiAssistant = () => {
       (chunk) => {
         fullText += chunk;
         setStreamingText(fullText);
+        setStatusText('');
       },
       // onDone callback
       () => {
@@ -119,9 +125,14 @@ export const AiAssistant = () => {
           text: fullText || '...',
           sources: [],
           artifacts: mappedArtifacts,
+          // L2b2: giu text do + danh dau dut giua chung
+          interrupted: interruptedFlag,
+          retryText: interruptedFlag ? query : undefined,
         };
         setMessages((prev) => [...prev, aiMsg]);
+        setInterruptedFlag(false);
         setStreamingText('');
+        setStatusText('');
         setStreamingMsgId(null);
         setIsTyping(false);
         abortStreamRef.current = null;
@@ -130,6 +141,7 @@ export const AiAssistant = () => {
       async (errMsg) => {
         console.warn('[AiAssistant] Stream lỗi, fallback non-stream:', errMsg);
         setStreamingText('');
+        setStatusText('');
         setStreamingMsgId(null);
 
         try {
@@ -172,11 +184,21 @@ export const AiAssistant = () => {
           setMessages((prev) => [...prev, aiMsg]);
         } finally {
           setIsTyping(false);
+          setStatusText('');
           abortStreamRef.current = null;
         }
       },
       (ids) => {
         artifactIds = ids;
+      },
+      // onStatus callback (C3 + L2b2): processing -> typing; interrupted -> giu text
+      (status) => {
+        if (status === 'processing') {
+          setStatusText('Mình đang tìm thông tin, chờ mình một chút nhé...');
+        } else if (status === 'interrupted') {
+          setStatusText('');
+          setInterruptedFlag(true);
+        }
       }
     );
 
@@ -320,7 +342,17 @@ export const AiAssistant = () => {
                     ) : (
                       <>
                         <MarkdownMessage content={msg.text} />
-                        <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-end">
+                        <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-end gap-1">
+                          {/* L2b2: nut Thu lai khi cau bi dut giua chung */}
+                          {msg.interrupted && (
+                            <button
+                              onClick={() => handleSend(msg.retryText)}
+                              className="flex items-center gap-1.5 text-xs text-museum-gold hover:text-museum-brown font-semibold transition-colors px-2 py-1 rounded-lg hover:bg-museum-cream/50 cursor-pointer"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                              <span>Thử lại</span>
+                            </button>
+                          )}
                           <button
                             onClick={() => handleCopy(msg.id, msg.text)}
                             className="flex items-center gap-1.5 text-xs text-museum-brown hover:text-museum-gold font-semibold transition-colors px-2 py-1 rounded-lg hover:bg-museum-cream/50 cursor-pointer"
@@ -338,6 +370,12 @@ export const AiAssistant = () => {
                             )}
                           </button>
                         </div>
+                        {/* L2b2: ghi chu cau tra loi co the chua day du */}
+                        {msg.interrupted && (
+                          <div className="mt-1.5 text-[10px] text-amber-600 italic px-1">
+                            Câu trả lời có thể chưa đầy đủ do kết nối bị gián đoạn — bạn bấm "Thử lại" để mình trả lời đầy đủ nhé.
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -424,7 +462,7 @@ export const AiAssistant = () => {
                 </div>
                 <div className="bg-white px-4 py-3 rounded-2xl border border-museum-gold/20 shadow-xs flex items-center gap-2 text-xs font-semibold text-museum-brown">
                   <RefreshCw className="w-4 h-4 animate-spin text-museum-gold" />
-                  <span>Trợ lý AI đang suy nghĩ và tra cứu tư liệu...</span>
+                  <span>{statusText || 'Trợ lý AI đang suy nghĩ và tra cứu tư liệu...'}</span>
                 </div>
               </div>
             )}

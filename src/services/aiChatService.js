@@ -63,9 +63,12 @@ export const sendChatQuery = async (message, history = []) => {
  * @param {function} onChunk - Callback nhận từng chunk text: (chunkText) => void
  * @param {function} onDone  - Callback khi hoàn thành: () => void
  * @param {function} onArtifacts - Callback nhận mảng artifactIds: (ids) => void
+ * @param {function} onStatus - Callback nhận trạng thái xử lý: (status) => void
+ *   (C3: backend gửi {status:"processing"} khi first token chậm >3s;
+ *   tham số optional, tương thích ngược với mọi caller cũ)
  * @returns {function} Hàm hủy streaming (AbortController.abort)
  */
-export const streamChatQuery = (message, history = [], onChunk, onDone, onError, onArtifacts) => {
+export const streamChatQuery = (message, history = [], onChunk, onDone, onError, onArtifacts, onStatus) => {
   const controller = new AbortController();
 
   const run = async () => {
@@ -120,9 +123,14 @@ export const streamChatQuery = (message, history = [], onChunk, onDone, onError,
             if (parsed.chunk) {
               onChunk?.(parsed.chunk);
             }
-            
+
             if (parsed.artifacts) {
               onArtifacts?.(parsed.artifacts);
+            }
+
+            // C3/L2b2: event trạng thái (processing/interrupted, kèm error nếu có)
+            if (parsed.status) {
+              onStatus?.(parsed.status, parsed);
             }
           } catch {
             // Bỏ qua dòng SSE không phải JSON hợp lệ
@@ -137,6 +145,7 @@ export const streamChatQuery = (message, history = [], onChunk, onDone, onError,
           if (dataStr) {
             const parsed = JSON.parse(dataStr);
             if (parsed.chunk) onChunk?.(parsed.chunk);
+            if (parsed.status) onStatus?.(parsed.status, parsed);
           }
         } catch {
           // Bỏ qua

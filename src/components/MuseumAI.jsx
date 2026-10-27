@@ -47,6 +47,9 @@ export const MuseumAI = () => {
   const [streamingText, setStreamingText] = useState('');
   const [streamingMsgId, setStreamingMsgId] = useState(null);
   // C3: text trạng thái khi backend báo first token chậm
+  const [statusText, setStatusText] = useState('');
+  // L2b2: stream dut giua chung — giu text da nhan + hien nut Thu lai
+  const [interruptedFlag, setInterruptedFlag] = useState(false);
   const abortStreamRef = useRef(null);
 
   // Kích thước widget
@@ -297,6 +300,7 @@ export const MuseumAI = () => {
       (chunk) => {
         fullText += chunk;
         setStreamingText(fullText);
+        setStatusText('');
       },
       // onDone: hoàn tất — chốt tin nhắn AI vào danh sách
       () => {
@@ -325,12 +329,17 @@ export const MuseumAI = () => {
             sources: [],
             artifacts: mappedArtifacts,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            // L2b2: giu text do + danh dau dut giua chung de hien nut Thu lai
+            interrupted: interruptedFlag,
+            retryText: interruptedFlag ? textToSend : undefined,
           };
           setMessages((prev) => [...prev, aiMsg]);
+          setInterruptedFlag(false);
         } catch (err) {
           console.error('[MuseumAI] Error in stream onDone:', err);
         } finally {
           setStreamingText('');
+          setStatusText('');
           setStreamingMsgId(null);
           setIsSearching(false);
           abortStreamRef.current = null;
@@ -342,7 +351,17 @@ export const MuseumAI = () => {
       (ids) => {
         artifactIds = ids;
       },
-
+      // onStatus (C3 + L2b2): processing -> hien typing; interrupted ->
+      // giu text da nhan, danh dau de hien ghi chu + nut Thu lai.
+      (status) => {
+        if (status === 'processing') {
+          setStatusText('Mình đang tìm thông tin, chờ mình một chút nhé...');
+        } else if (status === 'interrupted') {
+          setStatusText('');
+          setInterruptedFlag(true);
+        }
+      }
+    );
     abortStreamRef.current = abort;
   };
 
@@ -634,7 +653,19 @@ export const MuseumAI = () => {
                       {msg.sender === 'ai' && (
                         <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
                           <span className="text-[10px] text-gray-400">{msg.timestamp}</span>
-                          <button
+                          <div className="flex items-center gap-1">
+                            {/* L2b2: cau bi dut giua chung — hien ghi chu + nut Thu lai */}
+                            {msg.interrupted && (
+                              <button
+                                onClick={() => handleSendMessage(msg.retryText)}
+                                className="flex items-center gap-1 text-[11px] font-semibold text-museum-gold hover:text-museum-brown transition-colors px-2 py-0.5 rounded-md hover:bg-museum-cream/50 cursor-pointer"
+                                title="Gửi lại câu hỏi"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                <span>Thử lại</span>
+                              </button>
+                            )}
+                            <button
                             onClick={() => handleCopy(msg.id, msg.text)}
                             className="flex items-center gap-1 text-[11px] font-semibold text-museum-brown hover:text-museum-gold transition-colors px-2 py-0.5 rounded-md hover:bg-museum-cream/50 cursor-pointer"
                             title="Sao chép câu trả lời"
@@ -650,7 +681,14 @@ export const MuseumAI = () => {
                                 <span>Sao chép</span>
                               </>
                             )}
-                          </button>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      {/* L2b2: ghi chu cau tra loi co the chua day du */}
+                      {msg.sender === 'ai' && msg.interrupted && (
+                        <div className="mt-1.5 text-[10px] text-amber-600 italic">
+                          Câu trả lời có thể chưa đầy đủ do kết nối bị gián đoạn — bạn bấm "Thử lại" để mình trả lời đầy đủ nhé.
                         </div>
                       )}
                     </div>
