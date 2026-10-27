@@ -17,25 +17,35 @@ logger = logging.getLogger(__name__)
 
 class FeatureExtractor:
     def __init__(self):
-        logger.info("[ImageSearch] Khởi tạo mô hình ResNet50...")
-        # Tải mô hình ResNet50 (từ torchvision)
-        self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
-        self.model.eval() # Chế độ suy luận
-        
-        # Tiền xử lý ảnh đầu vào
-        self.preprocess = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ])
-        logger.info("[ImageSearch] Khởi tạo thành công.")
+        self.model = None
+        self.preprocess = None
+
+    def _ensure_model(self):
+        if self.model is None:
+            logger.info("[ImageSearch] Đang tải mô hình ResNet50...")
+            try:
+                self.model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
+                self.model.eval()
+                self.preprocess = transforms.Compose([
+                    transforms.Resize(256),
+                    transforms.CenterCrop(224),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                ])
+                logger.info("[ImageSearch] Khởi tạo mô hình thành công.")
+            except Exception as e:
+                logger.warning(f"[ImageSearch] Không thể tải weights ResNet50: {e}")
+                self.model = None
 
     def extract_feature(self, image_data):
         """
         Trích xuất đặc trưng từ dữ liệu ảnh (bytes hoặc object mở từ PIL)
         Trả về vector numpy 1 chiều (2048 phần tử)
         """
+        self._ensure_model()
+        if self.model is None or self.preprocess is None:
+            return None
+
         try:
             if isinstance(image_data, str):
                 img = Image.open(image_data).convert('RGB')

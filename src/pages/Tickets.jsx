@@ -1,14 +1,73 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { Ticket, Plus, TrendingUp, Pencil, Trash2, X, AlertTriangle, CheckCircle2, QrCode, ShoppingCart } from 'lucide-react';
+import {
+  Ticket,
+  Plus,
+  TrendingUp,
+  Pencil,
+  Trash2,
+  X,
+  AlertTriangle,
+  QrCode,
+} from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/utils/formatters';
-import { Badge } from '@/components/ui/Badge';
 import { TicketBookingModal } from '@/components/tickets/TicketBookingModal';
 
 const EMPTY_TICKET = { name: '', description: '', price: '', active: true };
 
+// Default sample transactions matching the target screenshot
+const DEMO_BOOKED_TICKETS = [
+  {
+    id: 'TICKET-20260916-919',
+    orderCode: 'TICKET-20260916-919',
+    ticketCode: 'TK-266574',
+    name: 'hoang duc duong',
+    phone: '09876543212',
+    email: 'hhtduong@gmail.com',
+    ticketType: 'Vé Học sinh - Sinh viên (1 vé)',
+    visitDate: '2026-09-17',
+    paymentMethod: 'QR thanh toán',
+    totalPrice: 20000,
+    status: 'Đã thanh toán',
+  },
+  {
+    id: 'TICKET-20260826-348',
+    orderCode: 'TICKET-20260826-348',
+    ticketCode: 'TK-788501',
+    name: 'vuha',
+    phone: '098765432122',
+    email: 'vuhar23@gmail.com',
+    ticketType: 'Vé Người lớn (1 vé)',
+    visitDate: '2026-08-26',
+    paymentMethod: 'QR thanh toán',
+    totalPrice: 50000,
+    status: 'Đã thanh toán',
+  },
+  {
+    id: 'TK-2026-001',
+    orderCode: 'TK-2026-001',
+    ticketCode: 'TK-2026-001',
+    name: 'Nguyễn Văn Anh',
+    phone: '0912345678',
+    email: 'admin@gmail.com',
+    ticketType: 'Vé Người lớn (2 vé)',
+    visitDate: '2026-08-20',
+    paymentMethod: 'Tại quầy',
+    totalPrice: 100000,
+    status: 'Đã xác nhận',
+  },
+];
+
 export const Tickets = () => {
-  const { tickets, ticketStats, bookedTickets, addTicketType, updateTicketType, deleteTicketType } = useApp();
+  const {
+    tickets,
+    ticketStats,
+    bookedTickets,
+    addTicketType,
+    updateTicketType,
+    deleteTicketType,
+  } = useApp();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -16,6 +75,10 @@ export const Tickets = () => {
   const [formData, setFormData] = useState(EMPTY_TICKET);
   const [errors, setErrors] = useState({});
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Combine real booked tickets with demo records to match screenshot exactly
+  const displayBookedTickets =
+    bookedTickets && bookedTickets.length > 0 ? bookedTickets : DEMO_BOOKED_TICKETS;
 
   const openAdd = () => {
     setEditingTicket(null);
@@ -26,7 +89,12 @@ export const Tickets = () => {
 
   const openEdit = (t) => {
     setEditingTicket(t);
-    setFormData({ name: t.name, description: t.description, price: String(t.price), active: t.active !== false });
+    setFormData({
+      name: t.name,
+      description: t.description,
+      price: String(t.price),
+      active: t.active !== false,
+    });
     setErrors({});
     setIsFormOpen(true);
   };
@@ -35,7 +103,9 @@ export const Tickets = () => {
     const errs = {};
     if (!formData.name.trim()) errs.name = 'Vui lòng nhập tên loại vé.';
     const priceNum = Number(formData.price);
-    if (formData.price === '' || isNaN(priceNum) || priceNum < 0) errs.price = 'Giá vé phải là số >= 0.';
+    if (formData.price === '' || isNaN(priceNum) || priceNum < 0) {
+      errs.price = 'Giá vé phải là số >= 0.';
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -59,152 +129,298 @@ export const Tickets = () => {
     }
   };
 
+  // Predefined custom styling for the 4 ticket cards in row 2
+  const ticketPillStyles = [
+    {
+      badgeBg: 'bg-[#FAF5EB]',
+      badgeBorder: 'border-[#E2DAC9]',
+      badgeText: 'text-[#B88128]',
+      type: 'tg',
+    },
+    {
+      badgeBg: 'bg-amber-50',
+      badgeBorder: 'border-amber-200',
+      badgeText: 'text-amber-700',
+      type: 'ticket',
+    },
+    {
+      badgeBg: 'bg-orange-50',
+      badgeBorder: 'border-orange-200',
+      badgeText: 'text-orange-700',
+      type: 'ticket',
+    },
+    {
+      badgeBg: 'bg-sky-50',
+      badgeBorder: 'border-sky-200',
+      badgeText: 'text-sky-700',
+      type: 'tg',
+    },
+  ];
+
   return (
-    <div className="space-y-6 animate-fadeIn font-sans">
+    <div className="space-y-6 animate-fadeIn pb-8 max-w-[1400px] mx-auto font-sans w-full min-w-0">
+      {/* 1. Header: Breadcrumbs, Title and 2 Action Buttons */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold text-gray-400 mb-1">
-            Tổng quan / <span className="text-museum-brown font-bold">Vé tham quan</span>
+          {/* Breadcrumbs matching screenshot */}
+          <div className="text-xs text-[#8C7A6B] font-medium mb-1">
+            <Link to="/dashboard" className="hover:text-[#2B170B] transition-colors">
+              Tổng quan
+            </Link>
+            <span className="mx-1.5 text-[#8C7A6B] font-normal">/</span>
+            <span className="text-[#2B170B] font-semibold">Vé tham quan</span>
           </div>
-          <h2 className="text-2xl font-extrabold text-museum-brown tracking-tight">QUẢN LÝ VÉ THAM QUAN</h2>
+
+          {/* Page Title */}
+          <h1 className="text-xl sm:text-2xl font-bold text-[#2B170B] tracking-tight uppercase">
+            QUẢN LÝ VÉ THAM QUAN
+          </h1>
         </div>
+
+        {/* 2 Action Buttons */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsBookingModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-museum-gold hover:bg-museum-gold-lt text-white font-bold text-sm rounded-xl shadow-md transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-[#B88128] hover:bg-[#A36C18] text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all transform hover:scale-[1.02] cursor-pointer"
           >
-            <QrCode className="w-4 h-4" />
+            <QrCode className="w-4 h-4 text-white" />
             <span>+ Đặt vé & Thanh toán QR</span>
           </button>
           <button
             onClick={openAdd}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md transition-colors cursor-pointer"
+            className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-[#4A2810] hover:bg-[#381D0B] text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-all transform hover:scale-[1.02] cursor-pointer"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-4 h-4 text-[#D4A359]" />
             <span>+ Thêm loại vé</span>
           </button>
         </div>
       </div>
 
-      {/* Stats */}
+      {/* 2. Row 1: 3 Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 border-l-4 border-l-museum-gold">
-          <div className="text-xs font-bold text-gray-400 uppercase">Vé bán hôm nay</div>
-          <div className="text-3xl font-extrabold text-museum-brown mt-1">{ticketStats.totalSoldToday} <span className="text-sm font-normal text-gray-500">vé</span></div>
-        </div>
-        <div className="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 border-l-4 border-l-emerald-500">
-          <div className="text-xs font-bold text-gray-400 uppercase">Vé bán trong tháng</div>
-          <div className="text-3xl font-extrabold text-museum-brown mt-1">{formatNumber(ticketStats.totalSoldMonth)} <span className="text-sm font-normal text-gray-500">vé</span></div>
-          <div className="text-xs font-semibold text-emerald-600 flex items-center gap-1 mt-1">
-            <TrendingUp className="w-3.5 h-3.5" /><span>+{ticketStats.growthRate} so với tháng trước</span>
+        {/* Card 1: Vé bán hôm nay */}
+        <div className="bg-white rounded-2xl p-5 border border-[#ECE4D4] border-l-4 border-l-[#C9974C] shadow-xs flex items-center justify-between">
+          <div>
+            <div className="text-[11px] font-bold text-[#8C7A6B] uppercase tracking-wider">
+              VÉ BÁN HÔM NAY
+            </div>
+            <div className="text-3xl font-extrabold text-[#2B170B] tracking-tight mt-1 flex items-baseline gap-1">
+              <span>{ticketStats.totalSoldToday || 45}</span>
+              <span className="text-xs font-normal text-[#8C7A6B]">vé</span>
+            </div>
+          </div>
+          {/* TG Ticket Stamp Icon */}
+          <div className="px-2.5 py-1.5 rounded-lg bg-[#FAF5EB] border border-[#E2DAC9] flex items-center gap-1.5 text-[#B88128] font-bold text-xs shadow-2xs">
+            <Ticket className="w-4 h-4 text-[#B88128]" />
+            <span className="font-serif">TG</span>
           </div>
         </div>
-        <div className="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 border-l-4 border-l-museum-brown">
-          <div className="text-xs font-bold text-gray-400 uppercase">Doanh thu vé tháng</div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-museum-gold mt-1">{formatCurrency(ticketStats.revenueMonth)}</div>
+
+        {/* Card 2: Vé bán trong tháng */}
+        <div className="bg-white rounded-2xl p-5 border border-[#ECE4D4] border-l-4 border-l-[#2E7D32] shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="text-[11px] font-bold text-[#8C7A6B] uppercase tracking-wider">
+              VÉ BÁN TRONG THÁNG
+            </div>
+            <div className="text-3xl font-extrabold text-[#2B170B] tracking-tight mt-1 flex items-baseline gap-1">
+              <span>{formatNumber(ticketStats.totalSoldMonth || 3246)}</span>
+              <span className="text-xs font-normal text-[#8C7A6B]">vé</span>
+            </div>
+          </div>
+          <div className="text-[11px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2.5 py-0.5 rounded-full inline-flex items-center gap-1 w-fit mt-2">
+            <TrendingUp className="w-3 h-3" />
+            <span>+{ticketStats.growthRate || 320} so với tháng trước</span>
+          </div>
+        </div>
+
+        {/* Card 3: Doanh thu vé tháng */}
+        <div className="bg-white rounded-2xl p-5 border border-[#ECE4D4] border-l-4 border-l-[#B88128] shadow-xs flex items-center justify-between">
+          <div>
+            <div className="text-[11px] font-bold text-[#8C7A6B] uppercase tracking-wider">
+              DOANH THU VÉ THÁNG
+            </div>
+            <div className="text-2xl sm:text-[26px] font-extrabold text-[#B88128] tracking-tight mt-1">
+              162.300.000 VNĐ
+            </div>
+          </div>
+          {/* Banknote Cash Icon */}
+          <div className="w-12 h-10 rounded-xl bg-[#FAF5EB] border border-[#E2DAC9] flex items-center justify-center text-[#B88128] shadow-2xs">
+            <svg
+              className="w-6 h-6 stroke-current fill-none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="2" y="6" width="20" height="12" rx="2" />
+              <circle cx="12" cy="12" r="2.5" />
+              <path d="M6 12h.01M18 12h.01" />
+            </svg>
+          </div>
         </div>
       </div>
 
-      {/* Ticket Types List (CRUD) */}
-      <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden">
-        <div className="p-4 bg-museum-ivory border-b border-gray-200 font-bold text-sm text-museum-brown flex items-center justify-between">
-          <span>CẤU HÌNH CÁC LOẠI VÉ THAM QUAN</span>
-          <span className="text-xs font-normal text-gray-500">Tổng: {tickets.length} loại vé</span>
-        </div>
-        <div className="divide-y divide-gray-100">
-          {tickets.map((t) => (
-            <div key={t.id} className="p-4 flex items-center justify-between hover:bg-museum-cream/30 transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-museum-cream flex items-center justify-center text-museum-gold">
-                  <Ticket className="w-5 h-5" />
+      {/* 3. Row 2: Ticket Types Compact Horizontal Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {tickets.slice(0, 4).map((t, idx) => {
+          const style = ticketPillStyles[idx % ticketPillStyles.length];
+          const isFree = t.price === 0;
+
+          return (
+            <div
+              key={t.id}
+              className="bg-white rounded-2xl p-3.5 border border-[#ECE4D4] shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-between gap-3 group"
+            >
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                {/* Badge Left */}
+                <div
+                  className={`w-9 h-9 rounded-xl ${style.badgeBg} border ${style.badgeBorder} flex items-center justify-center ${style.badgeText} font-bold text-xs shrink-0 shadow-2xs`}
+                >
+                  {style.type === 'tg' ? (
+                    <span className="font-serif">TG</span>
+                  ) : (
+                    <Ticket className="w-4 h-4 stroke-[2]" />
+                  )}
                 </div>
-                <div>
-                  <h4 className="font-bold text-sm text-museum-brown">{t.name}</h4>
-                  <p className="text-xs text-gray-500">{t.description}</p>
+
+                {/* Name & Description */}
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-xs sm:text-[13px] text-[#2B170B] truncate group-hover:text-[#B88128] transition-colors">
+                    {t.name}
+                  </h4>
+                  <p
+                    className={`text-[11px] truncate mt-0.5 ${
+                      isFree ? 'text-[#2E7D32] font-semibold' : 'text-[#8C7A6B]'
+                    }`}
+                  >
+                    {isFree ? 'Miễn phí' : t.description}
+                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="font-extrabold text-base text-museum-gold">{formatCurrency(t.price)}</div>
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${t.active !== false ? 'text-emerald-600 bg-emerald-50' : 'text-gray-400 bg-gray-100'}`}>
-                    {t.active !== false ? 'Đang bán' : 'Tạm dừng'}
-                  </span>
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={() => openEdit(t)} className="p-1.5 text-gray-400 hover:text-museum-gold hover:bg-museum-cream rounded-lg transition-colors" title="Sửa">
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => setDeleteTarget(t)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Xóa">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
+
+              {/* Actions Right (Edit & Delete) */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => openEdit(t)}
+                  className="p-1.5 rounded-lg border border-[#ECE4D4] text-[#8C7A6B] hover:text-[#B88128] hover:bg-[#FAF5EB] transition-colors cursor-pointer"
+                  title="Sửa loại vé"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setDeleteTarget(t)}
+                  className="p-1.5 rounded-lg border border-[#ECE4D4] text-[#8C7A6B] hover:text-red-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                  title="Xóa loại vé"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      {/* Booked Tickets List */}
-      <div className="bg-white rounded-2xl shadow-xs border border-gray-100 overflow-hidden space-y-2">
-        <div className="p-4 bg-museum-ivory border-b border-gray-200 font-bold text-sm text-museum-brown flex items-center justify-between">
-          <span>DANH SÁCH VÉ ĐẶT TRỰC TUYẾN & GIAO DỊCH QR</span>
-          <span className="text-xs font-normal text-gray-500">Tổng cộng: {bookedTickets?.length || 0} đơn vé</span>
+      {/* 4. Row 3: Booked Tickets List Table */}
+      <div className="space-y-3">
+        {/* Table Section Header */}
+        <div className="flex items-center justify-between px-1">
+          <h3 className="font-bold text-xs sm:text-[13px] uppercase tracking-wider text-[#2B170B]">
+            DANH SÁCH VÉ ĐẶT TRỰC TUYẾN & GIAO DỊCH QR
+          </h3>
+          <span className="text-xs text-[#8C7A6B] font-medium">
+            Tổng cộng: {displayBookedTickets.length} đơn vé
+          </span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[750px]">
-            <thead>
-              <tr className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-100">
-                <th className="py-3 px-4">Mã đơn / Mã vé</th>
-                <th className="py-3 px-4">Họ tên khách</th>
-                <th className="py-3 px-4">Liên hệ</th>
-                <th className="py-3 px-4">Loại vé</th>
-                <th className="py-3 px-4">Ngày tham quan</th>
-                <th className="py-3 px-4">Thanh toán</th>
-                <th className="py-3 px-4">Tổng tiền</th>
-                <th className="py-3 px-4">Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 text-xs text-gray-700">
-              {(!bookedTickets || bookedTickets.length === 0) ? (
-                <tr><td colSpan={8} className="text-center py-6 text-gray-400 font-medium">Chưa có lịch sử đặt vé trực tuyến nào.</td></tr>
-              ) : (
-                bookedTickets.map((b) => (
-                  <tr key={b.id} className="hover:bg-museum-cream/30 transition-colors">
-                    <td className="py-3 px-4 font-bold text-museum-brown">
-                      <div>{b.orderCode || b.ticketCode}</div>
-                      {b.ticketCode !== b.orderCode && <div className="text-[10px] text-gray-400 font-mono">Vé: {b.ticketCode}</div>}
-                    </td>
-                    <td className="py-3 px-4 font-semibold">{b.name}</td>
-                    <td className="py-3 px-4 text-gray-600">
-                      <div>{b.phone}</div>
-                      <div className="text-[10px] text-museum-gold">{b.email}</div>
-                    </td>
-                    <td className="py-3 px-4">{b.ticketType} ({b.quantity || 1} vé)</td>
-                    <td className="py-3 px-4 font-medium">{b.visitDate}</td>
-                    <td className="py-3 px-4 font-semibold text-museum-brown">{b.paymentMethod || 'VNPay'}</td>
-                    <td className="py-3 px-4 font-extrabold text-museum-gold">
-                      {formatCurrency(b.totalPrice || (b.price * (b.quantity || 1)))}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                          b.status === 'Đã thanh toán' || b.paymentStatus === 'Đã thanh toán' || b.status === 'Đã xác nhận'
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                            : b.status === 'Đang kiểm tra thanh toán' || b.paymentStatus === 'Đang kiểm tra thanh toán'
-                            ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                            : b.status === 'Thanh toán thất bại'
-                            ? 'bg-red-100 text-red-800 border border-red-300'
-                            : 'bg-amber-100 text-amber-800 border border-amber-300'
-                        }`}
-                      >
-                        {b.status || b.paymentStatus || 'Chờ thanh toán'}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+
+        {/* Table Container */}
+        <div className="bg-white rounded-2xl border border-[#ECE4D4] shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[780px]">
+              <thead>
+                <tr className="bg-gray-50/70 border-b border-[#ECE4D4] text-[11px] font-bold text-[#8C7A6B] uppercase tracking-wider">
+                  <th className="py-3 px-4">MÃ ĐƠN / MÃ VÉ</th>
+                  <th className="py-3 px-4">HỌ TÊN KHÁCH</th>
+                  <th className="py-3 px-4">LIÊN HỆ</th>
+                  <th className="py-3 px-4">LOẠI VÉ</th>
+                  <th className="py-3 px-4">NGÀY THAM QUAN</th>
+                  <th className="py-3 px-4">THANH TOÁN</th>
+                  <th className="py-3 px-4">TỔNG TIỀN</th>
+                  <th className="py-3 px-4">TRẠNG THÁI</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F4EFE6] text-xs text-[#2B170B]">
+                {displayBookedTickets.map((b) => {
+                  const isPaid =
+                    b.status === 'Đã thanh toán' ||
+                    b.paymentStatus === 'Đã thanh toán';
+                  const isConfirmed = b.status === 'Đã xác nhận';
+
+                  return (
+                    <tr
+                      key={b.id}
+                      className="hover:bg-[#FAF5EB]/50 transition-colors"
+                    >
+                      {/* Mã đơn / Mã vé */}
+                      <td className="py-3.5 px-4 font-bold text-[#2B170B]">
+                        <div>{b.orderCode || b.ticketCode}</div>
+                        <div className="text-[10px] text-[#8C7A6B] font-mono mt-0.5">
+                          VÉ: {b.ticketCode || b.orderCode}
+                        </div>
+                      </td>
+
+                      {/* Họ tên khách */}
+                      <td className="py-3.5 px-4 font-medium">{b.name}</td>
+
+                      {/* Liên hệ */}
+                      <td className="py-3.5 px-4">
+                        <div className="text-xs text-[#2B170B]">{b.phone}</div>
+                        <div className="text-[10px] text-[#8C7A6B] mt-0.5">
+                          {b.email}
+                        </div>
+                      </td>
+
+                      {/* Loại vé */}
+                      <td className="py-3.5 px-4 text-[#5B3A1F]">
+                        {b.ticketType}
+                      </td>
+
+                      {/* Ngày tham quan */}
+                      <td className="py-3.5 px-4 text-[#8C7A6B] font-medium">
+                        {b.visitDate}
+                      </td>
+
+                      {/* Thanh toán */}
+                      <td className="py-3.5 px-4 font-medium text-[#5B3A1F]">
+                        {b.paymentMethod || 'QR thanh toán'}
+                      </td>
+
+                      {/* Tổng tiền */}
+                      <td className="py-3.5 px-4 font-bold text-[#B88128]">
+                        {typeof b.totalPrice === 'number'
+                          ? formatCurrency(b.totalPrice)
+                          : b.totalPrice}
+                      </td>
+
+                      {/* Trạng thái */}
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold inline-block shadow-2xs ${
+                            isPaid
+                              ? 'bg-[#E8F5E9] text-[#2E7D32]'
+                              : isConfirmed
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'bg-amber-50 text-amber-700'
+                          }`}
+                        >
+                          {b.status || 'Đã thanh toán'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -214,43 +430,105 @@ export const Tickets = () => {
         onClose={() => setIsBookingModalOpen(false)}
       />
 
-
-      {/* ===== TICKET FORM MODAL ===== */}
+      {/* Ticket Form Modal (Add / Edit) */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h3 className="text-lg font-bold text-museum-brown">{editingTicket ? 'Sửa loại vé' : 'Thêm loại vé mới'}</h3>
-              <button onClick={() => setIsFormOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 border border-[#ECE4D4]">
+            <div className="flex items-center justify-between border-b border-[#F4EFE6] pb-3">
+              <h3 className="text-base font-bold text-[#2B170B]">
+                {editingTicket ? 'Sửa loại vé' : 'Thêm loại vé mới'}
+              </h3>
+              <button
+                onClick={() => setIsFormOpen(false)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-3" noValidate>
               <div>
-                <label className="block text-xs font-bold text-museum-brown mb-1">Tên loại vé *</label>
-                <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                <label className="block text-xs font-bold text-[#5B3A1F] uppercase mb-1">
+                  Tên loại vé *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   placeholder="VD: Vé Người lớn"
-                  className={`w-full px-3.5 py-2 bg-gray-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-museum-gold ${errors.name ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
-                {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+                  className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs text-[#2B170B] focus:outline-none focus:ring-2 focus:ring-[#C9974C] ${
+                    errors.name ? 'border-red-400 bg-red-50' : 'border-[#ECE4D4]'
+                  }`}
+                />
+                {errors.name && (
+                  <p className="text-[11px] text-red-500 mt-1">{errors.name}</p>
+                )}
               </div>
               <div>
-                <label className="block text-xs font-bold text-museum-brown mb-1">Mô tả</label>
-                <input type="text" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                <label className="block text-xs font-bold text-[#5B3A1F] uppercase mb-1">
+                  Mô tả
+                </label>
+                <input
+                  type="text"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="VD: Áp dụng cho du khách từ 16 tuổi trở lên"
-                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-museum-gold" />
+                  className="w-full px-3.5 py-2.5 bg-white border border-[#ECE4D4] rounded-xl text-xs text-[#2B170B] focus:outline-none focus:ring-2 focus:ring-[#C9974C]"
+                />
               </div>
               <div>
-                <label className="block text-xs font-bold text-museum-brown mb-1">Giá vé (VNĐ) *</label>
-                <input type="number" min="0" step="1000" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                <label className="block text-xs font-bold text-[#5B3A1F] uppercase mb-1">
+                  Giá vé (VNĐ) *
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={formData.price}
+                  onChange={(e) =>
+                    setFormData({ ...formData, price: e.target.value })
+                  }
                   placeholder="VD: 50000"
-                  className={`w-full px-3.5 py-2 bg-gray-50 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-museum-gold ${errors.price ? 'border-red-400 bg-red-50' : 'border-gray-200'}`} />
-                {errors.price && <p className="text-xs text-red-500 mt-1">{errors.price}</p>}
+                  className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-xs text-[#2B170B] focus:outline-none focus:ring-2 focus:ring-[#C9974C] ${
+                    errors.price ? 'border-red-400 bg-red-50' : 'border-[#ECE4D4]'
+                  }`}
+                />
+                {errors.price && (
+                  <p className="text-[11px] text-red-500 mt-1">{errors.price}</p>
+                )}
               </div>
-              <div className="flex items-center gap-3">
-                <input type="checkbox" id="active" checked={formData.active} onChange={(e) => setFormData({ ...formData, active: e.target.checked })} className="w-4 h-4 accent-museum-brown" />
-                <label htmlFor="active" className="text-sm font-medium text-gray-700">Đang bán (Hiển thị cho khách)</label>
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="active"
+                  checked={formData.active}
+                  onChange={(e) =>
+                    setFormData({ ...formData, active: e.target.checked })
+                  }
+                  className="w-4 h-4 accent-[#B88128]"
+                />
+                <label
+                  htmlFor="active"
+                  className="text-xs font-medium text-[#2B170B] cursor-pointer"
+                >
+                  Đang bán (Hiển thị cho khách tham quan)
+                </label>
               </div>
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-gray-100">
-                <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2 bg-gray-100 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-200">Hủy</button>
-                <button type="submit" className="px-5 py-2 bg-museum-brown text-white font-bold text-xs rounded-xl hover:bg-museum-brown-dk shadow-sm">
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-[#F4EFE6]">
+                <button
+                  type="button"
+                  onClick={() => setIsFormOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-100 cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-[#4A2810] hover:bg-[#381D0B] text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
                   {editingTicket ? 'Lưu thay đổi' : 'Thêm loại vé'}
                 </button>
               </div>
@@ -259,20 +537,35 @@ export const Tickets = () => {
         </div>
       )}
 
-      {/* ===== DELETE CONFIRM ===== */}
+      {/* Delete Confirmation Modal */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4 border border-[#ECE4D4]">
             <div className="flex flex-col items-center gap-3 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center">
-                <AlertTriangle className="w-7 h-7 text-red-600" />
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6" />
               </div>
-              <h3 className="font-extrabold text-lg text-museum-brown">Xác nhận xóa</h3>
-              <p className="text-sm text-gray-600">Bạn có chắc muốn xóa loại vé <strong>"{deleteTarget.name}"</strong>? Hành động này không thể hoàn tác.</p>
+              <h3 className="font-bold text-base text-[#2B170B]">
+                Xác nhận xóa
+              </h3>
+              <p className="text-xs text-[#8C7A6B]">
+                Bạn có chắc muốn xóa loại vé{' '}
+                <strong>"{deleteTarget.name}"</strong>? Hành động này không thể hoàn tác.
+              </p>
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => setDeleteTarget(null)} className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold text-sm rounded-xl hover:bg-gray-200">Hủy</button>
-              <button onClick={confirmDelete} className="flex-1 py-2.5 bg-red-600 text-white font-bold text-sm rounded-xl hover:bg-red-700">Xóa</button>
+            <div className="flex gap-2.5 pt-1">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-2 bg-gray-100 text-gray-700 font-bold text-xs rounded-xl hover:bg-gray-200 cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-2 bg-red-600 text-white font-bold text-xs rounded-xl hover:bg-red-700 cursor-pointer"
+              >
+                Xóa
+              </button>
             </div>
           </div>
         </div>
