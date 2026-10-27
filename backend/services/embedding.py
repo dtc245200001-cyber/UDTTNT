@@ -9,7 +9,7 @@ from google.genai import types
 
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
+GEMINI_API_KEY = (os.getenv("GEMINI_API_KEYS", "") or os.getenv("GEMINI_API_KEY", "")).split(",")[0].strip()
 
 EMBEDDING_MODEL = "gemini-embedding-2"
 EMBEDDING_DIMENSION = 768
@@ -27,40 +27,61 @@ if GEMINI_API_KEY and GEMINI_API_KEY != "YOUR_GEMINI_API_KEY_HERE":
 
 import asyncio
 
-def get_embedding(text: str) -> list[float]:
-    """
-    Tạo embedding cho câu hỏi tìm kiếm.
-    Gemini Embedding 2 sử dụng task prefix cho retrieval query.
-    """
+# B1 (buoc 1 duyet): MOT ham duy nhat cho moi cho goi embedding.
+# Dùng task_type CHÍNH THỨC của Gemini Embedding (google-genai SDK:
+# EmbedContentConfig.task_type: str, title: chỉ cho RETRIEVAL_DOCUMENT):
+#   - RETRIEVAL_DOCUMENT (+ title) khi index
+#   - RETRIEVAL_QUERY khi query
+# Bo prefix text tu che ("task: search result | query:", "title: | text:")
+# de index va query khong bao gio lech nhau nua.
+# Nguon: Google AI for Developers — Gemini Embedding guide (task types
+# RETRIEVAL_QUERY / RETRIEVAL_DOCUMENT), SDK types.EmbedContentConfig.
+TASK_RETRIEVAL_QUERY = "RETRIEVAL_QUERY"
+TASK_RETRIEVAL_DOCUMENT = "RETRIEVAL_DOCUMENT"
 
+
+def _embed_one(text: str, task_type: str, title: str | None = None) -> list[float]:
+    """Embed 1 text voi task_type cho truoc. Dung chung cho index va query."""
     text = str(text or "").strip()
-
     if not text:
         return [0.0] * EMBEDDING_DIMENSION
-
     if client is None:
         return _create_fallback_embedding(text)
-
     try:
-        query_text = f"task: search result | query: {text}"
-
+        cfg = {"output_dimensionality": EMBEDDING_DIMENSION, "task_type": task_type}
+        if title and task_type == TASK_RETRIEVAL_DOCUMENT:
+            cfg["title"] = title[:500]
         result = client.models.embed_content(
             model=EMBEDDING_MODEL,
-            contents=query_text,
-            config=types.EmbedContentConfig(
-                output_dimensionality=EMBEDDING_DIMENSION
-            )
+            contents=text,
+            config=types.EmbedContentConfig(**cfg),
         )
-
         if result.embeddings:
             return result.embeddings[0].values
-
         print("[Embedding] Gemini không trả về vector.")
         return _create_fallback_embedding(text)
-
     except Exception as e:
         print(f"[Embedding Warning] {e}")
         return _create_fallback_embedding(text)
+
+
+def embed_query(text: str) -> list[float]:
+    """Embed cau hoi (RETRIEVAL_QUERY). Dung cho moi truy van RAG."""
+    return _embed_one(text, TASK_RETRIEVAL_QUERY)
+
+
+def embed_document(text: str, title: str | None = None) -> list[float]:
+    """Embed tai lieu (RETRIEVAL_DOCUMENT + title). Dung khi index."""
+    return _embed_one(text, TASK_RETRIEVAL_DOCUMENT, title)
+
+
+def get_embedding(text: str) -> list[float]:
+    """
+    Tạo embedding cho câu hỏi tìm kiếm.
+    GIỮ LẠI để tương thích ngược — ủy thác cho embed_query().
+    """
+
+    return embed_query(text)
 
 async def get_embedding_async(text: str) -> list[float]:
     """
@@ -71,11 +92,12 @@ async def get_embedding_async(text: str) -> list[float]:
 
 def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
     """
-    Tạo embedding riêng cho từng tài liệu.
+    Tạo embedding riêng cho từng tài liệu (dùng khi index hàng loạt).
 
     Gemini Embedding 2 sẽ tạo embedding tổng hợp nếu truyền
     trực tiếp list[str]. Vì vậy mỗi tài liệu được bọc trong
-    một Content riêng để nhận một vector riêng.
+    một Content riêng để nhận một vector riêng, với
+    task_type=RETRIEVAL_DOCUMENT + title (B1).
     """
 
     if not texts:
@@ -93,59 +115,31 @@ def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
         ]
 
     try:
-        BATCH_SIZE = 100  # Giới hạn của Gemini Embedding API
+        # B1: config chi nhan 1 object cho ca batch nen title rieng tung doc
+        # khong kha thi — goi _embed_one cho tung doc (co title + retry rieng).
+        # Voi ~600 docs va sleep chong quota hien co, tong ~7-10 phut/1 lan index.
         all_embeddings = []
 
-        for batch_start in range(0, len(clean_texts), BATCH_SIZE):
-            batch = clean_texts[batch_start: batch_start + BATCH_SIZE]
-            contents = []
+        for idx, text in enumerate(clean_texts):
+            title = "none"
+            if text.startswith("Tiêu đề:"):
+                title = text.split("\n", 1)[0].replace("Tiêu đề:", "").strip()
 
-            for text in batch:
-                # Lấy tiêu đề từ dòng đầu tiên nếu có
-                title = "none"
-
-                if text.startswith("Tiêu đề:"):
-                    first_line = text.split("\n", 1)[0]
-                    title = first_line.replace(
-                        "Tiêu đề:", ""
-                    ).strip()
-
-                document_text = (
-                    f"title: {title} | text: {text}"
-                )
-
-                contents.append(
-                    types.Content(
-                        parts=[
-                            types.Part.from_text(
-                                text=document_text
-                            )
-                        ]
-                    )
-                )
-
-            # Gọi API với retry khi bị 429 (quota)
             MAX_EMBED_RETRIES = 5
             for embed_attempt in range(1, MAX_EMBED_RETRIES + 1):
                 try:
-                    result = client.models.embed_content(
-                        model=EMBEDDING_MODEL,
-                        contents=contents,
-                        config=types.EmbedContentConfig(
-                            output_dimensionality=EMBEDDING_DIMENSION
-                        )
-                    )
-                    break  # Thành công, thoát retry loop
+                    all_embeddings.append(_embed_one(text, TASK_RETRIEVAL_DOCUMENT, title))
+                    break
                 except Exception as embed_err:
                     err_str = str(embed_err)
-                    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
-                        # Tìm retryDelay từ message
+                    if ("429" in err_str or "RESOURCE_EXHAUSTED" in err_str
+                            or "quota" in err_str.lower()):
                         import re as _re
                         delay_match = _re.search(r"retryDelay.*?(\d+)s", err_str)
                         wait_secs = int(delay_match.group(1)) + 5 if delay_match else 65
                         print(
-                            f"[Embedding] Batch {batch_start // BATCH_SIZE + 1} bị rate limit. "
-                            f"Chờ {wait_secs}s rồi thử lại (lần {embed_attempt}/{MAX_EMBED_RETRIES})..."
+                            f"[Embedding] Doc {idx + 1}/{len(clean_texts)} bi rate limit. "
+                            f"Cho {wait_secs}s roi thu lai (lan {embed_attempt}/{MAX_EMBED_RETRIES})..."
                         )
                         time.sleep(wait_secs)
                         if embed_attempt == MAX_EMBED_RETRIES:
@@ -153,27 +147,8 @@ def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
                     else:
                         raise
 
-            batch_embeddings = [
-                embedding.values
-                for embedding in result.embeddings
-            ]
-
-            if len(batch_embeddings) != len(batch):
-                raise ValueError(
-                    f"Gemini trả về {len(batch_embeddings)} vector "
-                    f"cho {len(batch)} tài liệu (batch {batch_start // BATCH_SIZE + 1})."
-                )
-
-            all_embeddings.extend(batch_embeddings)
-            print(
-                f"[Embedding] Batch {batch_start // BATCH_SIZE + 1}: "
-                f"Đã embed {len(all_embeddings)}/{len(clean_texts)} documents."
-            )
-
-            # Chờ để tránh vượt rate limit của Gemini Embedding API (100 req/phút free tier)
-            if batch_start + BATCH_SIZE < len(clean_texts):
-                print("[Embedding] Chờ 65 giây để tránh vượt quota rate limit...")
-                time.sleep(65)
+            if (idx + 1) % 20 == 0 or (idx + 1) == len(clean_texts):
+                print(f"[Embedding] Da embed {idx + 1}/{len(clean_texts)} documents.")
 
         print(
             f"[Embedding] Đã tạo thành công "
