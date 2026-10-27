@@ -235,16 +235,8 @@ export const MuseumAI = () => {
       try {
         const res = await sendChatQuery(textToSend, messages);
         if (res.success && res.answer && !res.answer.includes('Mình đang gặp một chút gián đoạn khi kết nối với AI')) {
-          // L1: backend la nguon su that — chi bo sung local khi backend co
-          // artifact/sources (mo rong) hoac intent artifact_search co prior.
-          let mappedArtifacts = (res.artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
-          if (intent === 'artifact_search' && mappedArtifacts.length === 0
-              && ((res.sources || []).length > 0 || priorArtifacts.length > 0)) {
-              const localResult = searchArtifacts(artifacts, textToSend, {}, { priorArtifacts });
-              if (localResult && localResult.matchedArtifacts) {
-                  mappedArtifacts = localResult.matchedArtifacts.slice(0, 4).map(normalizeArtifact);
-              }
-          }
+          // Backend là nguồn sự thật duy nhất cho thẻ hiện vật
+          const mappedArtifacts = (res.artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
           
           const aiMsg = {
             id: aiMsgId,
@@ -313,14 +305,8 @@ export const MuseumAI = () => {
             return;
           }
 
-          // L1: nhu tren — backend la nguon su that cho the hien vat.
-          let mappedArtifacts = (artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
-          if (intent === 'artifact_search' && mappedArtifacts.length === 0 && priorArtifacts.length > 0) {
-              const localResult = searchArtifacts(artifacts, textToSend, {}, { priorArtifacts });
-              if (localResult && localResult.matchedArtifacts) {
-                  mappedArtifacts = localResult.matchedArtifacts.slice(0, 4).map(normalizeArtifact);
-              }
-          }
+          // Backend là nguồn sự thật duy nhất cho thẻ hiện vật
+          const mappedArtifacts = (artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
           
           const aiMsg = {
             id: aiMsgId,

@@ -139,13 +139,6 @@ class EntityLinkingService:
         if context_id and context_id in self._artifacts_by_id:
             return [context_id]
 
-        # Trường hợp 4: Fallback nếu context RAG retrieved được 1 hiện vật sát thực
-        if retrieved_ids:
-            # Lọc chỉ lấy các ID hợp lệ trong DB
-            valid_retrieved = [aid for aid in retrieved_ids if aid in self._artifacts_by_id]
-            if len(valid_retrieved) == 1:
-                return valid_retrieved[:1]
-
         return []
 
 # Singleton instance

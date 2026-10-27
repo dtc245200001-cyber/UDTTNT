@@ -88,6 +88,14 @@ STRUCTURED_INTENTS = {
 }
 
 
+# Từ khóa chức danh chính trị / bộ máy nhà nước đương nhiệm
+CURRENT_POLITICS_PATTERNS = [
+    r"\bchu tich nuoc\b", r"\bthu tuong\b", r"\btong bi thu\b",
+    r"\bchu tich quoc hoi\b", r"\bchinh phu\b", r"\bbo truong\b",
+    r"\buy vien bo chinh tri\b", r"\bban bi thu\b"
+]
+
+
 class RouterDecision:
     def __init__(
         self,
@@ -151,7 +159,7 @@ def log_zone_decision(query: str, decision: RouterDecision):
 class RAGRouter:
     def __init__(self, vector_collection = None):
         self.vector_collection = vector_collection
-        self.zone_museum_max = float(os.getenv("RAG_ZONE_MUSEUM_MAX", 0.30))
+        self.zone_museum_max = float(os.getenv("RAG_ZONE_MUSEUM_MAX", 0.28))
         self.zone_general_min = float(os.getenv("RAG_ZONE_GENERAL_MIN", 0.42))
 
     def detect_structured_intent(self, norm_query: str) -> Optional[str]:
@@ -263,6 +271,24 @@ class RAGRouter:
                 top1_doc=f"DB Entity: {matched_ent['name']}",
                 matched_entity=matched_ent,
                 reason=f"Khớp thực thể DB '{matched_ent['name']}' (bảng {matched_ent['table']})"
+            )
+            log_zone_decision(query, decision)
+            return decision
+
+        # ── 3.5. Kiểm tra câu hỏi chức danh / chính trị đương nhiệm ──
+        has_politics = any(re.search(pat, norm_query) for pat in CURRENT_POLITICS_PATTERNS)
+        has_museum_context = any(w in norm_query for w in [
+            "bao tang", "trung bay", "trien lam", "hien vat", "tu lieu", "co vat",
+            "tham quan", "ve", "phong ", "tang ", "ke ", "ho chi minh", "truong chinh",
+            "ton duc thang", "vo nguyen giap"
+        ])
+        if has_politics and not has_museum_context:
+            decision = RouterDecision(
+                final_mode="general",
+                zone="zone_3_general",
+                top1_dist=0.50,
+                top1_doc="Current Political Role Query",
+                reason="Câu hỏi về chức danh / chính trị đương nhiệm (không kèm từ khóa bảo tàng) -> General"
             )
             log_zone_decision(query, decision)
             return decision

@@ -24,9 +24,9 @@ export function detectIntent(text, artifacts = [], priorArtifacts = []) {
     return 'ticket_info';
   }
 
-  // L1: cau khong dau hieu bao tang -> "other" ngay, khong chay local search
-  // (chong rac kieu "hang dien thoai" -> "Dai Phat thanh Tieng noi").
-  if (!hasMuseumSignal(clean) && !(priorArtifacts && priorArtifacts.length > 0)) {
+  // Câu không có dấu hiệu bảo tàng -> "other" ngay, không chạy local search
+  // (chống rác kiểu "chủ tịch nước việt nam", "hãng điện thoại" -> nhận nhầm hiện vật)
+  if (!hasMuseumSignal(clean)) {
     return 'other';
   }
 

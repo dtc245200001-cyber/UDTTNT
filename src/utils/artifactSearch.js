@@ -101,10 +101,10 @@ export function searchArtifacts(rawArtifactsList = [], query = '', extraData = {
   const eventsList = extraData.events || [];
   const ticketsList = extraData.tickets || [];
 
-  // L1 gate: cau khong dau hieu bao tang VA khong phai cau noi tiep
-  // -> tra rong ngay, khong cho chay scoring (chong rac nhu "hang dien thoai").
-  const { allowUnverified = false, priorArtifacts = [] } = options || {};
-  if (!allowUnverified && !hasMuseumSignal(cleanQuery) && !(priorArtifacts && priorArtifacts.length > 0)) {
+  // L1 gate: câu không có dấu hiệu bảo tàng -> trả rỗng ngay, không cho chạy scoring
+  // (chống rác như "chủ tịch nước việt nam", "hãng điện thoại").
+  const { allowUnverified = false } = options || {};
+  if (!allowUnverified && !hasMuseumSignal(cleanQuery)) {
     return { success: false, message: '', matchedArtifacts: [], gated: true };
   }
 
@@ -189,6 +189,7 @@ export function searchArtifacts(rawArtifactsList = [], query = '', extraData = {
     'noi tieng', 'tieng', 'noi', 'hang', 'hieu', 'loai', 'danh tieng', 'pho bien',
     'dep', 'hay', 'tot', 'lon', 'nho', 'moi', 'cu', 'dac biet', 'dac sac',
     'lich su', 'van hoa', 'truyen thong', 'dan toc', 'dat nuoc',
+    'viet nam', 'viet', 'nam', 'nuoc', 'chu tich', 'quoc gia', 'nhan dan',
   ]);
 
   const scoredResults = artifactsList.map((item) => {
