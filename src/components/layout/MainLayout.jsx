@@ -22,12 +22,12 @@ const MuseumAIFallback = ({ reset }) => (
 
 export const MainLayout = () => {
   return (
-    <div className="min-h-screen flex bg-museum-ivory text-gray-800 antialiased font-sans relative">
+    <div className="min-h-screen flex bg-[#F8F5EE] text-[#2B170B] antialiased font-sans relative">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
-        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
+          <div className="max-w-[1400px] mx-auto space-y-6">
             <Outlet />
           </div>
         </main>

@@ -1,26 +1,39 @@
 import React from 'react';
-import { TrendingUp } from 'lucide-react';
 import { formatNumber } from '@/utils/formatters';
 
-export const StatCard = ({ title, value, growth, icon: Icon }) => {
+export const StatCard = ({ title, value, growth, icon: Icon, customSvg }) => {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 border-l-[3px] border-l-museum-gold hover:-translate-y-1 hover:shadow-md transition-all duration-200 cursor-pointer">
-      <div className="flex items-center gap-4">
-        {/* Icon container */}
-        <div className="w-13 h-13 rounded-2xl bg-museum-cream flex items-center justify-center text-museum-gold flex-shrink-0">
-          <Icon className="w-6 h-6" />
+    <div className="bg-white rounded-2xl p-4 sm:p-5 border border-[#ECE4D4] shadow-xs relative overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+      {/* Background subtle bronze drum watermark */}
+      <div className="absolute right-0 top-0 bottom-0 w-24 opacity-[0.04] pointer-events-none flex items-center justify-center overflow-hidden">
+        <svg viewBox="0 0 100 100" className="w-32 h-32 text-[#B88128]" fill="currentColor">
+          <circle cx="50" cy="50" r="48" stroke="currentColor" strokeWidth="2" fill="none" />
+          <circle cx="50" cy="50" r="38" stroke="currentColor" strokeWidth="1.5" fill="none" />
+          <circle cx="50" cy="50" r="28" stroke="currentColor" strokeWidth="1" fill="none" />
+          <circle cx="50" cy="50" r="12" fill="currentColor" />
+        </svg>
+      </div>
+
+      <div className="flex items-center gap-4 relative z-10">
+        {/* Circular icon container */}
+        <div className="w-13 h-13 rounded-full bg-[#FAF5EB] border border-[#E8DFC9] flex items-center justify-center text-[#C9974C] flex-shrink-0">
+          {customSvg ? (
+            customSvg
+          ) : (
+            <Icon className="w-6 h-6 stroke-[1.8]" />
+          )}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+          <div className="text-[11px] font-bold text-[#8C7A6B] uppercase tracking-wider">
             {title}
           </div>
-          <div className="text-2xl lg:text-3xl font-extrabold text-museum-brown tracking-tight">
+          <div className="text-2xl sm:text-[28px] font-extrabold text-[#2B170B] tracking-tight leading-none mt-1 mb-1">
             {typeof value === 'number' ? formatNumber(value) : value}
           </div>
-          <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-success">
-            <TrendingUp className="w-3.5 h-3.5" />
+          <div className="text-[11px] font-medium text-[#2E7D32] flex items-center gap-1">
+            <span>↗</span>
             <span>+{growth} so với tháng trước</span>
           </div>
         </div>
