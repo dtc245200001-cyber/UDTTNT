@@ -85,15 +85,44 @@ class ChatResponse(BaseModel):
     artifact_ids: list[str] = Field(default_factory=list, description="Danh sách ID hiện vật liên quan")
 
 
+async def periodic_sync_artifacts():
+    """
+    Tiến trình ngầm: Tự động kiểm tra và đồng bộ hiện vật mới từ Supabase vào ChromaDB.
+    Hoạt động ngay cả khi Admin thêm/sửa/xóa trực tiếp từ Supabase Dashboard mà không qua UI.
+    """
+    import asyncio
+    while True:
+        try:
+            await asyncio.sleep(60)  # Quét kiểm tra mỗi 60 giây
+            from core.supabase_client import supabase_admin
+            from services.vector_db import vector_db_service
+            from routers.hien_vat import _sync_hien_vat_to_chroma
+
+            res = supabase_admin.table("hien_vat").select("*").execute()
+            supa_rows = {row["id"]: row for row in (res.data or [])}
+
+            chroma_res = vector_db_service.collection.get(where={"source_table": "hien_vat"})
+            chroma_sids = {m.get("source_id") for m in chroma_res.get("metadatas", []) if m.get("source_id")}
+
+            missing_ids = set(supa_rows.keys()) - chroma_sids
+            if missing_ids:
+                print(f"🔄 [AutoSync] Phát hiện {len(missing_ids)} hiện vật mới từ Supabase: {missing_ids}")
+                for aid in missing_ids:
+                    row = supa_rows.get(aid)
+                    if row:
+                        _sync_hien_vat_to_chroma(row)
+                print("✅ [AutoSync] Đã tự động đồng bộ hiện vật mới vào ChromaDB và làm mới từ khóa AI.")
+        except Exception as e:
+            pass
+
+
 # ── Startup: Nạp kho tri thức tự động ─────────────────────────────────────
 
 @app.on_event("startup")
 async def startup_event():
     """
     Tự động kiểm tra và nạp kho tri thức nếu Vector DB còn trống.
-    Thứ tự:
-      1. Nạp dữ liệu JSON tĩnh (init_vector_db.py)
-      2. Đồng bộ thêm dữ liệu thật từ Supabase (sync_supabase_to_vector_db.py)
+    Khởi động tiến trình ngầm tự động đồng bộ hiện vật mới.
     """
     total_docs = vector_db_service.count()
     print(f"🏛️ [Startup] Vector DB hiện có {total_docs} chunks tài liệu.")
@@ -108,6 +137,10 @@ async def startup_event():
             sync_supabase_to_vector_db()
         except Exception as e:
             print(f"⚠️  [Startup] Không thể sync Supabase (có thể chưa có dữ liệu): {e}")
+
+    # Bắt đầu vòng lặp đồng bộ ngầm tự động
+    import asyncio
+    asyncio.create_task(periodic_sync_artifacts())
 
 
 # ── Base endpoints ──────────────────────────────────────────────────────────

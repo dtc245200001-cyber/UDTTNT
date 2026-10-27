@@ -585,6 +585,9 @@ export const AppProvider = ({ children }) => {
           ai_analysis: created.aiAnalysis,
         },
       ]);
+      // Tự động đồng bộ ngay vào kho tri thức AI (ChromaDB & Entity Linking)
+      api.post('/api/hien-vat/sync-single', { hien_vat_id: created.id, action: 'upsert' })
+        .catch((err) => console.warn('Sync AI vector background notice:', err));
     } catch (e) {
       console.warn('Supabase insert artifact notice', e);
     }
@@ -614,6 +617,10 @@ export const AppProvider = ({ children }) => {
           description: updatedData.description,
         })
         .eq('id', id);
+
+      // Tự động cập nhật lại vector kho tri thức AI
+      api.post('/api/hien-vat/sync-single', { hien_vat_id: id, action: 'upsert' })
+        .catch((err) => console.warn('Sync AI vector background notice:', err));
     } catch (e) {
       console.warn('Supabase update artifact notice', e);
     }
@@ -628,6 +635,9 @@ export const AppProvider = ({ children }) => {
 
     try {
       await supabase.from('hien_vat').delete().eq('id', id);
+      // Tự động xóa khỏi kho tri thức AI
+      api.post('/api/hien-vat/sync-single', { hien_vat_id: id, action: 'delete' })
+        .catch((err) => console.warn('Sync AI vector background notice:', err));
     } catch (e) {
       console.warn('Supabase delete artifact notice', e);
     }

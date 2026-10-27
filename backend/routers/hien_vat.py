@@ -4,6 +4,7 @@ Yêu cầu quyền admin cho các thao tác ghi (INSERT, UPDATE, DELETE).
 """
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, UploadFile, File
+from pydantic import BaseModel
 import uuid
 
 from core.auth import AuthenticatedUser, require_admin
@@ -46,6 +47,12 @@ def _sync_hien_vat_to_chroma(row: dict):
         embedding = get_embedding(doc_text)
         vector_db_service.upsert_document(doc_id, doc_text, metadata, embedding)
         print(f"[ChromaDB] Đã upsert hiện vật: {doc_id}")
+
+        # Tự động làm mới cache Entity Linking và Dynamic Keywords
+        from services.entity_linking import entity_linking_service
+        entity_linking_service.load_artifacts(force_refresh=True)
+        from services.dynamic_keywords import dynamic_keyword_service
+        dynamic_keyword_service.load_keywords(force_refresh=True)
     except Exception as e:
         print(f"[ChromaDB] Lỗi sync hiện vật {row.get('id')}: {e}")
 
@@ -201,3 +208,42 @@ async def delete_hien_vat(
         "success": True,
         "message": f"Đã xóa hiện vật '{target.get('name', hien_vat_id)}'.",
     }
+
+
+class SyncSingleArtifactRequest(BaseModel):
+    hien_vat_id: str
+    action: str = "upsert"  # "upsert" | "delete"
+
+
+@router.post("/sync-single", status_code=status.HTTP_200_OK)
+async def sync_single_artifact(payload: SyncSingleArtifactRequest, background_tasks: BackgroundTasks):
+    """
+    Tự động đồng bộ 1 hiện vật vào ChromaDB và refresh Entity Linking.
+    Được gọi ngay sau khi Admin thêm/sửa/xóa trên giao diện Admin.
+    """
+    aid = payload.hien_vat_id
+    action = payload.action.lower()
+
+    if action == "delete":
+        vector_db_service.delete_document(f"hien_vat_{aid}")
+        from services.entity_linking import entity_linking_service
+        entity_linking_service.load_artifacts(force_refresh=True)
+        from services.dynamic_keywords import dynamic_keyword_service
+        dynamic_keyword_service.load_keywords(force_refresh=True)
+        return {"success": True, "action": "delete", "id": aid}
+
+    # Upsert
+    res = supabase_admin.table("hien_vat").select("*").eq("id", aid).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail=f"Không tìm thấy hiện vật {aid} trong Supabase")
+
+    row = res.data[0]
+    background_tasks.add_task(_sync_hien_vat_to_chroma, row)
+    return {
+        "success": True,
+        "action": "upsert",
+        "id": aid,
+        "name": row.get("name", ""),
+        "message": "Đang đồng bộ vector vào kho tri thức AI thành công."
+    }
+
