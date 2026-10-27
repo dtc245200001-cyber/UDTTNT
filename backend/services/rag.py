@@ -61,12 +61,14 @@ class RAGPipeline:
         # Ưu tiên kiểm tra museum/realtime keywords trước
         if matches_phrase(text, MUSEUM_KEYWORDS + REALTIME_KEYWORDS):
             return False
+        # A4: "hôm nay thế nào" KHÔNG còn là chitchat — đó có thể là câu hỏi
+        # thời tiết/realtime. Chitchat chỉ khớp các mẫu chào hỏi thực sự.
         greetings = [
             "chào", "xin chào", "hello", "hi", "hey", "halo",
             "bạn là ai", "bạn tên gì", "tên bạn là gì",
             "bạn làm được gì", "giúp gì", "giới thiệu bản thân",
             "cảm ơn", "cám ơn", "thank", "thanks", "tạm biệt", "bye", "goodbye",
-            "hôm nay thế nào", "khỏe không", "mấy tuổi", "tuyệt vời",
+            "khỏe không", "mấy tuổi", "tuyệt vời",
             "rất hay", "ok", "oke", "được rồi", "hay quá", "chán", "buồn", "vui"
         ]
 
@@ -121,7 +123,19 @@ class RAGPipeline:
                 "sources": []
             }
 
-        # ── Nhánh 1: Chitchat ───────────────────────────────────────────────
+        # A4: xet realtime TRUOC chitchat
+        # ── Nhánh 1: Real-time data → Function Calling ──────────────────────
+        if self.needs_realtime_data(user_message):
+            print(f"[RAG] Phát hiện câu hỏi real-time → dùng Function Calling")
+            answer = await self.gemini.generate_response_with_tools(
+                user_message=user_message,
+                context="",
+                history=history,
+                is_chitchat=False,
+            )
+            return {"answer": answer, "sources": []}
+
+        # ── Nhánh 2: Chitchat ───────────────────────────────────────────────
         is_chitchat = self.is_conversational_chitchat(user_message, history)
         if is_chitchat:
             cached_ans = get_cached_chitchat_response(user_message)
@@ -133,17 +147,6 @@ class RAGPipeline:
                 context="",
                 history=history,
                 is_chitchat=True,
-            )
-            return {"answer": answer, "sources": []}
-
-        # ── Nhánh 2: Real-time data → Function Calling ──────────────────────
-        if self.needs_realtime_data(user_message):
-            print(f"[RAG] Phát hiện câu hỏi real-time → dùng Function Calling")
-            answer = await self.gemini.generate_response_with_tools(
-                user_message=user_message,
-                context="",
-                history=history,
-                is_chitchat=False,
             )
             return {"answer": answer, "sources": []}
 
@@ -234,14 +237,17 @@ class RAGPipeline:
             yield "Chào bạn 👋 Hôm nay mình có thể giúp gì cho bạn?"
             return
 
-        is_chitchat = self.is_conversational_chitchat(user_message, history)
-        if is_chitchat:
-            cached_ans = get_cached_chitchat_response(user_message)
-            if cached_ans:
-                yield cached_ans
-                return
-
+        # A4: xet realtime TRUOC chitchat (giong process_chat)
         use_tools = self.needs_realtime_data(user_message)
+
+        is_chitchat = False
+        if not use_tools:
+            is_chitchat = self.is_conversational_chitchat(user_message, history)
+            if is_chitchat:
+                cached_ans = get_cached_chitchat_response(user_message)
+                if cached_ans:
+                    yield cached_ans
+                    return
 
         context_str = ""
         if not is_chitchat and not use_tools:

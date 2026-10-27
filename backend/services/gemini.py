@@ -21,11 +21,13 @@ from google import genai
 from google.genai import types
 from services.text_utils import matches_phrase
 from services.constants import MUSEUM_KEYWORDS, REALTIME_KEYWORDS
+from core.config import settings
 
 load_dotenv()
 
-# Lấy tên model từ biến môi trường, mặc định dùng 3.5-flash
-MODEL_NAME = os.getenv("GEMINI_MODEL_NAME", "gemini-3.8-flash")
+# Model chính lấy từ NGUỒN DUY NHẤT: core.config.settings (đọc từ .env).
+# A1: đổi sang gemini-3.5-flash vì gemini-3.8-flash liên tục 503/timeout (xem probe 2026-10-27).
+MODEL_NAME = settings.GEMINI_MODEL_NAME or "gemini-3.5-flash"
 
 SYSTEM_PROMPT = """Bạn là "Trợ lý AI Bảo tàng Quốc gia Việt Nam".
 
@@ -61,14 +63,21 @@ Luôn:
 ========================
 
 1. Câu đầu tiên PHẢI trả lời trực tiếp câu hỏi. Cấm các câu mở đầu vòng vo như "Nhắc đến...", "Đây là một câu hỏi hay", "Chắc hẳn bạn...".
-2. Mặc định tối đa 3 câu (khoảng 60 từ) cho câu hỏi thông thường. Chỉ dài hơn khi người dùng nói rõ "chi tiết", "kể thêm", "phân tích", "giải thích kỹ".
+2. Mặc định tối đa 3 câu (khoảng 60 từ). Chỉ dài hơn khi người dùng nói rõ
+"chi tiết", "kể thêm", "phân tích", "giải thích kỹ".
 3. Cần liệt kê nhiều ý thì dùng tối đa 3-4 gạch đầu dòng ngắn, mỗi dòng dưới 15 từ. Không dùng tiêu đề (#) trong câu trả lời.
 4. In đậm (**...**) chỉ cho tên hiện vật hoặc con số quan trọng nhất, tối đa 2-3 chỗ mỗi câu trả lời.
 5. Tối đa 1 emoji mỗi câu trả lời, và có thể không dùng.
 6. Kết thúc bằng ĐÚNG MỘT câu mời tiếp ngắn nếu tự nhiên (vd "Bạn muốn biết thêm về hoa văn không?"), không lặp lại công thức này ở mọi câu trả lời.
-7. Câu hỏi "ở đâu / vị trí": nêu thẳng "Tầng X · Phòng Y · Kệ Z" ở câu đầu.
-8. Câu hỏi giá vé / giờ mở cửa: trả lời bằng các dòng số liệu ngắn, không thêm lời dẫn.
-9. Khi không có thông tin trong RAG: nói thẳng "Mình chưa có thông tin này" trong 1 câu và gợi ý hỏi quầy lễ tân, không bịa.
+7. Câu hỏi vị trí của HIỆN VẬT bảo tàng: nêu thẳng "Tầng X · Phòng Y · Kệ Z" ở câu đầu.
+8. Câu hỏi giá vé / giờ mở cửa của BẢO TÀNG: trả lời bằng các dòng số liệu ngắn, không thêm lời dẫn.
+9. Quy tắc "Mình chưa có thông tin này" CHỈ áp dụng cho câu hỏi về bảo tàng:
+khi câu hỏi RÕ RÀNG về bảo tàng (hiện vật, triển lãm, giá vé, giờ mở cửa...)
+nhưng dữ liệu RAG/function đều không có: nói thẳng "Mình chưa có thông tin này"
+trong 1 câu và gợi ý hỏi quầy lễ tân, không bịa.
+Với câu kiến thức chung (toán, địa lý, khoa học, văn hóa...) hoặc trò chuyện đời
+thường KHÔNG liên quan đến bảo tàng: trả lời thẳng bằng kiến thức nội tại theo
+mục 8, KHÔNG dùng câu "Mình chưa có thông tin này".
 
 Ví dụ TỐT:
 User: "Trống đồng"
@@ -322,8 +331,9 @@ class GeminiService:
                 kwargs['config'] = types.GenerateContentConfig(thinking_config=thinking_config)
 
     def _get_models_to_try(self):
+        # A1: MỘT nguồn cấu hình duy nhất = core.config.settings (đọc từ .env).
         primary = MODEL_NAME
-        fallback_str = os.getenv("GEMINI_FALLBACK_MODELS", "gemini-3.5-flash,gemini-2.5-flash,gemini-2.5-flash-lite")
+        fallback_str = settings.GEMINI_FALLBACK_MODELS or ""
         fallbacks = [m.strip() for m in fallback_str.split(",") if m.strip()]
         
         models_to_try = [primary] + fallbacks
@@ -410,7 +420,12 @@ class GeminiService:
                         try:
                             first_chunk = await asyncio.wait_for(raw_stream.__anext__(), timeout=15.0)
                         except StopAsyncIteration:
-                            return
+                            # A2: stream rỗng chunk đầu (model trả về rỗng, thường ở câu
+                            # dài/out-of-scope) — tuyệt đối không return im lặng.
+                            # Ghi nhận lỗi và để vòng fallback thử (model, key) tiếp theo.
+                            print(f"[Gemini Stream] Model {model} trả về stream rỗng ngay chunk đầu.")
+                            last_exception = RuntimeError(f"Model {model} returned empty stream")
+                            break
                             
                         t1 = time.perf_counter()
                         print(f"[Gemini Stream] Model {model} bắt đầu trả lời sau {t1 - t0:.2f}s")
@@ -520,8 +535,9 @@ class GeminiService:
             prompt_parts.append(
                 "=== THÔNG TIN BẢO TÀNG TỪ RAG ===\n"
                 "(Câu hỏi này không cần dữ liệu bảo tàng — nếu là kiến thức chung, "
-                "hãy trả lời trực tiếp bằng hiểu biết của bạn theo mục 7 KIẾN THỨC "
-                "CHUNG NGOÀI BẢO TÀNG trong SYSTEM ROLE.)"
+                "hãy trả lời trực tiếp bằng hiểu biết của bạn theo mục 8 KIẾN THỨC "
+                "CHUNG NGOÀI BẢO TÀNG trong SYSTEM ROLE. Chỉ dùng câu \"Mình chưa có "
+                "thông tin này\" khi câu hỏi RÕ RÀNG về bảo tàng.)"
             )
 
         prompt_parts.append(
