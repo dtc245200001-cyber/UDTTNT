@@ -19,8 +19,7 @@ import time
 import asyncio
 import json
 import re
-from datetime import datetime
-import zoneinfo
+from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -32,7 +31,7 @@ load_dotenv()
 
 # Model chính lấy từ NGUỒN DUY NHẤT: core.config.settings (đọc từ .env).
 # A1: gemini-3.5-flash (gemini-3.8-flash liên tục 503/timeout — probe 2026-10-27).
-MODEL_NAME = settings.GEMINI_MODEL_NAME or "gemini-3.5-flash"
+MODEL_NAME = settings.GEMINI_MODEL_NAME or "gemini-3.5-flash-lite"
 
 # B6: prompt gon (~3.6k ky tu, giam 71% so voi ~12.7k), giu NGUYEN moi quy tac.
 SYSTEM_PROMPT = """Bạn là "Trợ lý AI Bảo tàng Quốc gia Việt Nam" — trợ lý trò chuyện tự nhiên (không phải chatbot FAQ), duy trì ngữ cảnh và dùng kiến thức bảo tàng khi cần.
@@ -85,6 +84,106 @@ KHÔNG gọi function cho chào hỏi, tâm sự, câu hỏi chung không liên 
 ========================
 Câu kiến thức chung (lịch sử, khoa học, văn hóa...) KHÔNG liên quan trực tiếp đến bảo tàng: trả lời bằng kiến thức nội tại, không cần function/RAG. Nếu là thông tin cụ thể VỀ BẢO TÀNG mà RAG/function đều không có: không bịa — nói "Mình chưa có thông tin này" và gợi ý hỏi quầy lễ tân.
 """
+
+MUSEUM_GROUNDED_PROMPT = """Bạn là Trợ lý AI chính thức của Bảo tàng Lịch sử Quốc gia Việt Nam.
+NGUYÊN TẮC BẮT BUỘC:
+1. CHỈ ĐƯỢC trả lời dựa trên thông tin được cung cấp trong THÔNG TIN BẢO TÀNG TỪ RAG hoặc dữ liệu hệ thống.
+2. TUYỆT ĐỐI KHÔNG tự bịa đặt, suy đoán hay sử dụng kiến thức bên ngoài về hiện vật, niên đại, chất liệu, kích thước, vị trí trưng bày, giá vé.
+3. Nếu trong dữ liệu cung cấp KHÔNG CÓ thông tin để trả lời, bạn PHẢI nói thẳng:
+   "Hiện tại hệ thống dữ liệu của Bảo tàng chưa có thông tin chi tiết về nội dung này. Bạn vui lòng liên hệ quầy thông tin/lễ tân của Bảo tàng để được hướng dẫn chi tiết nhé."
+4. Trả lời chính xác, trang trọng, ngắn gọn, tự nhiên, nêu đúng tên và vị trí hiện vật nếu có trong dữ liệu.
+"""
+
+GENERAL_PROMPT = """Bạn là Trợ lý AI thông minh, hiểu biết và thân thiện.
+Đây là câu hỏi kiến thức chung ngoài bảo tàng.
+Hãy trả lời người dùng một cách chính xác, tự nhiên, đầy đủ bằng kiến thức tổng quát của bạn (văn hóa thế giới, khoa học, đời sống, lập trình, ẩm thực, địa lý...).
+KHÔNG cần gò ép liên hệ hay nhắc đến Bảo tàng Lịch sử Quốc gia nếu người dùng không yêu cầu.
+"""
+
+GRAY_ZONE_HYBRID_PROMPT = """Bạn là Trợ lý AI của Bảo tàng Lịch sử Quốc gia Việt Nam.
+NGUYÊN TẮC XỬ LÝ LAI:
+1. Nếu câu hỏi liên quan đến Bảo tàng Lịch sử Quốc gia Việt Nam: CHỈ ĐƯỢC dùng thông tin có trong THÔNG TIN BẢO TÀNG TỪ RAG. Nếu thiếu thông tin, nói rõ chưa có dữ liệu và hướng dẫn hỏi quầy lễ tân; TUYỆT ĐỐI KHÔNG tự bịa hiện vật, vị trí, giá vé ngoài context.
+2. Nếu câu hỏi là về kiến thức phổ thông, thế giới (địa danh quốc tế, tác phẩm nghệ thuật thế giới, khoa học, lịch sử thế giới...): Hãy trả lời tự do, chính xác bằng kiến thức tổng quát của bạn.
+"""
+
+
+# ── Khai báo Tool Declarations cho Gemini Function Calling ─────────────────
+
+TOOL_DECLARATIONS = types.Tool(
+    function_declarations=[
+        types.FunctionDeclaration(
+            name="get_thong_ke_tong_quan",
+            description=(
+                "Tra cứu số liệu thống kê THẬT của bảo tàng từ cơ sở dữ liệu. "
+                "Gọi khi người dùng hỏi về số lượng hiện vật, bao nhiêu hiện vật, "
+                "bao nhiêu triển lãm, bao nhiêu sự kiện, có bao nhiêu phòng, "
+                "thống kê bảo tàng, danh mục nào nhiều nhất. "
+                "PHẢI gọi function này thay vì tự ước tính hoặc bịa đặt."
+            ),
+            parameters=types.Schema(
+                type=types.Type.OBJECT,
+                properties={},
+                required=[],
+            ),
+        ),
+        types.FunctionDeclaration(
+            name="get_ve_gia_va_con_cho",
+            description=(
+                "Tra cứu danh sách loại vé tham quan bảo tàng và giá vé hiện tại. "
+                "Gọi khi người dùng hỏi về giá vé, mua vé, loại vé."
+            ),
+            parameters=types.Schema(
+                type=types.Type.OBJECT,
+                properties={},
+                required=[],
+            ),
+        ),
+        types.FunctionDeclaration(
+            name="get_su_kien_sap_dien_ra",
+            description=(
+                "Tra cứu danh sách sự kiện sắp diễn ra tại bảo tàng từ hôm nay trở đi. "
+                "Gọi khi người dùng hỏi về sự kiện, lịch sự kiện, hôm nay có gì, "
+                "tuần này có gì, workshop, tọa đàm, triển lãm sắp tới."
+            ),
+            parameters=types.Schema(
+                type=types.Type.OBJECT,
+                properties={},
+                required=[],
+            ),
+        ),
+        types.FunctionDeclaration(
+            name="get_trien_lam_dang_dien_ra",
+            description=(
+                "Tra cứu các triển lãm đang diễn ra tại bảo tàng hiện nay. "
+                "Gọi khi người dùng hỏi triển lãm nào đang mở, có triển lãm gì hiện tại, "
+                "đang trưng bày gì."
+            ),
+            parameters=types.Schema(
+                type=types.Type.OBJECT,
+                properties={},
+                required=[],
+            ),
+        ),
+        types.FunctionDeclaration(
+            name="get_danh_gia_trung_binh",
+            description=(
+                "Tra cứu điểm đánh giá trung bình và các nhận xét của khách tham quan "
+                "về một hiện vật cụ thể. Gọi khi người dùng hỏi 'hiện vật này được đánh giá "
+                "thế nào', 'mọi người nghĩ gì về', 'rating của'."
+            ),
+            parameters=types.Schema(
+                type=types.Type.OBJECT,
+                properties={
+                    "object_id": types.Schema(
+                        type=types.Type.STRING,
+                        description="ID của hiện vật trong hệ thống (ví dụ: ART_abc123)"
+                    )
+                },
+                required=["object_id"],
+            ),
+        ),
+    ]
+)
 
 
 class GeminiService:
@@ -435,7 +534,7 @@ class GeminiService:
     ) -> str:
         prompt_parts = []
 
-        now = datetime.now(zoneinfo.ZoneInfo("Asia/Ho_Chi_Minh"))
+        now = datetime.now(timezone(timedelta(hours=7)))
         weekdays = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"]
         weekday_str = weekdays[now.isoweekday() % 7]
         time_str = f"Hôm nay là {weekday_str}, ngày {now.strftime('%d')} tháng {now.strftime('%m')} năm {now.strftime('%Y')}, giờ hiện tại khoảng {now.strftime('%H:%M')} (giờ Việt Nam)."
@@ -482,7 +581,9 @@ class GeminiService:
         user_message: str,
         context: str = "",
         history: list[dict] = None,
-        is_chitchat: bool = False
+        is_chitchat: bool = False,
+        system_instruction: str = None,
+        temperature: float = None,
     ) -> str:
         # C2: client None = loi ky thuat that (log ro, khong gia vo response rong).
         if self.client is None:
@@ -496,7 +597,8 @@ class GeminiService:
             response = await self._execute_with_fallback(
                 contents=full_prompt,
                 config=types.GenerateContentConfig(
-                    system_instruction=SYSTEM_PROMPT,
+                    system_instruction=system_instruction or SYSTEM_PROMPT,
+                    temperature=temperature,
                     max_output_tokens=500,
                 )
             )
@@ -622,6 +724,8 @@ class GeminiService:
         history: list[dict] = None,
         is_chitchat: bool = False,
         use_tools: bool = False,
+        system_instruction: str = None,
+        temperature: float = None,
     ):
         """
         Sinh câu trả lời dạng streaming (yield từng chunk).
@@ -638,9 +742,12 @@ class GeminiService:
         status_delay = float(settings.STREAM_STATUS_DELAY_S or 3.0)
 
         async def _stream_texts(agen):
-            """Lay text tu stream chunk, bo qua chunk rong/ValueError."""
+            """Lay text tu stream chunk, bo qua chunk rong/ValueError.
+            Dict events (stream_event, status) duoc pass-through nguyen ven.
+            """
             async for ch in agen:
                 if isinstance(ch, dict):
+                    yield ch  # pass-through: stream_event, status...
                     continue
                 try:
                     t = ch.text
@@ -767,12 +874,15 @@ class GeminiService:
             # gap MAX_TOKENS thi goi tiep "viet tiep" toi da 1 lan.
             async def _plain_stream(prompt_text):
                 async for item in _with_status_notice(
-                    self._stream_with_fallback(
-                        contents=prompt_text,
-                        config=types.GenerateContentConfig(
-                            system_instruction=SYSTEM_PROMPT,
-                            max_output_tokens=1024,
-                        ),
+                    _stream_texts(
+                        self._stream_with_fallback(
+                            contents=prompt_text,
+                            config=types.GenerateContentConfig(
+                                system_instruction=system_instruction or SYSTEM_PROMPT,
+                                temperature=temperature,
+                                max_output_tokens=1024,
+                            ),
+                        )
                     )
                 ):
                     yield item
@@ -787,10 +897,7 @@ class GeminiService:
                     status_event_seen = True
                     yield item
                     continue
-                try:
-                    text = item.text
-                except ValueError:
-                    text = ""
+                text = self._safe_text(item)
                 if text:
                     has_yielded = True
                     yield text
@@ -806,10 +913,7 @@ class GeminiService:
                             continue
                         yield item
                         continue
-                    try:
-                        text = item.text
-                    except ValueError:
-                        text = ""
+                    text = self._safe_text(item)
                     if text:
                         has_yielded = True
                         yield text
@@ -845,6 +949,9 @@ class GeminiService:
 
     @staticmethod
     def _safe_text(response) -> str:
+        # Neu da la string (da duoc trich tu _stream_texts), giu nguyen khoang trang cho stream chunk
+        if isinstance(response, str):
+            return response
         try:
             t = response.text if response is not None else ""
         except ValueError:

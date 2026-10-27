@@ -1,62 +1,51 @@
 """
-RAG Pipeline — Điều phối luồng xử lý hội thoại thông minh.
+RAG Pipeline — Điều phối luồng xử lý hội thoại thông minh 3 Vùng.
 
-Ba nhánh xử lý:
-  1. Chitchat / xã giao → Gemini trả lời luôn (không RAG, không function)
-  2. Dữ liệu real-time (vé, sự kiện hôm nay...) → Function Calling
-  3. Kiến thức bảo tàng tĩnh → RAG ChromaDB → Gemini tổng hợp
-
-Nhom B: B3 song song hoa + dung chung helper, B4 bo qua RAG cho cau kien
-thuc chung ro rang, B5 cache embedding + cache cau tra loi.
+Các nhánh xử lý:
+  1. Chitchat / xã giao → Gemini trực tiếp (không thẻ, không RAG)
+  2. Intent có cấu trúc → Truy vấn trực tiếp DB Supabase (list_featured, trien_lam_dang_dien_ra...)
+  3. Chế độ General (Zone 3 hoặc ngoài bảo tàng) → Kiến thức mở Gemini (temperature 0.7, không thẻ)
+  4. Chế độ Museum (Zone 1 hoặc Zone 2 Vùng xám bảo tàng) → Grounded RAG V2 (temperature 0.2)
+     + Ngữ cảnh rỗng: Báo chưa có dữ liệu và hướng dẫn hỏi lễ tân, KHÔNG bịa
+     + Entity Linking: Gắn thẻ hiện vật chuẩn xác từ DB cho câu trả lời
 """
 import asyncio
+import json
+import logging
 import re
 from functools import lru_cache
 from cachetools import TTLCache
+
 from core.config import settings
 from services.embedding import get_embedding, get_embedding_async
 from services.vector_db import vector_db_service
-from services.gemini import gemini_service
+from services.gemini import (
+    gemini_service,
+    SYSTEM_PROMPT,
+    MUSEUM_GROUNDED_PROMPT,
+    GENERAL_PROMPT,
+    GRAY_ZONE_HYBRID_PROMPT
+)
 from services.constants import REALTIME_KEYWORDS, MUSEUM_KEYWORDS
 from services.text_utils import matches_phrase, remove_accents
+from services.rag_router import RAGRouter, RouterDecision
+from services.entity_linking import entity_linking_service
 
-# B4: dau hieu cau hoi kien thuc chung ro rang (da chuan hoa khong dau).
-# Cau khop 1 trong cac dau hieu nay VA khong co tu khoa bao tang/realtime
-# -> bo qua embed + Chroma, goi thang LLM.
-GENERAL_KNOWLEDGE_MARKERS = [
-    "bang may",          # "2+2 bang may"
-    "la gi",             # "thu do cua ... la gi", "... la gi?"
-    "dinh nghia",
-    "giai thich",
-    "thuyet ",           # "thuyet tuong doi..."
-    "thoi tiet",
-    "nguyen tac",
-    "tai sao",
-    "nhu the nao",
-    "cua nuoc nao",
-    "o dau",             # dia ly chung (khong keyword bao tang)
-]
-_ARITHMETIC_RE = None
+logger = logging.getLogger(__name__)
 
+EMPTY_MUSEUM_NOTICE = (
+    "Hiện tại hệ thống dữ liệu của Bảo tàng chưa có thông tin chi tiết về nội dung này. "
+    "Bạn vui lòng liên hệ quầy thông tin/lễ tân của Bảo tàng để được hướng dẫn chi tiết nhé."
+)
 
-def _get_arithmetic_re():
-    global _ARITHMETIC_RE
-    if _ARITHMETIC_RE is None:
-        import re as _re
-        _ARITHMETIC_RE = _re.compile(r"\d\s*[+\-*/^]\s*\d")
-    return _ARITHMETIC_RE
-
-
-# B5: cache embedding (TTL 1h) + cache cau tra loi tinh (TTL theo settings).
 _embed_cache = TTLCache(maxsize=500, ttl=3600)
 _answer_cache = TTLCache(maxsize=200, ttl=600)
 
 
 def normalize_question(text: str) -> str:
-    import re as _re
     q = (text or "").lower().strip()
-    q = _re.sub(r"\s+", " ", q)
-    q = _re.sub(r"[!?.,;:()\[\]]+", "", q).strip()
+    q = re.sub(r"\s+", " ", q)
+    q = re.sub(r"[!?.,;:()\[\]]+", "", q).strip()
     return q
 
 
@@ -76,25 +65,10 @@ async def cached_get_embedding(text: str) -> list:
     return vec
 
 
-def is_general_knowledge_question(text: str) -> bool:
-    """True neu cau ro rang la kien thuc chung VA khong lien quan bao tang."""
-    if matches_phrase(text, MUSEUM_KEYWORDS + REALTIME_KEYWORDS):
-        return False
-    low = normalize_question(remove_accents(text.lower()))
-    if _get_arithmetic_re().search(low):
-        return True
-    return any(m in low for m in GENERAL_KNOWLEDGE_MARKERS)
-
-
 @lru_cache(maxsize=200)
 def get_cached_chitchat_response(text: str) -> str | None:
-    """
-    Cache trả lời nhanh cho các câu chào hỏi/cảm ơn phổ biến.
-    Chỉ dùng cho các câu hỏi ngắn đã có sẵn logic ở _fallback_response.
-    """
+    """Trả lời nhanh các câu chào hỏi/cảm ơn phổ biến."""
     clean = text.lower().strip()
-
-    # Chỉ cache câu rất ngắn để an toàn
     if len(clean.split()) > 5:
         return None
 
@@ -110,7 +84,6 @@ def get_cached_chitchat_response(text: str) -> str | None:
             "Bạn muốn nghe một câu chuyện lịch sử thú vị "
             "hay khám phá một hiện vật đặc biệt?"
         )
-
     return None
 
 
@@ -118,22 +91,18 @@ class RAGPipeline:
     def __init__(self):
         self.vector_db = vector_db_service
         self.gemini = gemini_service
+        self.router = RAGRouter(vector_collection=self.vector_db.collection)
+        self.entity_linking = entity_linking_service
 
     def is_conversational_chitchat(self, text: str, history: list[dict] = None) -> bool:
-        """
-        Nhận diện câu chào hỏi, cảm ơn, tâm sự đời thường không cần gọi RAG hay function.
-        """
+        """Nhận diện câu chào hỏi, cảm ơn, tâm sự không cần gọi RAG."""
         clean = text.lower().strip()
         clean_no_punct = re.sub(r'[^\w\s]', '', clean)
         words = clean_no_punct.split()
 
-        clean_no_accents = remove_accents(clean_no_punct)
-
-        # Ưu tiên kiểm tra museum/realtime keywords trước
         if matches_phrase(text, MUSEUM_KEYWORDS + REALTIME_KEYWORDS):
             return False
-        # A4: "hôm nay thế nào" KHÔNG còn là chitchat — đó có thể là câu hỏi
-        # thời tiết/realtime. Chitchat chỉ khớp các mẫu chào hỏi thực sự.
+
         greetings = [
             "chào", "xin chào", "hello", "hi", "hey", "halo",
             "bạn là ai", "bạn tên gì", "tên bạn là gì",
@@ -143,23 +112,12 @@ class RAGPipeline:
             "rất hay", "ok", "oke", "được rồi", "hay quá", "chán", "buồn", "vui"
         ]
 
-        # Use matches_phrase instead of substring match
         if len(words) <= 7 and matches_phrase(text, greetings):
             return True
-
         return False
 
-    def needs_realtime_data(self, text: str) -> bool:
-        """
-        Kiểm tra xem câu hỏi có cần dữ liệu real-time qua Function Calling không.
-        """
-        # Dùng matches_phrase thay vì substring
-        return matches_phrase(text, REALTIME_KEYWORDS)
-
     def build_search_query(self, user_message: str, history: list[dict] = None) -> str:
-        """
-        Tối ưu hóa câu truy vấn RAG khi người dùng dùng đại từ ngắn.
-        """
+        """Mở rộng query ngắn với ngữ cảnh gần nhất nếu có."""
         short_followup_patterns = [
             "nó", "cái đó", "cái này", "còn cái kia", "vậy à", "thế còn",
             "có gì thú vị", "kể thêm", "tại sao", "ở đâu", "cái nào hay",
@@ -180,19 +138,45 @@ class RAGPipeline:
 
         return user_message
 
+    def format_featured_artifacts_answer(self, featured_items: list[dict]) -> tuple[str, list[str]]:
+        """Dựng câu trả lời danh sách hiện vật tiêu biểu trực tiếp từ DB Supabase (is_featured = true)."""
+        if not featured_items:
+            return "Hiện tại danh sách hiện vật tiêu biểu đang được cập nhật.", []
+
+        lines = ["🏛️ **Các bảo vật quốc gia và hiện vật tiêu biểu của Bảo tàng Lịch sử Quốc gia:**\n"]
+        artifact_ids = []
+        for i, item in enumerate(featured_items, 1):
+            name = item.get("name", "")
+            period = item.get("period", "")
+            loc = item.get("location", "")
+            desc = item.get("description", "")
+            aid = item.get("id", "")
+            artifact_ids.append(aid)
+
+            period_str = f"Thời kỳ: {period}" if period else ""
+            loc_str = f"Vị trí: {loc}" if loc else ""
+            extra = " · ".join(filter(None, [period_str, loc_str]))
+
+            line = f"{i}. **{name}**"
+            if extra:
+                line += f" ({extra})"
+            if desc:
+                short_desc = desc[:150] + ("..." if len(desc) > 150 else "")
+                line += f"\n   - {short_desc}"
+            lines.append(line)
+
+        lines.append("\nBạn có muốn tìm hiểu chi tiết hơn về hiện vật nào trong số này không?")
+        return "\n".join(lines), artifact_ids
+
     async def _retrieve_context(
         self, user_message: str, history: list = None
     ) -> tuple:
-        """B3/B4/B5: tra cuu RAG chung cho ca process_chat va process_chat_stream.
-
-        Tra ve (context_str, sources, artifact_ids, min_dist, skipped).
         """
-        if is_general_knowledge_question(user_message):
-            print("[RAG] Cau kien thuc chung -> bo qua embed + Chroma, goi thang LLM.")
-            return "", [], [], 10.0, True
-
+        Truy xuất tài liệu từ collection V2 (cosine metric).
+        Chỉ giữ các chunk có distance < zone_general_min (0.42).
+        Trả về (context_str, sources, artifact_ids, min_dist, skipped).
+        """
         search_query = self.build_search_query(user_message, history)
-        # B3: embed chay trong thread pool san; cau truc san de mo rong song song.
         query_embedding = await cached_get_embedding(search_query)
 
         matched_chunks = await asyncio.to_thread(
@@ -202,62 +186,55 @@ class RAGPipeline:
             6,
         )
 
-        threshold = float(settings.RAG_DISTANCE_THRESHOLD or 0.85)
+        max_allowed_dist = float(getattr(settings, "RAG_ZONE_GENERAL_MIN", 0.42))
         max_chars = int(settings.RAG_MAX_CONTEXT_CHARS or 4000)
         max_chunk = int(settings.RAG_MAX_CHUNK_CHARS or 1200)
+
         context_parts = []
         sources = []
         seen_titles = set()
         current_len = 0
-        artifact_ids = []
+        retrieved_ids = []
 
-        if matched_chunks and matched_chunks[0].get("distance", 10.0) >= threshold:
-            matched_chunks = []
+        # Lọc theo ngưỡng cosine tối đa
+        valid_chunks = [c for c in (matched_chunks or []) if float(c.get("distance", 10.0)) < max_allowed_dist]
 
-        for chunk in matched_chunks:
-            dist = chunk.get("distance", 0.0)
-            if dist >= threshold:
-                continue
+        for chunk in valid_chunks:
+            dist = float(chunk.get("distance", 0.0))
             meta = chunk.get("metadata", {})
             content = (chunk.get("content", "") or "")[:max_chunk]
-            title = meta.get("title", meta.get("name", "Tu lieu Bao tang"))
-            category = meta.get("category", "Tu lieu lich su")
+            title = meta.get("title", meta.get("name", "Tư liệu Bảo tàng"))
+            category = meta.get("category", "Tư liệu lịch sử")
             period = meta.get("period", "")
             source_table = meta.get("source_table")
             source_id = meta.get("source_id")
 
-            part = f"### {title} (Phan loai: {category})\n{content}"
+            part = f"### {title} (Phân loại: {category})\n{content}"
             if current_len + len(part) > max_chars:
                 break
             context_parts.append(part)
             current_len += len(part)
 
-            if source_table == "hien_vat" and source_id and source_id not in artifact_ids:
-                artifact_ids.append(source_id)
+            if source_table == "hien_vat" and source_id and source_id not in retrieved_ids:
+                retrieved_ids.append(source_id)
+
             if title not in seen_titles:
                 seen_titles.add(title)
                 snippet = content[:180] + ("..." if len(content) > 180 else "")
+                # Độ tương đồng cosine: (1.0 - dist) * 100%
                 sources.append({
                     "id": chunk.get("id", ""),
                     "title": title,
                     "category": category,
                     "period": period,
                     "snippet": snippet,
-                    "relevance": round(max(0.0, 1.0 - (dist / 2.0)) * 100, 1) if dist > 0 else 95.0,
+                    "relevance": round(max(0.0, 1.0 - dist) * 100, 1),
                     "source_table": source_table,
                     "source_id": source_id,
                 })
 
-        min_dist = 10.0
-        for _m in (matched_chunks or []):
-            try:
-                _d = float(_m.get("distance", 10.0))
-            except Exception:
-                _d = 10.0
-            if _d < min_dist:
-                min_dist = _d
-
-        return "\n\n".join(context_parts), sources, artifact_ids, min_dist, False
+        min_dist = min([float(c.get("distance", 10.0)) for c in matched_chunks], default=10.0)
+        return "\n\n".join(context_parts), sources, retrieved_ids, min_dist, False
 
     def _answer_cache_get(self, user_message: str, history: list = None):
         if history:
@@ -278,43 +255,28 @@ class RAGPipeline:
             pass
 
     async def process_chat(self, user_message: str, history: list[dict] = None) -> dict:
-        """
-        Quy trình xử lý hội thoại thông minh 3 nhánh:
-          1. Chitchat → Gemini trực tiếp
-          2. Real-time → Function Calling qua Gemini
-          3. Tĩnh → RAG ChromaDB → Gemini
-        """
+        """Quy trình xử lý chat hoàn chỉnh với 3 Vùng và Entity Linking."""
         user_message = user_message.strip()
         if not user_message:
             return {
                 "answer": "Chào bạn 👋 Hôm nay mình có thể giúp gì cho bạn?",
-                "sources": []
+                "sources": [],
+                "artifact_ids": []
             }
 
-        # B5: cache cau tra loi tinh lap lai (chi khi khong co history)
+        # Cache HIT cho câu hỏi lặp lại không có history
         cached = self._answer_cache_get(user_message, history)
         if cached:
-            print("[RAG] Answer cache HIT.")
             return {"answer": cached, "sources": [], "artifact_ids": []}
 
-        # A4: xet realtime TRUOC chitchat
-        # ── Nhánh 1: Real-time data → Function Calling ──────────────────────
-        if self.needs_realtime_data(user_message):
-            print(f"[RAG] Phát hiện câu hỏi real-time → dùng Function Calling")
-            answer = await self.gemini.generate_response_with_tools(
-                user_message=user_message,
-                context="",
-                history=history,
-                is_chitchat=False,
-            )
-            return {"answer": answer, "sources": []}
+        # ── 1. Định tuyến thông minh 3 Vùng ─────────────────────────────────
+        decision: RouterDecision = await self.router.route_query(user_message, history=history)
 
-        # ── Nhánh 2: Chitchat ───────────────────────────────────────────────
-        is_chitchat = self.is_conversational_chitchat(user_message, history)
-        if is_chitchat:
+        # ── 2. Xử lý Chào hỏi / Chitchat ────────────────────────────────────
+        if self.is_conversational_chitchat(user_message, history):
             cached_ans = get_cached_chitchat_response(user_message)
             if cached_ans:
-                return {"answer": cached_ans, "sources": []}
+                return {"answer": cached_ans, "sources": [], "artifact_ids": []}
 
             answer = await self.gemini.generate_response(
                 user_message=user_message,
@@ -322,81 +284,210 @@ class RAGPipeline:
                 history=history,
                 is_chitchat=True,
             )
-            return {"answer": answer, "sources": []}
+            return {"answer": answer, "sources": [], "artifact_ids": []}
 
-        # Nhanh 3: RAG (B3/B4/B5 qua _retrieve_context)
-        context_str, sources, artifact_ids, _min_dist, _skipped = await self._retrieve_context(
+        # ── 3. Intent có cấu trúc đi thẳng DB (không dùng similarity) ────────
+        if decision.intent == "list_featured":
+            featured = self.entity_linking.get_featured_artifacts(limit=8)
+            ans, a_ids = self.format_featured_artifacts_answer(featured)
+            return {"answer": ans, "sources": [], "artifact_ids": a_ids}
+
+        if decision.intent == "trien_lam_dang_dien_ra" and decision.direct_data:
+            context_str = json.dumps(decision.direct_data, ensure_ascii=False)
+            answer = await self.gemini.generate_response(
+                user_message=user_message,
+                context=f"DỮ LIỆU TRIỂN LÃM ĐANG DIỄN RA TỪ SUPABASE (LỌC THEO THỜI GIAN THẬT):\n{context_str}",
+                history=history,
+                system_instruction=MUSEUM_GROUNDED_PROMPT,
+                temperature=0.2
+            )
+            return {"answer": answer, "sources": [], "artifact_ids": []}
+
+        if decision.intent in ("thong_ke_bao_tang", "gia_ve") and decision.direct_data:
+            context_str = json.dumps(decision.direct_data, ensure_ascii=False)
+            answer = await self.gemini.generate_response(
+                user_message=user_message,
+                context=f"DỮ LIỆU THỐNG KÊ/VÉ THẬT TỪ SUPABASE:\n{context_str}",
+                history=history,
+                system_instruction=MUSEUM_GROUNDED_PROMPT,
+                temperature=0.2
+            )
+            return {"answer": answer, "sources": [], "artifact_ids": []}
+
+        # ── 4. Chế độ General (Zone 3 hoặc Vùng xám không liên quan bảo tàng) ─
+        if decision.final_mode == "general":
+            answer = await self.gemini.generate_response(
+                user_message=user_message,
+                context="",
+                history=history,
+                system_instruction=GENERAL_PROMPT,
+                temperature=0.7
+            )
+            return {"answer": answer, "sources": [], "artifact_ids": []}
+
+        # ── 5. Chế độ Museum (Zone 1 Grounded hoặc Zone 2 Gray Museum) ───────
+        context_str, sources, retrieved_ids, min_dist, _ = await self._retrieve_context(
             user_message, history
         )
+
+        # Xử lý ngữ cảnh rỗng (hỏi bảo tàng nhưng không có dữ liệu)
+        if not context_str.strip() or min_dist >= float(getattr(settings, "RAG_ZONE_GENERAL_MIN", 0.42)):
+            return {
+                "answer": EMPTY_MUSEUM_NOTICE,
+                "sources": [],
+                "artifact_ids": []
+            }
+
+        # Lựa chọn Prompt và Temperature
+        if decision.zone == "zone_2_gray":
+            sys_inst = GRAY_ZONE_HYBRID_PROMPT
+            temp = 0.3
+        else:
+            sys_inst = MUSEUM_GROUNDED_PROMPT
+            temp = 0.2
 
         answer = await self.gemini.generate_response(
             user_message=user_message,
             context=context_str,
             history=history,
-            is_chitchat=False,
+            system_instruction=sys_inst,
+            temperature=temp
         )
 
-        # Lam sach sources neu mo hinh noi khong co thong tin nhung van co sources yeu
-        low = answer.lower()
-        if "chua tim thay thong tin chinh xac" in low or "khong co thong tin" in low:
-            if len(sources) > 0 and sources[0].get("relevance", 0) < 65:
-                sources = []
-                artifact_ids = []
+        # Entity Linking trích xuất thẻ hiện vật
+        low_ans = answer.lower()
+        if "chua co thong tin" in low_ans or "khong co thong tin" in low_ans or "chua tim thay" in low_ans:
+            sources = []
+            artifact_ids = []
+        else:
+            prev_mode, prev_aid = self.router.check_previous_turn_mode(history)
+            artifact_ids = self.entity_linking.resolve_artifact_ids(
+                final_mode="museum",
+                answer_text=answer,
+                intent=decision.intent,
+                retrieved_ids=retrieved_ids,
+                context_id=prev_aid if decision.is_followup else None
+            )
 
-        # B5: luu cache cau tra loi tinh
         self._answer_cache_set(user_message, answer, history)
-
-        return {"answer": answer, "sources": sources, "artifact_ids": artifact_ids[:4]}
+        return {"answer": answer, "sources": sources, "artifact_ids": artifact_ids}
 
     async def process_chat_stream(
         self,
         user_message: str,
         history: list[dict] = None,
     ):
-        """
-        Giống process_chat() nhưng trả về generator để streaming.
-        Yield từng text chunk.
-        """
+        """Streaming response có hỗ trợ 3 Vùng, SSE chunks và thẻ artifact."""
         user_message = user_message.strip()
         if not user_message:
             yield "Chào bạn 👋 Hôm nay mình có thể giúp gì cho bạn?"
             return
 
-        # A4: xet realtime TRUOC chitchat (giong process_chat)
-        use_tools = self.needs_realtime_data(user_message)
+        # 1. Định tuyến 3 Vùng
+        decision: RouterDecision = await self.router.route_query(user_message, history=history)
 
-        is_chitchat = False
-        if not use_tools:
-            is_chitchat = self.is_conversational_chitchat(user_message, history)
-            if is_chitchat:
-                cached_ans = get_cached_chitchat_response(user_message)
-                if cached_ans:
-                    yield cached_ans
-                    return
+        # 2. Chitchat
+        if self.is_conversational_chitchat(user_message, history):
+            cached_ans = get_cached_chitchat_response(user_message)
+            if cached_ans:
+                yield cached_ans
+                return
+            async for chunk in self.gemini.generate_response_stream(
+                user_message=user_message,
+                context="",
+                history=history,
+                is_chitchat=True,
+            ):
+                yield chunk
+            return
 
-        context_str = ""
-        artifact_ids = []
-        min_dist = 10.0
-        if not is_chitchat and not use_tools:
-            # B3/B4/B5: dung chung helper voi process_chat
-            context_str, _sources, artifact_ids, min_dist, _skipped = await self._retrieve_context(
-                user_message, history
-            )
+        # 3. Intent có cấu trúc
+        if decision.intent == "list_featured":
+            featured = self.entity_linking.get_featured_artifacts(limit=8)
+            ans, a_ids = self.format_featured_artifacts_answer(featured)
+            yield ans
+            if a_ids:
+                yield {"artifact_ids": a_ids}
+            return
 
+        if decision.intent == "trien_lam_dang_dien_ra" and decision.direct_data:
+            context_str = json.dumps(decision.direct_data, ensure_ascii=False)
+            async for chunk in self.gemini.generate_response_stream(
+                user_message=user_message,
+                context=f"DỮ LIỆU TRIỂN LÃM ĐANG DIỄN RA TỪ SUPABASE (LỌC THEO THỜI GIAN THẬT):\n{context_str}",
+                history=history,
+                system_instruction=MUSEUM_GROUNDED_PROMPT,
+                temperature=0.2
+            ):
+                yield chunk
+            return
+
+        if decision.intent in ("thong_ke_bao_tang", "gia_ve") and decision.direct_data:
+            context_str = json.dumps(decision.direct_data, ensure_ascii=False)
+            async for chunk in self.gemini.generate_response_stream(
+                user_message=user_message,
+                context=f"DỮ LIỆU THỐNG KÊ/VÉ THẬT TỪ SUPABASE:\n{context_str}",
+                history=history,
+                system_instruction=MUSEUM_GROUNDED_PROMPT,
+                temperature=0.2
+            ):
+                yield chunk
+            return
+
+        # 4. Chế độ General
+        if decision.final_mode == "general":
+            async for chunk in self.gemini.generate_response_stream(
+                user_message=user_message,
+                context="",
+                history=history,
+                system_instruction=GENERAL_PROMPT,
+                temperature=0.7
+            ):
+                yield chunk
+            return
+
+        # 5. Chế độ Museum
+        context_str, sources, retrieved_ids, min_dist, _ = await self._retrieve_context(
+            user_message, history
+        )
+
+        if not context_str.strip() or min_dist >= float(getattr(settings, "RAG_ZONE_GENERAL_MIN", 0.42)):
+            yield EMPTY_MUSEUM_NOTICE
+            return
+
+        if decision.zone == "zone_2_gray":
+            sys_inst = GRAY_ZONE_HYBRID_PROMPT
+            temp = 0.3
+        else:
+            sys_inst = MUSEUM_GROUNDED_PROMPT
+            temp = 0.2
+
+        full_answer = []
         async for chunk in self.gemini.generate_response_stream(
             user_message=user_message,
             context=context_str,
             history=history,
-            is_chitchat=is_chitchat,
-            use_tools=use_tools,
+            system_instruction=sys_inst,
+            temperature=temp
         ):
+            if isinstance(chunk, str):
+                full_answer.append(chunk)
             yield chunk
 
-        if not is_chitchat and not use_tools and artifact_ids:
-            # Chỉ hiển thị thẻ hiện vật nếu có kết quả RAG thực sự sát (distance < 0.7)
-            # để tránh hiện rác khi hỏi câu ngoài luồng.
-            if min_dist < 0.7:
-                yield {"artifact_ids": artifact_ids[:4]}
+        # Yield artifact cards at end of stream
+        complete_text = "".join(full_answer)
+        low_ans = complete_text.lower()
+        if not ("chua co thong tin" in low_ans or "khong co thong tin" in low_ans or "chua tim thay" in low_ans):
+            prev_mode, prev_aid = self.router.check_previous_turn_mode(history)
+            artifact_ids = self.entity_linking.resolve_artifact_ids(
+                final_mode="museum",
+                answer_text=complete_text,
+                intent=decision.intent,
+                retrieved_ids=retrieved_ids,
+                context_id=prev_aid if decision.is_followup else None
+            )
+            if artifact_ids:
+                yield {"artifact_ids": artifact_ids}
 
 
 # Khởi tạo singleton instance
