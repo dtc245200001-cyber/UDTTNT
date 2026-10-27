@@ -50,7 +50,8 @@ class Settings(BaseSettings):
     STREAM_STATUS_DELAY_S: float = Field(default=3.0, description="Chờ bao lâu thì báo trạng thái đang xử lý khi stream")
 
     # ── RAG (Nhóm B/D) ──
-    RAG_DISTANCE_THRESHOLD: float = Field(default=0.85, description="Ngưỡng distance ChromaDB (D: chờ duyệt mới đổi)")
+    RAG_COLLECTION_NAME: str = Field(default="museum_rag_knowledge", description="Ten collection Chroma (doi sang _v2 khi duyet)")
+    RAG_DISTANCE_THRESHOLD: float = Field(default=0.85, description="Ngưỡng distance ChromaDB (D: chờ duyệt 0.33 moi doi)")
     RAG_MAX_CONTEXT_CHARS: int = Field(default=4000, description="Trần độ dài context RAG nạp vào prompt")
     RAG_MAX_CHUNK_CHARS: int = Field(default=1200, description="Trần độ dài mỗi chunk RAG")
 

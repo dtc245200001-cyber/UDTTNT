@@ -4,14 +4,29 @@ from chromadb.config import Settings
 
 # Đường dẫn lưu trữ Vector Database bền vững
 CHROMA_DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "chroma_db")
+# Ten collection mac dinh; doi qua .env RAG_COLLECTION_NAME
+# (vd museum_rag_knowledge_v2) ma khong can sua code — dung cho viec chuyen V2.
+# Doc qua settings (mot nguon cau hinh duy nhat).
 COLLECTION_NAME = "museum_rag_knowledge"
 
+
+def _resolve_collection_name() -> str:
+    try:
+        from core.config import settings
+        return settings.RAG_COLLECTION_NAME or COLLECTION_NAME
+    except Exception:
+        return os.getenv("RAG_COLLECTION_NAME", COLLECTION_NAME)
+
+
+COLLECTION_NAME = _resolve_collection_name()
+
 class VectorDBService:
-    def __init__(self):
+    def __init__(self, collection_name: str | None = None):
         os.makedirs(CHROMA_DATA_PATH, exist_ok=True)
         self.client = chromadb.PersistentClient(path=CHROMA_DATA_PATH)
+        self.collection_name = collection_name or COLLECTION_NAME
         self.collection = self.client.get_or_create_collection(
-            name=COLLECTION_NAME,
+            name=self.collection_name,
             metadata={"description": "Kho tri thức RAG Bảo tàng Lịch sử Quốc gia Việt Nam"}
         )
 
@@ -21,9 +36,9 @@ class VectorDBService:
 
     def clear(self):
         """Xóa toàn bộ collection để nạp lại dữ liệu mới khi cần"""
-        self.client.delete_collection(COLLECTION_NAME)
+        self.client.delete_collection(self.collection_name)
         self.collection = self.client.get_or_create_collection(
-            name=COLLECTION_NAME,
+            name=self.collection_name,
             metadata={"description": "Kho tri thức RAG Bảo tàng Lịch sử Quốc gia Việt Nam"}
         )
 
