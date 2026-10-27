@@ -5,14 +5,85 @@ Ba nhánh xử lý:
   1. Chitchat / xã giao → Gemini trả lời luôn (không RAG, không function)
   2. Dữ liệu real-time (vé, sự kiện hôm nay...) → Function Calling
   3. Kiến thức bảo tàng tĩnh → RAG ChromaDB → Gemini tổng hợp
+
+Nhom B: B3 song song hoa + dung chung helper, B4 bo qua RAG cho cau kien
+thuc chung ro rang, B5 cache embedding + cache cau tra loi.
 """
+import asyncio
 import re
 from functools import lru_cache
+from cachetools import TTLCache
+from core.config import settings
 from services.embedding import get_embedding, get_embedding_async
 from services.vector_db import vector_db_service
 from services.gemini import gemini_service
 from services.constants import REALTIME_KEYWORDS, MUSEUM_KEYWORDS
 from services.text_utils import matches_phrase, remove_accents
+
+# B4: dau hieu cau hoi kien thuc chung ro rang (da chuan hoa khong dau).
+# Cau khop 1 trong cac dau hieu nay VA khong co tu khoa bao tang/realtime
+# -> bo qua embed + Chroma, goi thang LLM.
+GENERAL_KNOWLEDGE_MARKERS = [
+    "bang may",          # "2+2 bang may"
+    "la gi",             # "thu do cua ... la gi", "... la gi?"
+    "dinh nghia",
+    "giai thich",
+    "thuyet ",           # "thuyet tuong doi..."
+    "thoi tiet",
+    "nguyen tac",
+    "tai sao",
+    "nhu the nao",
+    "cua nuoc nao",
+    "o dau",             # dia ly chung (khong keyword bao tang)
+]
+_ARITHMETIC_RE = None
+
+
+def _get_arithmetic_re():
+    global _ARITHMETIC_RE
+    if _ARITHMETIC_RE is None:
+        import re as _re
+        _ARITHMETIC_RE = _re.compile(r"\d\s*[+\-*/^]\s*\d")
+    return _ARITHMETIC_RE
+
+
+# B5: cache embedding (TTL 1h) + cache cau tra loi tinh (TTL theo settings).
+_embed_cache = TTLCache(maxsize=500, ttl=3600)
+_answer_cache = TTLCache(maxsize=200, ttl=600)
+
+
+def normalize_question(text: str) -> str:
+    import re as _re
+    q = (text or "").lower().strip()
+    q = _re.sub(r"\s+", " ", q)
+    q = _re.sub(r"[!?.,;:()\[\]]+", "", q).strip()
+    return q
+
+
+async def cached_get_embedding(text: str) -> list:
+    key = normalize_question(text)
+    try:
+        hit = _embed_cache.get(key)
+    except Exception:
+        hit = None
+    if hit is not None:
+        return hit
+    vec = await get_embedding_async(text)
+    try:
+        _embed_cache[key] = vec
+    except Exception:
+        pass
+    return vec
+
+
+def is_general_knowledge_question(text: str) -> bool:
+    """True neu cau ro rang la kien thuc chung VA khong lien quan bao tang."""
+    if matches_phrase(text, MUSEUM_KEYWORDS + REALTIME_KEYWORDS):
+        return False
+    low = normalize_question(remove_accents(text.lower()))
+    if _get_arithmetic_re().search(low):
+        return True
+    return any(m in low for m in GENERAL_KNOWLEDGE_MARKERS)
 
 
 @lru_cache(maxsize=200)
@@ -22,7 +93,7 @@ def get_cached_chitchat_response(text: str) -> str | None:
     Chỉ dùng cho các câu hỏi ngắn đã có sẵn logic ở _fallback_response.
     """
     clean = text.lower().strip()
-    
+
     # Chỉ cache câu rất ngắn để an toàn
     if len(clean.split()) > 5:
         return None
@@ -77,13 +148,13 @@ class RAGPipeline:
             return True
 
         return False
+
     def needs_realtime_data(self, text: str) -> bool:
         """
         Kiểm tra xem câu hỏi có cần dữ liệu real-time qua Function Calling không.
         """
         # Dùng matches_phrase thay vì substring
         return matches_phrase(text, REALTIME_KEYWORDS)
-
 
     def build_search_query(self, user_message: str, history: list[dict] = None) -> str:
         """
@@ -109,6 +180,103 @@ class RAGPipeline:
 
         return user_message
 
+    async def _retrieve_context(
+        self, user_message: str, history: list = None
+    ) -> tuple:
+        """B3/B4/B5: tra cuu RAG chung cho ca process_chat va process_chat_stream.
+
+        Tra ve (context_str, sources, artifact_ids, min_dist, skipped).
+        """
+        if is_general_knowledge_question(user_message):
+            print("[RAG] Cau kien thuc chung -> bo qua embed + Chroma, goi thang LLM.")
+            return "", [], [], 10.0, True
+
+        search_query = self.build_search_query(user_message, history)
+        # B3: embed chay trong thread pool san; cau truc san de mo rong song song.
+        query_embedding = await cached_get_embedding(search_query)
+
+        matched_chunks = await asyncio.to_thread(
+            self.vector_db.query_similar,
+            query_embedding,
+            search_query,
+            6,
+        )
+
+        threshold = float(settings.RAG_DISTANCE_THRESHOLD or 0.85)
+        max_chars = int(settings.RAG_MAX_CONTEXT_CHARS or 4000)
+        max_chunk = int(settings.RAG_MAX_CHUNK_CHARS or 1200)
+        context_parts = []
+        sources = []
+        seen_titles = set()
+        current_len = 0
+        artifact_ids = []
+
+        if matched_chunks and matched_chunks[0].get("distance", 10.0) >= threshold:
+            matched_chunks = []
+
+        for chunk in matched_chunks:
+            dist = chunk.get("distance", 0.0)
+            if dist >= threshold:
+                continue
+            meta = chunk.get("metadata", {})
+            content = (chunk.get("content", "") or "")[:max_chunk]
+            title = meta.get("title", meta.get("name", "Tu lieu Bao tang"))
+            category = meta.get("category", "Tu lieu lich su")
+            period = meta.get("period", "")
+            source_table = meta.get("source_table")
+            source_id = meta.get("source_id")
+
+            part = f"### {title} (Phan loai: {category})\n{content}"
+            if current_len + len(part) > max_chars:
+                break
+            context_parts.append(part)
+            current_len += len(part)
+
+            if source_table == "hien_vat" and source_id and source_id not in artifact_ids:
+                artifact_ids.append(source_id)
+            if title not in seen_titles:
+                seen_titles.add(title)
+                snippet = content[:180] + ("..." if len(content) > 180 else "")
+                sources.append({
+                    "id": chunk.get("id", ""),
+                    "title": title,
+                    "category": category,
+                    "period": period,
+                    "snippet": snippet,
+                    "relevance": round(max(0.0, 1.0 - (dist / 2.0)) * 100, 1) if dist > 0 else 95.0,
+                    "source_table": source_table,
+                    "source_id": source_id,
+                })
+
+        min_dist = 10.0
+        for _m in (matched_chunks or []):
+            try:
+                _d = float(_m.get("distance", 10.0))
+            except Exception:
+                _d = 10.0
+            if _d < min_dist:
+                min_dist = _d
+
+        return "\n\n".join(context_parts), sources, artifact_ids, min_dist, False
+
+    def _answer_cache_get(self, user_message: str, history: list = None):
+        if history:
+            return None
+        try:
+            return _answer_cache.get(normalize_question(user_message))
+        except Exception:
+            return None
+
+    def _answer_cache_set(self, user_message: str, answer: str, history: list = None):
+        if history or not answer:
+            return
+        try:
+            size = int(settings.ANSWER_CACHE_SIZE or 200)
+            _answer_cache.maxsize = size
+            _answer_cache[normalize_question(user_message)] = answer
+        except Exception:
+            pass
+
     async def process_chat(self, user_message: str, history: list[dict] = None) -> dict:
         """
         Quy trình xử lý hội thoại thông minh 3 nhánh:
@@ -122,6 +290,12 @@ class RAGPipeline:
                 "answer": "Chào bạn 👋 Hôm nay mình có thể giúp gì cho bạn?",
                 "sources": []
             }
+
+        # B5: cache cau tra loi tinh lap lai (chi khi khong co history)
+        cached = self._answer_cache_get(user_message, history)
+        if cached:
+            print("[RAG] Answer cache HIT.")
+            return {"answer": cached, "sources": [], "artifact_ids": []}
 
         # A4: xet realtime TRUOC chitchat
         # ── Nhánh 1: Real-time data → Function Calling ──────────────────────
@@ -141,7 +315,7 @@ class RAGPipeline:
             cached_ans = get_cached_chitchat_response(user_message)
             if cached_ans:
                 return {"answer": cached_ans, "sources": []}
-                
+
             answer = await self.gemini.generate_response(
                 user_message=user_message,
                 context="",
@@ -150,63 +324,10 @@ class RAGPipeline:
             )
             return {"answer": answer, "sources": []}
 
-        # ── Nhánh 3: Tra cứu tĩnh → RAG ChromaDB ───────────────────────────
-        search_query = self.build_search_query(user_message, history)
-        query_embedding = await get_embedding_async(search_query)
-
-        matched_chunks = self.vector_db.query_similar(
-            query_embedding=query_embedding,
-            query_text=search_query,
-            n_results=6
+        # Nhanh 3: RAG (B3/B4/B5 qua _retrieve_context)
+        context_str, sources, artifact_ids, _min_dist, _skipped = await self._retrieve_context(
+            user_message, history
         )
-
-        DISTANCE_THRESHOLD = 0.85
-        context_parts = []
-        sources = []
-        seen_titles = set()
-        current_context_len = 0
-        artifact_ids = []
-
-        if matched_chunks and matched_chunks[0].get("distance", 10.0) >= DISTANCE_THRESHOLD:
-            # TOP 1 không đạt ngưỡng chặt, coi như context rỗng để fallback về kiến thức chung
-            matched_chunks = []
-
-        for chunk in matched_chunks:
-            dist = chunk.get("distance", 0.0)
-            meta = chunk.get("metadata", {})
-            content = chunk.get("content", "")
-            title = meta.get("title", meta.get("name", "Tư liệu Bảo tàng"))
-            category = meta.get("category", "Tư liệu lịch sử")
-            period = meta.get("period", "")
-            source_table = meta.get("source_table")
-            source_id = meta.get("source_id")
-
-            if dist < DISTANCE_THRESHOLD:
-                part_text = f"### {title} (Phân loại: {category})\n{content}"
-                if current_context_len + len(part_text) > 6000:
-                    break
-                
-                context_parts.append(part_text)
-                current_context_len += len(part_text)
-                
-                if source_table == "hien_vat" and source_id and source_id not in artifact_ids:
-                    artifact_ids.append(source_id)
-
-                if title not in seen_titles:
-                    seen_titles.add(title)
-                    snippet = content[:180] + ("..." if len(content) > 180 else "")
-                    sources.append({
-                        "id": chunk.get("id", ""),
-                        "title": title,
-                        "category": category,
-                        "period": period,
-                        "snippet": snippet,
-                        "relevance": round(max(0.0, 1.0 - (dist / 2.0)) * 100, 1) if dist > 0 else 95.0,
-                        "source_table": source_table,
-                        "source_id": source_id
-                    })
-
-        context_str = "\n\n".join(context_parts)
 
         answer = await self.gemini.generate_response(
             user_message=user_message,
@@ -215,11 +336,15 @@ class RAGPipeline:
             is_chitchat=False,
         )
 
-        # Làm sạch sources nếu không tìm thấy kết quả phù hợp
-        if "chưa tìm thấy thông tin chính xác" in answer.lower() or "không có thông tin" in answer.lower():
+        # Lam sach sources neu mo hinh noi khong co thong tin nhung van co sources yeu
+        low = answer.lower()
+        if "chua tim thay thong tin chinh xac" in low or "khong co thong tin" in low:
             if len(sources) > 0 and sources[0].get("relevance", 0) < 65:
                 sources = []
                 artifact_ids = []
+
+        # B5: luu cache cau tra loi tinh
+        self._answer_cache_set(user_message, answer, history)
 
         return {"answer": answer, "sources": sources, "artifact_ids": artifact_ids[:4]}
 
@@ -250,42 +375,13 @@ class RAGPipeline:
                     return
 
         context_str = ""
+        artifact_ids = []
+        min_dist = 10.0
         if not is_chitchat and not use_tools:
-            search_query = self.build_search_query(user_message, history)
-            query_embedding = await get_embedding_async(search_query)
-            matched_chunks = self.vector_db.query_similar(
-                query_embedding=query_embedding,
-                query_text=search_query,
-                n_results=6
+            # B3/B4/B5: dung chung helper voi process_chat
+            context_str, _sources, artifact_ids, min_dist, _skipped = await self._retrieve_context(
+                user_message, history
             )
-            DISTANCE_THRESHOLD = 0.85
-            context_parts = []
-            current_context_len = 0
-            artifact_ids = []
-            
-            if matched_chunks and matched_chunks[0].get("distance", 10.0) >= DISTANCE_THRESHOLD:
-                matched_chunks = []
-                
-            for chunk in matched_chunks:
-                dist = chunk.get("distance", 0.0)
-                meta = chunk.get("metadata", {})
-                content = chunk.get("content", "")
-                title = meta.get("title", "Tư liệu Bảo tàng")
-                category = meta.get("category", "Tư liệu lịch sử")
-                source_table = meta.get("source_table")
-                source_id = meta.get("source_id")
-                
-                if dist < DISTANCE_THRESHOLD:
-                    part_text = f"### {title} (Phân loại: {category})\n{content}"
-                    if current_context_len + len(part_text) > 6000:
-                        break
-                    context_parts.append(part_text)
-                    current_context_len += len(part_text)
-                    
-                    if source_table == "hien_vat" and source_id and source_id not in artifact_ids:
-                        artifact_ids.append(source_id)
-                        
-            context_str = "\n\n".join(context_parts)
 
         async for chunk in self.gemini.generate_response_stream(
             user_message=user_message,
@@ -299,7 +395,6 @@ class RAGPipeline:
         if not is_chitchat and not use_tools and artifact_ids:
             # Chỉ hiển thị thẻ hiện vật nếu có kết quả RAG thực sự sát (distance < 0.7)
             # để tránh hiện rác khi hỏi câu ngoài luồng.
-            min_dist = matched_chunks[0].get("distance", 10.0) if matched_chunks else 10.0
             if min_dist < 0.7:
                 yield {"artifact_ids": artifact_ids[:4]}
 
