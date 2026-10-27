@@ -15,3 +15,8 @@ backend/__pycache__/
 
 # Vite Temporary Files
 vite.config.js.timestamp-*
+
+# Logs and Backups
+backend/logs/
+*.log
+backend/data/*backup*/
