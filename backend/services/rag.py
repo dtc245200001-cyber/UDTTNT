@@ -292,22 +292,28 @@ class RAGPipeline:
             ans, a_ids = self.format_featured_artifacts_answer(featured)
             return {"answer": ans, "sources": [], "artifact_ids": a_ids}
 
-        if decision.intent == "trien_lam_dang_dien_ra" and decision.direct_data:
-            context_str = json.dumps(decision.direct_data, ensure_ascii=False)
-            answer = await self.gemini.generate_response(
-                user_message=user_message,
-                context=f"DỮ LIỆU TRIỂN LÃM ĐANG DIỄN RA TỪ SUPABASE (LỌC THEO THỜI GIAN THẬT):\n{context_str}",
-                history=history,
-                system_instruction=MUSEUM_GROUNDED_PROMPT,
-                temperature=0.2
-            )
-            return {"answer": answer, "sources": [], "artifact_ids": []}
+        LIVE_INTENT_LABELS = {
+            "gia_ve": "BẢNG GIÁ VÀ CÁC LOẠI VÉ THAM QUAN ĐANG BÁN THẬT TỪ SUPABASE (BẢNG ve_tham_quan)",
+            "trien_lam": "DANH SÁCH TRIỂN LÃM THẬT TỪ SUPABASE (BẢNG trien_lam)",
+            "trien_lam_dang_dien_ra": "DANH SÁCH TRIỂN LÃM THẬT TỪ SUPABASE (BẢNG trien_lam)",
+            "su_kien": "DANH SÁCH SỰ KIỆN SẮP DIỄN RA THẬT TỪ SUPABASE (BẢNG su_kien)",
+            "chuyen_de": "DANH SÁCH CÁC CHUYÊN ĐỀ TRƯNG BÀY THẬT TỪ SUPABASE (BẢNG phong_trung_bay)",
+            "danh_gia": "ĐÁNH GIÁ VÀ NHẬN XÉT THỰC TẾ CỦA DU KHÁCH TỪ SUPABASE (BẢNG danh_gia)",
+            "thong_ke_bao_tang": "DỮ LIỆU THỐNG KÊ TỔNG QUAN THẬT TỪ SUPABASE",
+        }
 
-        if decision.intent in ("thong_ke_bao_tang", "gia_ve") and decision.direct_data:
-            context_str = json.dumps(decision.direct_data, ensure_ascii=False)
+        if decision.intent in LIVE_INTENT_LABELS and decision.direct_data:
+            label = LIVE_INTENT_LABELS[decision.intent]
+            context_str = json.dumps(decision.direct_data, ensure_ascii=False, indent=2)
+            prompt_context = (
+                f"{label}:\n{context_str}\n\n"
+                f"YÊU CẦU BẮT BUỘC:\n"
+                f"- Trả lời chính xác, đầy đủ và trung thực dựa trên dữ liệu thật của hệ thống bảo tàng ở trên.\n"
+                f"- Tuyệt đối không tự bịa đặt hoặc dùng số liệu/quy định cũ ngoài hệ thống."
+            )
             answer = await self.gemini.generate_response(
                 user_message=user_message,
-                context=f"DỮ LIỆU THỐNG KÊ/VÉ THẬT TỪ SUPABASE:\n{context_str}",
+                context=prompt_context,
                 history=history,
                 system_instruction=MUSEUM_GROUNDED_PROMPT,
                 temperature=0.2
@@ -410,23 +416,28 @@ class RAGPipeline:
                 yield {"artifact_ids": a_ids}
             return
 
-        if decision.intent == "trien_lam_dang_dien_ra" and decision.direct_data:
-            context_str = json.dumps(decision.direct_data, ensure_ascii=False)
-            async for chunk in self.gemini.generate_response_stream(
-                user_message=user_message,
-                context=f"DỮ LIỆU TRIỂN LÃM ĐANG DIỄN RA TỪ SUPABASE (LỌC THEO THỜI GIAN THẬT):\n{context_str}",
-                history=history,
-                system_instruction=MUSEUM_GROUNDED_PROMPT,
-                temperature=0.2
-            ):
-                yield chunk
-            return
+        LIVE_INTENT_LABELS = {
+            "gia_ve": "BẢNG GIÁ VÀ CÁC LOẠI VÉ THAM QUAN ĐANG BÁN THẬT TỪ SUPABASE (BẢNG ve_tham_quan)",
+            "trien_lam": "DANH SÁCH TRIỂN LÃM THẬT TỪ SUPABASE (BẢNG trien_lam)",
+            "trien_lam_dang_dien_ra": "DANH SÁCH TRIỂN LÃM THẬT TỪ SUPABASE (BẢNG trien_lam)",
+            "su_kien": "DANH SÁCH SỰ KIỆN SẮP DIỄN RA THẬT TỪ SUPABASE (BẢNG su_kien)",
+            "chuyen_de": "DANH SÁCH CÁC CHUYÊN ĐỀ TRƯNG BÀY THẬT TỪ SUPABASE (BẢNG phong_trung_bay)",
+            "danh_gia": "ĐÁNH GIÁ VÀ NHẬN XÉT THỰC TẾ CỦA DU KHÁCH TỪ SUPABASE (BẢNG danh_gia)",
+            "thong_ke_bao_tang": "DỮ LIỆU THỐNG KÊ TỔNG QUAN THẬT TỪ SUPABASE",
+        }
 
-        if decision.intent in ("thong_ke_bao_tang", "gia_ve") and decision.direct_data:
-            context_str = json.dumps(decision.direct_data, ensure_ascii=False)
+        if decision.intent in LIVE_INTENT_LABELS and decision.direct_data:
+            label = LIVE_INTENT_LABELS[decision.intent]
+            context_str = json.dumps(decision.direct_data, ensure_ascii=False, indent=2)
+            prompt_context = (
+                f"{label}:\n{context_str}\n\n"
+                f"YÊU CẦU BẮT BUỘC:\n"
+                f"- Trả lời chính xác, đầy đủ và trung thực dựa trên dữ liệu thật của hệ thống bảo tàng ở trên.\n"
+                f"- Tuyệt đối không tự bịa đặt hoặc dùng số liệu/quy định cũ ngoài hệ thống."
+            )
             async for chunk in self.gemini.generate_response_stream(
                 user_message=user_message,
-                context=f"DỮ LIỆU THỐNG KÊ/VÉ THẬT TỪ SUPABASE:\n{context_str}",
+                context=prompt_context,
                 history=history,
                 system_instruction=MUSEUM_GROUNDED_PROMPT,
                 temperature=0.2

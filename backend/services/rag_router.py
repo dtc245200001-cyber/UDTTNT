@@ -28,7 +28,10 @@ from services.dynamic_keywords import dynamic_keyword_service, strip_accents
 from services.live_data_tools import (
     get_trien_lam_dang_dien_ra,
     get_thong_ke_tong_quan,
-    get_ve_gia_va_con_cho
+    get_ve_gia_va_con_cho,
+    get_su_kien_sap_dien_ra,
+    get_chuyen_de_trung_bay,
+    get_danh_gia_tong_quan,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,30 +55,50 @@ FOLLOWUP_PATTERNS = [
     r"\bco chup anh duoc khong\b", r"\bgia bao nhieu\b"
 ]
 
-# Intent có cấu trúc
+# Intent có cấu trúc (truy vấn trực tiếp CSDL Supabase theo dữ liệu thời gian thực)
 STRUCTURED_INTENTS = {
     "list_featured": [
         r"\bhien vat tieu bieu\b", r"\bcac hien vat tieu bieu\b",
-        r"\bbao vat quoc gia tieu bieu\b", r"\bhien vat noi bat\b",
-        r"\bhien vat dac sac\b", r"\btop hien vat\b"
-    ],
-    "trien_lam_dang_dien_ra": [
-        r"\btrien lam dang dien ra\b", r"\bcac chuyen de dang dien ra\b",
-        r"\btrien lam dang mo cua\b", r"\bchuyen de dang trung bay\b",
-        r"\btrien lam hien tai\b", r"\bchuyen de hien tai\b"
-    ],
-    "thong_ke_bao_tang": [
-        r"\bbao tang co bao nhieu hien vat\b", r"\bco bao nhieu hien vat dang trung bay\b",
-        r"\btong so hien vat\b", r"\bbao nhieu phong trung bay\b"
+        r"\bnhung hien vat tieu bieu\b", r"\bbao vat quoc gia\b",
+        r"\bbao vat tieu bieu\b", r"\bhien vat noi bat\b",
+        r"\bhien vat dac sac\b", r"\btop hien vat\b",
+        r"\bco nhung hien vat nao tieu bieu\b"
     ],
     "gia_ve": [
         r"\bgia ve\b", r"\bve tham quan\b", r"\bve bao nhieu tien\b",
-        r"\bhow much is the entrance ticket\b", r"\bticket price\b",
-        r"\bve cho hoc sinh\b", r"\bve sinh vien\b", r"\bve bnhieu tien\b"
+        r"\bve bao nhieu\b", r"\bve dang ban\b", r"\bcac loai ve\b",
+        r"\bnhung loai ve\b", r"\bloai ve\b", r"\bmua ve\b", r"\bdat ve\b",
+        r"\bbang gia ve\b", r"\bhow much.*ticket\b", r"\bticket price\b",
+        r"\bentrance fee\b", r"\bve cho hoc sinh\b", r"\bve sinh vien\b",
+        r"\bve nguoi lon\b", r"\bve tre em\b", r"\bmien phi ve\b",
+        r"\bbang ban nhung loai ve\b", r"\bco ban nhung loai ve\b"
+    ],
+    "trien_lam": [
+        r"\btrien lam\b", r"\bcac trien lam\b", r"\bnhung trien lam\b",
+        r"\bexhibition\b", r"\btrien lam nao\b"
+    ],
+    "su_kien": [
+        r"\bsu kien\b", r"\bcac su kien\b", r"\bnhung su kien\b",
+        r"\btoa dam\b", r"\bworkshop\b", r"\bevent\b", r"\blich su kien\b"
+    ],
+    "chuyen_de": [
+        r"\bchuyen de\b", r"\bcac chuyen de\b", r"\bchuyen de trung bay\b",
+        r"\btrung bay chuyen de\b", r"\bphong trung bay\b", r"\bkhong gian trung bay\b"
+    ],
+    "danh_gia": [
+        r"\bdanh gia\b", r"\bnhan xet\b", r"\bfeedback\b", r"\breview\b",
+        r"\bcam nhan cua khach\b", r"\bkhach tham quan noi gi\b",
+        r"\bdu khach nhan xet\b"
+    ],
+    "thong_ke_bao_tang": [
+        r"\bbao tang co bao nhieu hien vat\b", r"\bco bao nhieu hien vat\b",
+        r"\btong so hien vat\b", r"\bbao nhieu phong trung bay\b",
+        r"\bthong ke bao tang\b", r"\bquy mo bao tang\b"
     ],
     "gio_mo_cua": [
         r"\bgio mo cua\b", r"\bwhat are the opening hours\b",
-        r"\bkhung gio nao\b", r"\bmo cua may gio\b"
+        r"\bkhung gio nao\b", r"\bmo cua may gio\b", r"\bmo cua luc may gio\b",
+        r"\bngay dong cua\b", r"\bmo cua nhung ngay nao\b"
     ],
     "noi_quy": [
         r"\bco duoc mang balo\b", r"\bdo an\b", r"\bchup anh\b", r"\bquay phim\b",
@@ -241,12 +264,18 @@ class RAGRouter:
         intent = self.detect_structured_intent(norm_query)
         if intent:
             direct_data = None
-            if intent == "trien_lam_dang_dien_ra":
+            if intent in ("gia_ve", "ve_tham_quan"):
+                direct_data = get_ve_gia_va_con_cho()
+            elif intent in ("trien_lam", "trien_lam_dang_dien_ra"):
                 direct_data = get_trien_lam_dang_dien_ra()
+            elif intent in ("su_kien", "su_kien_sap_dien_ra"):
+                direct_data = get_su_kien_sap_dien_ra()
+            elif intent in ("chuyen_de", "chuyen_de_trung_bay"):
+                direct_data = get_chuyen_de_trung_bay()
+            elif intent in ("danh_gia", "review"):
+                direct_data = get_danh_gia_tong_quan()
             elif intent == "thong_ke_bao_tang":
                 direct_data = get_thong_ke_tong_quan()
-            elif intent == "gia_ve":
-                direct_data = get_ve_gia_va_con_cho()
 
             decision = RouterDecision(
                 final_mode="museum",

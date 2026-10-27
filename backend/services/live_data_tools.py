@@ -244,13 +244,91 @@ def get_danh_gia_trung_binh(object_id: str) -> dict:
         return {"status": "error", "object_id": object_id, "message": str(e)}
 
 
+def get_chuyen_de_trung_bay() -> dict:
+    """
+    Tra cứu các chuyên đề trưng bày từ bảng phong_trung_bay trên Supabase.
+    Bảng phong_trung_bay: id, name, location, status, description.
+    """
+    try:
+        result = supabase_admin.table("phong_trung_bay").select(
+            "id, name, location, status, description"
+        ).execute()
+
+        items = result.data or []
+        if not items:
+            return {
+                "status": "no_data",
+                "message": "Hiện chưa có thông tin chuyên đề trưng bày.",
+                "galleries": []
+            }
+
+        return {
+            "status": "ok",
+            "galleries": [
+                {
+                    "name": g.get("name", ""),
+                    "location": g.get("location", ""),
+                    "status": g.get("status", ""),
+                    "description": (g.get("description") or "")[:200],
+                }
+                for g in items
+            ],
+            "summary": f"Bảo tàng có {len(items)} chuyên đề trưng bày."
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e), "galleries": []}
+
+
+def get_danh_gia_tong_quan() -> dict:
+    """
+    Tra cứu các nhận xét, đánh giá của du khách về bảo tàng và hiện vật từ bảng danh_gia.
+    Bảng danh_gia: id, author, rating, comment, artifact_name, date.
+    """
+    try:
+        result = supabase_admin.table("danh_gia").select(
+            "id, author, rating, comment, artifact_name, date"
+        ).order("date", desc=True).limit(6).execute()
+
+        reviews = result.data or []
+        if not reviews:
+            return {
+                "status": "no_data",
+                "message": "Hiện chưa có đánh giá nào từ du khách.",
+                "reviews": []
+            }
+
+        ratings = [r["rating"] for r in reviews if r.get("rating")]
+        avg = sum(ratings) / len(ratings) if ratings else 5.0
+
+        return {
+            "status": "ok",
+            "average_rating": round(avg, 1),
+            "total_reviews": len(reviews),
+            "reviews": [
+                {
+                    "author": r.get("author", "Ẩn danh"),
+                    "rating": r.get("rating", 5),
+                    "comment": r.get("comment", ""),
+                    "target": r.get("artifact_name") or "Bảo tàng Quốc gia",
+                    "date": r.get("date", ""),
+                }
+                for r in reviews
+            ],
+            "summary": f"Bảo tàng có đánh giá trung bình {round(avg, 1)}/5 sao từ du khách."
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e), "reviews": []}
+
+
 # ── Mapping tên function → hàm Python (dùng trong vòng lặp function calling) ──
 FUNCTION_MAP = {
     "get_thong_ke_tong_quan": get_thong_ke_tong_quan,
     "get_ve_gia_va_con_cho": get_ve_gia_va_con_cho,
     "get_su_kien_sap_dien_ra": get_su_kien_sap_dien_ra,
     "get_trien_lam_dang_dien_ra": get_trien_lam_dang_dien_ra,
+    "get_chuyen_de_trung_bay": get_chuyen_de_trung_bay,
     "get_danh_gia_trung_binh": get_danh_gia_trung_binh,
+    "get_danh_gia_tong_quan": get_danh_gia_tong_quan,
 }
 
 
