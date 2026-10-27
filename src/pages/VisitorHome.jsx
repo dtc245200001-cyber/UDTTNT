@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import {
@@ -59,7 +59,15 @@ export const VisitorHome = () => {
     setActiveRegisterEvent(ev);
   };
 
-  const featuredArtifacts = artifacts.slice(0, 6);
+  const featuredArtifacts = useMemo(() => {
+    const featured = artifacts.filter((a) => Boolean(a.is_featured));
+    if (featured.length > 0) {
+      return [...featured]
+        .sort((a, b) => (Number(a.featured_order) || 999) - (Number(b.featured_order) || 999))
+        .slice(0, 6);
+    }
+    return artifacts.slice(0, 6);
+  }, [artifacts]);
   const activeExhibitions = exhibitions;
 
   const handleBookTicket = (ticket) => {
