@@ -66,9 +66,11 @@ export const sendChatQuery = async (message, history = []) => {
  * @param {function} onStatus - Callback nhận trạng thái xử lý: (status) => void
  *   (C3: backend gửi {status:"processing"} khi first token chậm >3s;
  *   tham số optional, tương thích ngược với mọi caller cũ)
+ * @param {function} onSources - Callback nhận mảng sources RAG: (sources) => void
+ *   (backend gửi kèm {sources:[...]} đầu stream; optional, caller cũ bỏ qua)
  * @returns {function} Hàm hủy streaming (AbortController.abort)
  */
-export const streamChatQuery = (message, history = [], onChunk, onDone, onError, onArtifacts, onStatus) => {
+export const streamChatQuery = (message, history = [], onChunk, onDone, onError, onArtifacts, onStatus, onSources) => {
   const controller = new AbortController();
 
   const run = async () => {
@@ -128,6 +130,10 @@ export const streamChatQuery = (message, history = [], onChunk, onDone, onError,
               onArtifacts?.(parsed.artifacts);
             }
 
+            if (parsed.sources) {
+              onSources?.(parsed.sources);
+            }
+
             // C3/L2b2: event trạng thái (processing/interrupted, kèm error nếu có)
             if (parsed.status) {
               onStatus?.(parsed.status, parsed);
@@ -146,6 +152,7 @@ export const streamChatQuery = (message, history = [], onChunk, onDone, onError,
             const parsed = JSON.parse(dataStr);
             if (parsed.chunk) onChunk?.(parsed.chunk);
             if (parsed.status) onStatus?.(parsed.status, parsed);
+            if (parsed.sources) onSources?.(parsed.sources);
           }
         } catch {
           // Bỏ qua

@@ -13,11 +13,13 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() not in ('utf-8', 'utf8'):
     except AttributeError:
         pass  # Python < 3.7 không có reconfigure
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
+
+from core.auth import AuthenticatedUser, require_admin
 
 sys.stdout.reconfigure(encoding="utf-8")
 sys.stderr.reconfigure(encoding="utf-8")
@@ -212,6 +214,10 @@ async def chat_stream_endpoint(request: ChatRequest):
                         if chunk["artifact_ids"]:
                             payload = json.dumps({"artifacts": chunk["artifact_ids"]}, ensure_ascii=False)
                             yield f"data: {payload}\n\n"
+                    elif isinstance(chunk, dict) and "sources" in chunk:
+                        if chunk["sources"]:
+                            payload = json.dumps({"sources": chunk["sources"]}, ensure_ascii=False)
+                            yield f"data: {payload}\n\n"
                     elif isinstance(chunk, dict) and "status" in chunk:
                         # C3/L2b2: forward event trang thai (processing/interrupted).
                         # Contract cu giu nguyen: client cu bo qua key "status";
@@ -250,7 +256,7 @@ async def chat_stream_endpoint(request: ChatRequest):
 # ── Admin utilities ─────────────────────────────────────────────────────────
 
 @app.post("/api/admin/sync-rag")
-async def sync_rag_endpoint():
+async def sync_rag_endpoint(admin: AuthenticatedUser = Depends(require_admin)):
     """
     Endpoint để Admin bấm tay đồng bộ lại toàn bộ dữ liệu từ Supabase vào ChromaDB.
     Không cần restart backend.

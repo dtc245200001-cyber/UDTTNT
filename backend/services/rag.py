@@ -248,8 +248,6 @@ class RAGPipeline:
         if history or not answer:
             return
         try:
-            size = int(settings.ANSWER_CACHE_SIZE or 200)
-            _answer_cache.maxsize = size
             _answer_cache[normalize_question(user_message)] = answer
         except Exception:
             pass
@@ -472,6 +470,11 @@ class RAGPipeline:
         else:
             sys_inst = MUSEUM_GROUNDED_PROMPT
             temp = 0.2
+
+        # Gửi sources (trích dẫn RAG) ngay đầu stream để frontend hiển thị.
+        # Client cũ không đọc key này thì bỏ qua — tương thích ngược.
+        if sources:
+            yield {"sources": sources}
 
         full_answer = []
         async for chunk in self.gemini.generate_response_stream(

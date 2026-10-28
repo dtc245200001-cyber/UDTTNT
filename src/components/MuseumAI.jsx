@@ -12,7 +12,7 @@ import { TicketBookingModal } from '@/components/tickets/TicketBookingModal';
 import { detectIntent } from '@/utils/chatIntent';
 import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
-import { normalizeArtifact } from '@/utils/normalizeArtifact';
+import { normalizeArtifact, resolveChatArtifacts } from '@/utils/normalizeArtifact';
 import {
   Bot,
   Sparkles,
@@ -50,6 +50,9 @@ export const MuseumAI = () => {
   const [statusText, setStatusText] = useState('');
   // L2b2: stream dut giua chung — giu text da nhan + hien nut Thu lai
   const [interruptedFlag, setInterruptedFlag] = useState(false);
+  // Ref song song với state: onDone closure giữ giá trị cũ của state,
+  // nên đọc ref để biết chính xác có bị interrupted khi stream kết thúc.
+  const interruptedRef = useRef(false);
   const abortStreamRef = useRef(null);
 
   // Kích thước widget
@@ -226,6 +229,7 @@ export const MuseumAI = () => {
 
     let fullText = '';
     let artifactIds = [];
+    let streamedSources = [];
 
     const handleFallback = async (errMsg) => {
       console.warn('[MuseumAI] Fallback handler called:', errMsg);
@@ -236,7 +240,7 @@ export const MuseumAI = () => {
         const res = await sendChatQuery(textToSend, messages);
         if (res.success && res.answer && !res.answer.includes('Mình đang gặp một chút gián đoạn khi kết nối với AI')) {
           // Backend là nguồn sự thật duy nhất cho thẻ hiện vật
-          const mappedArtifacts = (res.artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
+          const mappedArtifacts = resolveChatArtifacts(res.artifactIds, artifacts, res.sources);
           
           const aiMsg = {
             id: aiMsgId,
@@ -306,21 +310,22 @@ export const MuseumAI = () => {
           }
 
           // Backend là nguồn sự thật duy nhất cho thẻ hiện vật
-          const mappedArtifacts = (artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
+          const mappedArtifacts = resolveChatArtifacts(artifactIds, artifacts, streamedSources);
           
           const aiMsg = {
             id: aiMsgId,
             sender: 'ai',
             text: fullText || '...',
-            sources: [],
+            sources: streamedSources,
             artifacts: mappedArtifacts,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            // L2b2: giu text do + danh dau dut giua chung de hien nut Thu lai
-            interrupted: interruptedFlag,
-            retryText: interruptedFlag ? textToSend : undefined,
+            // L2b2: doc ref (khong phai state) vi closure giu gia tri cu
+            interrupted: interruptedRef.current,
+            retryText: interruptedRef.current ? textToSend : undefined,
           };
           setMessages((prev) => [...prev, aiMsg]);
           setInterruptedFlag(false);
+          interruptedRef.current = false;
         } catch (err) {
           console.error('[MuseumAI] Error in stream onDone:', err);
         } finally {
@@ -345,7 +350,12 @@ export const MuseumAI = () => {
         } else if (status === 'interrupted') {
           setStatusText('');
           setInterruptedFlag(true);
+          interruptedRef.current = true;
         }
+      },
+      // onSources: trích dẫn RAG gửi kèm đầu stream
+      (sources) => {
+        streamedSources = sources || [];
       }
     );
     abortStreamRef.current = abort;

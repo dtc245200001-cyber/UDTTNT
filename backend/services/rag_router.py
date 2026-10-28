@@ -173,6 +173,16 @@ def log_zone_decision(query: str, decision: RouterDecision):
             f"doc={decision.top1_doc[:35]} | "
             f"reason={decision.reason}\n"
         )
+        # Giới hạn kích thước file log (~1MB): khi vượt thì chỉ giữ 500 dòng cuối.
+        # Tránh file phình vô hạn vì mỗi câu chat ghi 1 dòng.
+        try:
+            if os.path.exists(ZONE_LOG_PATH) and os.path.getsize(ZONE_LOG_PATH) > 1_000_000:
+                with open(ZONE_LOG_PATH, "r", encoding="utf-8") as f:
+                    tail_lines = f.readlines()[-500:]
+                with open(ZONE_LOG_PATH, "w", encoding="utf-8") as f:
+                    f.writelines(tail_lines)
+        except Exception:
+            pass
         with open(ZONE_LOG_PATH, "a", encoding="utf-8") as f:
             f.write(log_line)
     except Exception as e:
@@ -277,14 +287,23 @@ class RAGRouter:
             elif intent == "thong_ke_bao_tang":
                 direct_data = get_thong_ke_tong_quan()
 
+            # Các intent không có direct_data (gio_mo_cua, noi_quy, goi_y_tham_quan):
+            # KHÔNG đi thẳng DB mà đi qua nhánh museum RAG chuẩn bên dưới
+            # (dữ liệu đã có trong ChromaDB: museum_info.json + guide docs).
+            # Ghi zone/reason đúng để log không gây hiểu nhầm.
+            uses_rag_fallback = direct_data is None
             decision = RouterDecision(
                 final_mode="museum",
-                zone="zone_structured_intent",
+                zone="zone_rag_museum" if uses_rag_fallback else "zone_structured_intent",
                 top1_dist=0.15,
                 top1_doc=f"Structured Intent: {intent}",
                 intent=intent,
                 direct_data=direct_data,
-                reason=f"Khớp Intent có cấu trúc '{intent}' đi thẳng DB"
+                reason=(
+                    f"Khớp Intent '{intent}' → qua RAG museum (dữ liệu tĩnh museum_info/guide)"
+                    if uses_rag_fallback else
+                    f"Khớp Intent có cấu trúc '{intent}' đi thẳng DB"
+                )
             )
             log_zone_decision(query, decision)
             return decision

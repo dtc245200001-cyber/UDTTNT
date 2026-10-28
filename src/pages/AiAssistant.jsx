@@ -7,6 +7,7 @@ import { ChatArtifactCards } from '@/components/ai/ChatArtifactCards';
 import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal';
 import { searchArtifacts } from '@/utils/artifactSearch';
 import { getFollowUps } from '@/utils/followUpSuggestions';
+import { resolveChatArtifacts } from '@/utils/normalizeArtifact';
 import { useApp } from '@/context/AppContext';
 
 export const AiAssistant = () => {
@@ -18,6 +19,9 @@ export const AiAssistant = () => {
   // C3: text trạng thái khi backend báo first token chậm (status:"processing")
   // L2b2: stream dut giua chung — giu text da nhan + hien nut Thu lai
   const [interruptedFlag, setInterruptedFlag] = useState(false);
+  // Ref song song với state: onDone closure giữ giá trị cũ của state,
+  // nên đọc ref để biết chính xác có bị interrupted khi stream kết thúc.
+  const interruptedRef = useRef(false);
   const [statusText, setStatusText] = useState('');
   const abortStreamRef = useRef(null);
   const [chatHistory, setChatHistory] = useState([
@@ -99,6 +103,7 @@ export const AiAssistant = () => {
 
     let fullText = '';
     let artifactIds = [];
+    let streamedSources = [];
 
     const abort = streamChatQuery(
       query,
@@ -118,19 +123,20 @@ export const AiAssistant = () => {
           throw new Error('AI_CONNECTION_ERROR');
         }
 
-        const mappedArtifacts = artifactIds.map(id => artifacts.find(a => a.id === id)).filter(Boolean);
+        const mappedArtifacts = resolveChatArtifacts(artifactIds, artifacts, streamedSources);
         const aiMsg = {
           id: aiMsgId,
           sender: 'ai',
           text: fullText || '...',
-          sources: [],
+          sources: streamedSources,
           artifacts: mappedArtifacts,
-          // L2b2: giu text do + danh dau dut giua chung
-          interrupted: interruptedFlag,
-          retryText: interruptedFlag ? query : undefined,
+          // L2b2: doc ref (khong phai state) vi closure giu gia tri cu
+          interrupted: interruptedRef.current,
+          retryText: interruptedRef.current ? query : undefined,
         };
         setMessages((prev) => [...prev, aiMsg]);
         setInterruptedFlag(false);
+        interruptedRef.current = false;
         setStreamingText('');
         setStatusText('');
         setStreamingMsgId(null);
@@ -147,7 +153,7 @@ export const AiAssistant = () => {
         try {
           const res = await sendChatQuery(query, messages);
           if (res.success && res.answer && !res.answer.includes('Mình đang gặp một chút gián đoạn khi kết nối với AI')) {
-            const mappedArtifacts = (res.artifactIds || []).map(id => artifacts.find(a => a.id === id)).filter(Boolean);
+            const mappedArtifacts = resolveChatArtifacts(res.artifactIds, artifacts, res.sources);
             const aiMsg = {
               id: aiMsgId,
               sender: 'ai',
@@ -198,7 +204,12 @@ export const AiAssistant = () => {
         } else if (status === 'interrupted') {
           setStatusText('');
           setInterruptedFlag(true);
+          interruptedRef.current = true;
         }
+      },
+      // onSources: trích dẫn RAG gửi kèm đầu stream
+      (sources) => {
+        streamedSources = sources || [];
       }
     );
 
@@ -312,7 +323,7 @@ export const AiAssistant = () => {
 
           {/* Messages Scroll View */}
           <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-museum-ivory/40">
-            {messages.map((msg) => (
+            {messages.map((msg, idx) => (
               <div
                 key={msg.id}
                 className={`flex items-start gap-3 ${

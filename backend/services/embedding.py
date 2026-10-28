@@ -136,7 +136,7 @@ def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
         for text in texts
     ]
 
-    if client is None:
+    if not clients:
         return [
             _create_fallback_embedding(text)
             for text in clean_texts
