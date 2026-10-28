@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import {
   Archive, Plus, Pencil, Trash2, X, AlertTriangle,
-  CalendarDays, MapPin, Users, ImageIcon, Search, Clock, CheckCircle2, Landmark
+  CalendarDays, MapPin, Users, ImageIcon, Search, Clock, CheckCircle2, Landmark, LayoutGrid
 } from 'lucide-react';
+import { Breadcrumb } from '@/components/common/Breadcrumb';
 
 const EMPTY_EXHIBITION = {
   name: '', status: 'Sắp diễn ra', startDate: '', endDate: '',
@@ -92,75 +93,113 @@ export const Exhibitions = () => {
   return (
     <div className="min-h-screen bg-[#FAF6F0] font-sans pb-12">
 
-      {/* ── Hero Banner ── */}
-      <div className="relative overflow-hidden h-[220px] mb-8 bg-museum-brown">
+      {/* ── Hero Banner: Chiều cao chuẩn 220-240px, nền màu nâu di sản, ảnh trống đồng ── */}
+      <div className="relative overflow-hidden min-h-[220px] md:h-[240px] mb-8 bg-museum-brown flex items-center select-none">
         <div className="absolute inset-0 bg-[url('/images/trong-dong.jpg')] bg-cover bg-center" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#2a170b] via-[#3d1f0d]/80 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#2a170b] via-[#3d1f0d]/85 to-transparent" />
         
-        <div className="relative max-w-7xl mx-auto px-6 h-full flex flex-row items-center justify-between">
-          <div className="border-l-[3px] border-museum-gold pl-5 max-w-2xl">
-            <p className="text-xs text-[#FAF6F0]/80 mb-2 font-medium">Trang chủ <span className="opacity-40 mx-1">/</span> Triển lãm</p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[10px] bg-museum-brown/80 backdrop-blur-sm border border-white/10 flex items-center justify-center flex-none">
-                <Landmark className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-white tracking-tight">
-                Triển lãm chuyên đề
-              </h1>
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-0 flex flex-col justify-center">
+          <div className="max-w-full md:max-w-[60%] relative z-10">
+            {/* Breadcrumb: TRANG CHỦ / TRIỂN LÃM */}
+            <div className="relative z-10">
+              <Breadcrumb
+                items={[
+                  { label: 'TRANG CHỦ', path: '/' },
+                  { label: 'TRIỂN LÃM' },
+                ]}
+                variant="dark"
+              />
             </div>
-            <p className="text-white/70 text-[13px] sm:text-sm mt-3 leading-relaxed max-w-lg line-clamp-2">
+
+            {/* Title: Serif bold, large, white */}
+            <h1 
+              className="typo-page-title text-white tracking-wide leading-tight uppercase relative z-10"
+              style={{ textShadow: '0 2px 12px rgba(0,0,0,.45)' }}
+            >
+              TRIỂN LÃM CHUYÊN ĐỀ
+            </h1>
+
+            {/* Description */}
+            <p className="typo-body text-[#F5EFE0]/80 line-clamp-2 mt-2 max-w-xl relative z-10">
               Khám phá những giá trị văn hóa, lịch sử đặc sắc qua các triển lãm được tổ chức định kỳ tại Bảo tàng Quốc gia Việt Nam.
             </p>
-          </div>
-          <div className="hidden md:block absolute right-10 top-1/2 -translate-y-1/2">
-            <p className="text-[#FAF6F0]/90 text-2xl md:text-3xl italic font-serif opacity-90" style={{ fontFamily: '"Playfair Display", "Dancing Script", cursive', transform: 'rotate(-5deg)' }}>
-              Hành trình<br/>khám phá di sản
-            </p>
+
+            {/* Short gold divider bar */}
+            <div className="w-14 h-[2px] bg-[#D4A359] mt-3 rounded-full relative z-10" />
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 space-y-8">
 
-        {/* ── Filter Tabs & Search ── */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-            {filterTabs.map(tab => {
-              let Icon = null;
-              if (tab.key === 'Đang diễn ra') Icon = () => <span className="w-2 h-2 rounded-full bg-museum-gold mr-1.5" />;
-              else if (tab.key === 'Sắp diễn ra') Icon = () => <Clock className="w-3.5 h-3.5 mr-1.5 text-current" />;
-              else if (tab.key === 'Đã kết thúc') Icon = () => <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 text-current" />;
+        {/* ── Filter Tabs & Search Bar ── */}
+        <div className="bg-white px-4 sm:px-5 py-3 rounded-2xl md:rounded-full border border-stone-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          {/* Status Tabs */}
+          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 [&::-webkit-scrollbar]:hidden scroll-smooth flex-1 min-w-0">
+            {filterTabs.map((tab) => {
+              let iconElement = null;
+              if (tab.key === 'all') iconElement = <LayoutGrid className="w-3.5 h-3.5 shrink-0" />;
+              else if (tab.key === 'Đang diễn ra') iconElement = <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" />;
+              else if (tab.key === 'Sắp diễn ra') iconElement = <Clock className="w-3.5 h-3.5 shrink-0" />;
+              else if (tab.key === 'Đã kết thúc') iconElement = <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />;
 
               const isActive = activeFilter === tab.key;
               return (
-                <button key={tab.key} onClick={() => setActiveFilter(tab.key)}
-                  className={`inline-flex items-center whitespace-nowrap px-4 py-2 rounded-full text-[13px] font-semibold transition-all ${
-                    isActive ? 'bg-museum-brown text-white shadow-md' : 'bg-white text-stone-600 border border-stone-200 hover:border-museum-gold/50 hover:text-museum-brown'
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveFilter(tab.key)}
+                  className={`relative h-9 sm:h-10 px-3.5 sm:px-4 rounded-full typo-btn text-xs sm:text-[13px] tracking-normal transition-all duration-200 shrink-0 cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A1E]/40 ${
+                    isActive
+                      ? 'bg-[#8B5A1E] text-white shadow-xs font-bold'
+                      : 'bg-[#F4EFEA] hover:bg-[#EAE2D8] text-[#5C4535] font-semibold'
+                  }`}
+                >
+                  {iconElement && (
+                    <span className={isActive ? 'text-amber-200 flex items-center' : 'text-stone-400 flex items-center'}>
+                      {iconElement}
+                    </span>
+                  )}
+                  <span>{tab.label}</span>
+                  <span className={`px-2 py-0.5 text-[11px] rounded-full font-bold ml-1.5 shrink-0 inline-flex items-center justify-center leading-none ${
+                    isActive ? 'bg-[#B8860B] text-white' : 'bg-stone-200/80 text-stone-600'
                   }`}>
-                  {Icon && <Icon />}
-                  {tab.label}
-                  <span className={`ml-2 px-1.5 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-museum-gold text-white' : 'bg-stone-100 text-stone-500'}`}>{tab.count}</span>
+                    {tab.count}
+                  </span>
                 </button>
               );
             })}
           </div>
 
-          <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Search & Actions */}
+          <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0">
             {currentUser?.role === 'admin' && (
-              <button onClick={openAdd} className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-museum-gold hover:bg-amber-500 text-white font-semibold text-sm rounded-full shadow-sm transition-all whitespace-nowrap shrink-0">
+              <button
+                onClick={openAdd}
+                className="btn-primary inline-flex items-center justify-center gap-1.5 h-11 px-5 typo-btn rounded-full shadow-sm transition-all whitespace-nowrap shrink-0 cursor-pointer"
+              >
                 <Plus className="w-4 h-4" />
-                Tạo triển lãm mới
+                <span>Tạo triển lãm mới</span>
               </button>
             )}
-            <div className="relative w-full md:w-64 shrink-0">
+            <div className="relative flex-1 md:w-72">
+              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input 
                 type="text" 
                 placeholder="Tìm kiếm triển lãm..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-10 py-2 bg-white border border-stone-200 rounded-full text-[13px] focus:outline-none focus:ring-2 focus:ring-museum-gold/50 transition-all"
+                className="search-input w-full pl-10 pr-9 text-xs sm:text-sm placeholder:text-stone-400"
               />
-              <Search className="w-4 h-4 text-stone-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="w-5 h-5 flex items-center justify-center absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 text-xs font-bold cursor-pointer transition-colors"
+                  title="Xóa tìm kiếm"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -174,8 +213,8 @@ export const Exhibitions = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((item) => (
-              <div key={item.id} className="group bg-white rounded-[20px] overflow-hidden shadow-sm border border-stone-100 hover:shadow-md hover:-translate-y-1 transition-all duration-200 flex flex-col">
-                <div className="relative h-48 overflow-hidden">
+              <div key={item.id} className="group bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1 border border-stone-200/80 transition-all duration-300 flex flex-col">
+                <div className="relative aspect-[16/9] overflow-hidden bg-museum-cream">
                   {item.image ? (
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
@@ -183,33 +222,48 @@ export const Exhibitions = () => {
                       <ImageIcon className="w-12 h-12 text-museum-gold/40" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                   
-                  <div className="absolute top-3 left-3">
+                  <div className="absolute top-3 left-3 z-10">
                     <StatusBadge status={item.status} />
                   </div>
                   
                   {currentUser?.role === 'admin' && (
-                    <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <button onClick={() => openEdit(item)} className="w-7 h-7 bg-white/90 backdrop-blur rounded-lg flex items-center justify-center text-museum-brown hover:bg-museum-cream shadow-xs" title="Sửa"><Pencil className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => setDeleteTarget(item)} className="w-7 h-7 bg-white/90 backdrop-blur rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 shadow-xs" title="Xóa"><Trash2 className="w-3.5 h-3.5" /></button>
+                    <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+                      <button onClick={() => openEdit(item)} className="w-8 h-8 bg-white/95 backdrop-blur rounded-lg flex items-center justify-center text-museum-brown hover:bg-museum-cream shadow-xs cursor-pointer" title="Sửa"><Pencil className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => setDeleteTarget(item)} className="w-8 h-8 bg-white/95 backdrop-blur rounded-lg flex items-center justify-center text-red-500 hover:bg-red-50 shadow-xs cursor-pointer" title="Xóa"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   )}
-
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-white font-bold text-lg leading-snug line-clamp-2">{item.name}</h3>
-                  </div>
                 </div>
                 
-                <div className="p-5 flex flex-col flex-1 gap-4">
-                  <p className="text-[13px] text-stone-500 leading-relaxed line-clamp-2 flex-1">{item.description}</p>
-                  <div className="space-y-2.5 text-[13px] text-stone-600">
-                    <div className="flex items-center gap-2.5"><CalendarDays className="w-4 h-4 text-museum-gold shrink-0" /><span className="font-medium">{item.startDate} → {item.endDate}</span></div>
-                    <div className="flex items-center gap-2.5"><MapPin className="w-4 h-4 text-museum-gold shrink-0" /><span>{item.location}</span></div>
+                <div className="p-5 flex flex-col flex-1 justify-between gap-3.5">
+                  <div>
+                    <h3 className="typo-card-title text-museum-brown group-hover:text-museum-gold transition-colors min-h-[2.7em]">
+                      {item.name}
+                    </h3>
+                    <p className="typo-body text-xs text-stone-500 leading-relaxed line-clamp-2 mt-1.5">
+                      {item.description}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-stone-600 mt-auto">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="w-3.5 h-3.5 text-museum-gold shrink-0" />
+                      <span className="font-medium">{item.startDate} → {item.endDate}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-3.5 h-3.5 text-museum-gold shrink-0" />
+                      <span className="truncate">{item.location}</span>
+                    </div>
                     
-                    <div className="flex items-center justify-between pt-3 border-t border-stone-100 mt-2">
-                      <span className="flex items-center gap-1.5 font-medium text-stone-600"><Archive className="w-4 h-4 text-museum-gold" />{item.artifactsCount || 0} hiện vật</span>
-                      <span className="flex items-center gap-1.5 font-medium text-stone-600"><Users className="w-4 h-4 text-museum-gold" />{(item.visitorsCount || 0).toLocaleString()} khách</span>
+                    <div className="flex items-center justify-between pt-3 border-t border-stone-100 mt-1">
+                      <span className="flex items-center gap-1.5 font-medium text-stone-600">
+                        <Archive className="w-3.5 h-3.5 text-museum-gold" />
+                        {item.artifactsCount || 0} hiện vật
+                      </span>
+                      <span className="flex items-center gap-1.5 font-medium text-stone-600">
+                        <Users className="w-3.5 h-3.5 text-museum-gold" />
+                        {(item.visitorsCount || 0).toLocaleString()} khách
+                      </span>
                     </div>
                   </div>
                 </div>

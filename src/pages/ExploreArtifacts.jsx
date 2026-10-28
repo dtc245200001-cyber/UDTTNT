@@ -5,6 +5,7 @@ import { Search, ChevronDown, RefreshCw, LayoutGrid, SlidersHorizontal } from 'l
 import { ArtifactCard } from '@/components/cards/ArtifactCard';
 import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Breadcrumb } from '@/components/common/Breadcrumb';
 
 const BATCH_SIZE = 16;
 
@@ -82,8 +83,8 @@ export const ExploreArtifacts = () => {
 
   return (
     <div className="min-h-screen bg-[#FBF7F0] animate-fadeIn font-sans pb-12 relative overflow-hidden">
-      {/* ── Hero Banner: Chiều cao ~215px, nền màu nâu tối, ảnh bảo tàng mờ dần ── */}
-      <div className="relative h-[215px] bg-[#200e05] overflow-hidden select-none">
+      {/* ── Hero Banner: Chiều cao chuẩn 220-240px, nền màu nâu tối, ảnh bảo tàng mờ dần ── */}
+      <div className="relative min-h-[220px] md:h-[240px] bg-[#200e05] overflow-hidden select-none flex items-center">
         {/* Right side museum image with glass cabinets & statues */}
         <div className="absolute right-0 top-0 bottom-0 w-full md:w-[70%] opacity-35 md:opacity-100 pointer-events-none">
           <img
@@ -107,25 +108,29 @@ export const ExploreArtifacts = () => {
         />
 
         {/* Content container */}
-        <div className="relative z-10 max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-0 flex flex-col justify-center">
           <div className="max-w-full md:max-w-[60%] relative z-10">
             {/* Breadcrumb: TRANG CHỦ / KHÁM PHÁ HIỆN VẬT */}
-            <div className="text-[#D4A359] text-[11px] font-bold tracking-widest uppercase mb-1.5 flex items-center gap-1.5 relative z-10">
-              <Link to="/" className="hover:underline">TRANG CHỦ</Link>
-              <span className="text-[#D4A359]/60">/</span>
-              <span className="text-white/90">KHÁM PHÁ HIỆN VẬT</span>
+            <div className="relative z-10">
+              <Breadcrumb
+                items={[
+                  { label: 'TRANG CHỦ', path: '/' },
+                  { label: 'KHÁM PHÁ HIỆN VẬT' },
+                ]}
+                variant="dark"
+              />
             </div>
 
             {/* Title: Serif bold, large, white */}
             <h1 
-              className="text-3xl sm:text-[40px] lg:text-[44px] font-serif font-extrabold text-white tracking-wide leading-tight relative z-10"
+              className="typo-page-title text-white tracking-wide leading-tight relative z-10"
               style={{ textShadow: '0 2px 12px rgba(0,0,0,.45)' }}
             >
               KHÁM PHÁ HIỆN VẬT
             </h1>
 
             {/* Description */}
-            <p className="text-[#F5EFE0]/80 text-[14px] sm:text-[15px] leading-relaxed line-clamp-2 mt-2 max-w-xl relative z-10">
+            <p className="typo-body text-[#F5EFE0]/80 line-clamp-2 mt-2 max-w-xl relative z-10">
               Không gian lưu giữ và giới thiệu hơn {artifacts.length} hiện vật, bảo vật quốc gia và tư liệu lịch sử qua {categories.length} danh mục đặc sắc của Bảo tàng.
             </p>
 
@@ -138,20 +143,20 @@ export const ExploreArtifacts = () => {
       {/* ── Main Content Container ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 pt-5 relative z-10">
         {/* ── Filter Tabs & Search Bar (Khung thanh lọc phong cách Chuyên đề) ── */}
-        <div className="bg-white px-5 py-3 rounded-2xl md:rounded-full border border-stone-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="bg-white px-4 sm:px-5 py-3 rounded-2xl md:rounded-full border border-stone-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           {/* Categories Horizontal Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 [&::-webkit-scrollbar]:hidden scroll-smooth flex-1 min-w-0">
             <button
               onClick={() => handleCategorySelect('Tất cả')}
-              className={`relative px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-1.5 ${
+              className={`relative h-9 sm:h-10 px-3.5 sm:px-4 rounded-full typo-btn text-xs sm:text-[13px] tracking-normal transition-all duration-200 shrink-0 cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A1E]/40 ${
                 selectedCategory === 'Tất cả'
-                  ? 'bg-[#8B5A1E] text-white shadow-xs'
-                  : 'bg-[#F4EFEA] hover:bg-[#EAE2D8] text-[#5C4535]'
+                  ? 'bg-[#8B5A1E] text-white shadow-xs font-bold'
+                  : 'bg-[#F4EFEA] hover:bg-[#EAE2D8] text-[#5C4535] font-semibold'
               }`}
             >
-              <LayoutGrid className="w-3.5 h-3.5" />
+              <LayoutGrid className="w-3.5 h-3.5 shrink-0" />
               <span>Tất cả</span>
-              <span className={`px-2 py-0.5 text-[11px] rounded-full font-bold ml-1 ${
+              <span className={`px-2 py-0.5 text-[11px] rounded-full font-bold ml-1.5 shrink-0 inline-flex items-center justify-center leading-none ${
                 selectedCategory === 'Tất cả' ? 'bg-[#B8860B] text-white' : 'bg-stone-200/80 text-stone-600'
               }`}>
                 {artifacts.length}
@@ -164,14 +169,14 @@ export const ExploreArtifacts = () => {
                 <button
                   key={cat.id}
                   onClick={() => handleCategorySelect(cat.name)}
-                  className={`relative px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                  className={`relative h-9 sm:h-10 px-3.5 sm:px-4 rounded-full typo-btn text-xs sm:text-[13px] tracking-normal transition-all duration-200 shrink-0 cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A1E]/40 ${
                     isSelected
-                      ? 'bg-[#8B5A1E] text-white shadow-xs'
-                      : 'bg-[#F4EFEA] hover:bg-[#EAE2D8] text-[#5C4535]'
+                      ? 'bg-[#8B5A1E] text-white shadow-xs font-bold'
+                      : 'bg-[#F4EFEA] hover:bg-[#EAE2D8] text-[#5C4535] font-semibold'
                   }`}
                 >
                   <span>{cat.name}</span>
-                  <span className={`px-2 py-0.5 text-[11px] rounded-full font-bold ml-1 ${
+                  <span className={`px-2 py-0.5 text-[11px] rounded-full font-bold ml-1.5 shrink-0 inline-flex items-center justify-center leading-none ${
                     isSelected ? 'bg-[#B8860B] text-white' : 'bg-stone-200/80 text-stone-600'
                   }`}>
                     {count}
@@ -184,22 +189,23 @@ export const ExploreArtifacts = () => {
           {/* Search Input & Sliders Filter Button */}
           <div className="flex items-center gap-2.5 w-full md:w-80 shrink-0">
             <div className="relative flex-1">
-              <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
                 placeholder="Tìm theo tên hiện vật, niên đại, văn hóa..."
-                className="w-full pl-9 pr-8 py-2 bg-[#F7F3EE] text-xs text-stone-800 rounded-full border border-stone-200/70 focus:outline-none focus:ring-2 focus:ring-[#8B5A1E]/30 focus:bg-white transition-all placeholder:text-stone-400"
+                className="search-input w-full pl-10 pr-9 text-xs sm:text-sm placeholder:text-stone-400"
               />
               {searchTerm && (
                 <button
+                  type="button"
                   onClick={() => {
                     setSearchTerm('');
                     searchParams.delete('q');
                     setSearchParams(searchParams);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 text-xs font-bold cursor-pointer"
+                  className="w-5 h-5 flex items-center justify-center absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 text-xs font-bold cursor-pointer transition-colors"
                   title="Xóa tìm kiếm"
                 >
                   ✕
@@ -208,7 +214,7 @@ export const ExploreArtifacts = () => {
             </div>
             <button
               type="button"
-              className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-600 hover:text-[#8B5A1E] hover:bg-stone-50 shadow-2xs shrink-0 cursor-pointer transition-colors"
+              className="w-11 h-11 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-600 hover:text-[#8B5A1E] hover:bg-stone-50 shadow-2xs shrink-0 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A1E]/40"
               title="Bộ lọc nâng cao"
             >
               <SlidersHorizontal className="w-4 h-4" />
@@ -241,7 +247,7 @@ export const ExploreArtifacts = () => {
                 searchParams.delete('category');
                 setSearchParams(searchParams);
               }}
-              className="mt-4 px-5 py-2.5 bg-[#8B5A1E] hover:bg-[#6e4616] text-white font-bold text-xs rounded-full shadow-md transition-colors inline-flex items-center gap-2 cursor-pointer"
+              className="btn-primary mt-4 h-11 px-6 typo-btn gap-2 shadow-md cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" />
               <span>Xem tất cả hiện vật</span>
@@ -264,7 +270,7 @@ export const ExploreArtifacts = () => {
           <div className="text-center pt-4">
             <button
               onClick={handleLoadMore}
-              className="inline-flex items-center gap-2 px-8 py-3 bg-white hover:bg-[#F4EFEA] text-[#8B5A1E] font-extrabold text-sm rounded-full border border-stone-200 shadow-sm hover:shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              className="btn-secondary h-11 px-8 typo-btn gap-2 shadow-xs hover:shadow-md cursor-pointer"
             >
               <span>Xem thêm hiện vật ({filteredArtifacts.length - visibleCount} còn lại)</span>
               <ChevronDown className="w-4 h-4 text-[#8B5A1E] animate-bounce" />

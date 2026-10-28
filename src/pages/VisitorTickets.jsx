@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { formatCurrency } from '@/utils/formatters';
 import { TicketBookingModal } from '@/components/tickets/TicketBookingModal';
+import { Breadcrumb } from '@/components/common/Breadcrumb';
 import {
   Ticket, Clock, MapPin, Calendar, Users, Star,
   Landmark, ChevronRight, CheckCircle, Info, ShieldCheck, Phone, Mail, Sparkles
@@ -72,7 +73,7 @@ export const VisitorTickets = () => {
     <div className="min-h-screen bg-[#FBF7F0] font-sans pb-12 relative overflow-hidden animate-fadeIn">
 
       {/* ── 1. Hero Banner: Thiết kế cao cấp đồng bộ với Chuyên đề & Hiện vật ── */}
-      <div className="relative min-h-[220px] md:h-[235px] bg-[#200e05] overflow-hidden select-none">
+      <div className="relative min-h-[220px] md:h-[240px] bg-[#200e05] overflow-hidden select-none flex items-center">
         {/* Right side museum image with glass cabinets & statues */}
         <div className="absolute right-0 top-0 bottom-0 w-full md:w-[70%] opacity-35 md:opacity-100 pointer-events-none">
           <img
@@ -96,25 +97,29 @@ export const VisitorTickets = () => {
         />
 
         {/* Content container */}
-        <div className="relative z-10 max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex flex-col justify-center py-7">
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-0 flex flex-col justify-center">
           <div className="max-w-full md:max-w-[65%] relative z-10">
             {/* Breadcrumb: TRANG CHỦ / VÉ THAM QUAN */}
-            <div className="text-[#D4A359] text-[11px] font-bold tracking-widest uppercase mb-1.5 flex items-center gap-1.5 relative z-10">
-              <Link to="/" className="hover:underline">TRANG CHỦ</Link>
-              <span className="text-[#D4A359]/60">/</span>
-              <span className="text-white/90">VÉ THAM QUAN</span>
+            <div className="relative z-10">
+              <Breadcrumb
+                items={[
+                  { label: 'TRANG CHỦ', path: '/' },
+                  { label: 'VÉ THAM QUAN' },
+                ]}
+                variant="dark"
+              />
             </div>
 
             {/* Title: Serif bold, trắng sáng, sắc nét và dễ nhìn */}
             <h1 
-              className="text-3xl sm:text-[38px] lg:text-[42px] font-serif font-extrabold text-white tracking-wide leading-tight relative z-10"
+              className="typo-page-title text-white tracking-wide leading-tight relative z-10"
               style={{ textShadow: '0 2px 12px rgba(0,0,0,.45)' }}
             >
               VÉ THAM QUAN BẢO TÀNG
             </h1>
 
             {/* Description */}
-            <p className="text-[#F5EFE0]/80 text-[14px] sm:text-[15px] leading-relaxed line-clamp-2 mt-2 max-w-xl relative z-10">
+            <p className="typo-body text-[#F5EFE0]/80 line-clamp-2 mt-2 max-w-xl relative z-10">
               Khám phá kho tàng di sản văn hóa hàng nghìn năm của dân tộc. Đặt vé trực tuyến nhanh chóng qua mã QR, nhận vé điện tử tức thì không cần xếp hàng tại quầy.
             </p>
 
@@ -122,14 +127,14 @@ export const VisitorTickets = () => {
             <div className="flex flex-wrap items-center gap-3 mt-4 relative z-10">
               <button
                 onClick={() => handleBookTicket()}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#8B5A1E] hover:bg-[#a06823] text-white font-bold text-xs sm:text-sm rounded-full shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer border border-[#D4A359]/40"
+                className="btn-primary h-11 px-6 typo-btn gap-2 rounded-full shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-pointer border border-[#D4A359]/40"
               >
                 <Ticket className="w-4 h-4 text-amber-200" />
                 <span>Đặt vé ngay</span>
               </button>
               <Link
                 to="/my-tickets"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm rounded-full transition-all duration-200 border border-white/25 backdrop-blur-xs hover:-translate-y-0.5"
+                className="h-11 px-6 typo-btn gap-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all duration-200 border border-white/25 backdrop-blur-xs hover:-translate-y-0.5 inline-flex items-center"
               >
                 <CheckCircle className="w-4 h-4 text-[#D4A359]" />
                 <span>Tra cứu vé đã đặt</span>
@@ -252,7 +257,7 @@ export const VisitorTickets = () => {
             </p>
             <button
               onClick={() => handleBookTicket()}
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#8B5A1E] hover:bg-[#a06823] text-white font-bold text-sm rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer border border-[#D4A359]/40"
+              className="btn-primary inline-flex items-center gap-2 h-12 px-8 typo-btn rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer border border-[#D4A359]/40"
             >
               <Ticket className="w-4 h-4 text-amber-200" />
               <span>Đặt vé tham quan ngay</span>
@@ -302,7 +307,7 @@ const TicketCard = ({ ticket, index, onBook }) => {
   const theme = CARD_THEMES[index % CARD_THEMES.length];
 
   return (
-    <div className="group bg-white rounded-2xl shadow-[0_4px_16px_rgba(0,0,0,0.04)] border border-stone-200/80 overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col">
+    <div className="group bg-white rounded-2xl shadow-xs hover:shadow-lg hover:-translate-y-1 border border-stone-200/80 overflow-hidden transition-all duration-300 flex flex-col">
       {/* Card header */}
       <div className={`bg-gradient-to-br ${theme.headerBg} p-5 relative overflow-hidden`}>
         <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full bg-white/5 pointer-events-none" />
@@ -315,7 +320,7 @@ const TicketCard = ({ ticket, index, onBook }) => {
               Đang mở bán
             </span>
           </div>
-          <h3 className="font-serif font-extrabold text-base sm:text-lg text-white mt-3 leading-snug">{ticket.name}</h3>
+          <h3 className="font-serif font-extrabold text-base sm:text-lg text-white mt-3 leading-snug line-clamp-2 min-h-[2.7em]">{ticket.name}</h3>
           <p className="text-[#F5EFE0]/70 text-xs mt-1 line-clamp-2">{ticket.description || 'Vé tham quan tiêu chuẩn toàn khu trưng bày'}</p>
         </div>
       </div>
@@ -347,7 +352,7 @@ const TicketCard = ({ ticket, index, onBook }) => {
         {/* CTA Button */}
         <button
           onClick={onBook}
-          className="mt-auto w-full py-2.5 bg-[#8B5A1E] hover:bg-[#6e4616] text-white font-bold text-xs sm:text-sm rounded-xl transition-all duration-200 shadow-xs hover:shadow-md flex items-center justify-center gap-2 cursor-pointer group-hover:-translate-y-0.5"
+          className="btn-primary mt-auto w-full h-11 typo-btn rounded-full transition-all duration-200 shadow-xs hover:shadow-md flex items-center justify-center gap-2 cursor-pointer group-hover:-translate-y-0.5"
         >
           <Ticket className="w-4 h-4 text-amber-200" />
           <span>Đặt vé này</span>

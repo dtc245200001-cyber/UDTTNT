@@ -149,13 +149,13 @@ export const ArtifactDetailModal = ({ artifact, isOpen, onClose }) => {
               onClose();
               navigate(`/artifacts/${artifact.id}`);
             }}
-            className="px-4 py-2 text-museum-brown hover:text-museum-gold font-bold text-xs sm:text-sm transition-colors cursor-pointer"
+            className="h-10 px-4 typo-btn text-museum-brown hover:text-museum-gold transition-colors cursor-pointer flex items-center"
           >
             Xem trang đầy đủ
           </button>
           <button
             onClick={onClose}
-            className="px-6 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs sm:text-sm rounded-xl transition-colors cursor-pointer shadow-md"
+            className="btn-primary h-10 px-6 typo-btn rounded-full transition-colors cursor-pointer shadow-md"
           >
             Đóng
           </button>

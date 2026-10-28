@@ -19,20 +19,22 @@ export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl'
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
       <div
         className={`bg-white rounded-2xl shadow-2xl w-full ${maxWidth} max-h-[90vh] flex flex-col overflow-hidden border border-museum-cream transform transition-all scale-100`}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-museum-ivory">
-          <h3 className="text-lg font-bold text-museum-brown">{title}</h3>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-gray-100 bg-museum-ivory shrink-0">
+          <h3 className="text-base sm:text-lg font-bold text-museum-brown">{title}</h3>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-museum-brown hover:bg-museum-cream rounded-lg transition-colors"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-museum-brown hover:bg-stone-100 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A1E]/40"
+            title="Đóng"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-6 overflow-y-auto flex-1">{children}</div>
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">{children}</div>
       </div>
     </div>
   );

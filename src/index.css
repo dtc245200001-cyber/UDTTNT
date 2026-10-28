@@ -34,7 +34,10 @@
   border-radius: 9999px !important;
   border: none !important;
   box-shadow: 0 2px 8px rgba(139, 90, 30, 0.22);
-  font-weight: 700;
+  font-family: 'Be Vietnam Pro', Inter, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -55,6 +58,103 @@
 .btn-primary:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(139, 90, 30, 0.35);
+}
+
+/* Secondary Button (Light background, gold/bronze border) */
+.btn-secondary {
+  background-color: #FFFFFF !important;
+  color: var(--color-primary) !important;
+  border: 1px solid #D4A359 !important;
+  border-radius: 9999px !important;
+  box-shadow: 0 1px 4px rgba(139, 90, 30, 0.08);
+  font-family: 'Be Vietnam Pro', Inter, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-secondary:hover {
+  background-color: #FBF7F0 !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 3px 10px rgba(139, 90, 30, 0.16);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 90, 30, 0.25);
+}
+
+/* Outline Button */
+.btn-outline {
+  background-color: transparent !important;
+  color: var(--color-primary) !important;
+  border: 1px solid rgba(139, 90, 30, 0.3) !important;
+  border-radius: 9999px !important;
+  font-family: 'Be Vietnam Pro', Inter, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-outline:hover {
+  background-color: rgba(139, 90, 30, 0.06) !important;
+  border-color: var(--color-primary) !important;
+}
+
+.btn-outline:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 90, 30, 0.25);
+}
+
+/* Standardized Search Input */
+.search-input {
+  height: 44px;
+  border-radius: 9999px;
+  background-color: #F7F3EE;
+  border: 1px solid rgba(214, 206, 195, 0.7);
+  font-family: 'Be Vietnam Pro', Inter, sans-serif;
+  font-size: 0.875rem;
+  color: #2D241E;
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  background-color: #FFFFFF;
+  border-color: #D4A359;
+  box-shadow: 0 0 0 3px rgba(139, 90, 30, 0.15);
+}
+
+/* Standardized Form Input */
+.input-base {
+  min-height: 44px;
+  border-radius: 0.75rem;
+  background-color: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  font-family: 'Be Vietnam Pro', Inter, sans-serif;
+  font-size: 0.875rem;
+  color: #2D241E;
+  transition: all 0.2s ease;
+}
+
+.input-base:focus {
+  outline: none;
+  background-color: #FFFFFF;
+  border-color: #D4A359;
+  box-shadow: 0 0 0 3px rgba(139, 90, 30, 0.15);
 }
 
 .pill-primary-active {
@@ -114,3 +214,133 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: #2D241E !important;
   transition: background-color 500000s ease-in-out 0s !important;
 }
+
+/* ==========================================================================
+   TYPOGRAPHY SYSTEM & REUSABLE TOKENS (PHASE UI-1)
+   Primary Sans: Be Vietnam Pro | Secondary Serif: Playfair Display
+   ========================================================================== */
+
+@layer components {
+  /* 1. Hero Display Title (Immersive Home Hero & Cultural Displays) */
+  .typo-hero-title,
+  .hero-title {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    text-rendering: optimizeLegibility;
+  }
+  @media (min-width: 1024px) {
+    .typo-hero-title, .hero-title { font-size: 3rem; } /* 48px */
+  }
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .typo-hero-title, .hero-title { font-size: 2.375rem; } /* 38px */
+  }
+  @media (max-width: 639px) {
+    .typo-hero-title, .hero-title { font-size: 1.875rem; } /* 30px */
+  }
+
+  /* 2. Page Title (H1 for Inner Pages / Subpage Banners) */
+  .typo-page-title,
+  .page-title {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: normal;
+    text-rendering: optimizeLegibility;
+  }
+  @media (min-width: 1024px) {
+    .typo-page-title, .page-title { font-size: 2.375rem; } /* 38px */
+  }
+  @media (min-width: 640px) and (max-width: 1023px) {
+    .typo-page-title, .page-title { font-size: 2rem; } /* 32px */
+  }
+  @media (max-width: 639px) {
+    .typo-page-title, .page-title { font-size: 1.625rem; } /* 26px */
+  }
+
+  /* 3. Section Title (H2 for Content Blocks) */
+  .typo-section-title,
+  .section-title {
+    font-family: 'Be Vietnam Pro', Inter, sans-serif;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    text-rendering: optimizeLegibility;
+  }
+  @media (min-width: 640px) {
+    .typo-section-title, .section-title { font-size: 1.75rem; } /* 28px */
+  }
+  @media (max-width: 639px) {
+    .typo-section-title, .section-title { font-size: 1.375rem; } /* 22px */
+  }
+
+  /* 4. Card Title (Artifacts, Exhibitions, Events, Galleries) */
+  .typo-card-title {
+    font-family: 'Be Vietnam Pro', Inter, sans-serif;
+    font-size: 1.0625rem; /* 17px */
+    font-weight: 700;
+    line-height: 1.35;
+    letter-spacing: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* 5. Body Text (Paragraphs, Descriptive Copy) */
+  .typo-body {
+    font-family: 'Be Vietnam Pro', Inter, sans-serif;
+    font-size: 0.9375rem; /* 15px mobile/tablet */
+    font-weight: 400;
+    line-height: 1.65;
+    letter-spacing: normal;
+  }
+  @media (min-width: 1024px) {
+    .typo-body { font-size: 1rem; } /* 16px */
+  }
+
+  /* 6. Metadata / Microcopy (Badges, Dates, Locations, Tags) */
+  .typo-meta {
+    font-family: 'Be Vietnam Pro', Inter, sans-serif;
+    font-size: 0.8125rem; /* 13px */
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: normal;
+  }
+
+  /* 7. Breadcrumb Navigation (Uppercase Gold Heritage Style) */
+  .typo-breadcrumb {
+    font-family: 'Be Vietnam Pro', Inter, sans-serif;
+    font-size: 0.6875rem; /* 11px */
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+  }
+
+  /* 8. Button Text */
+  .typo-btn {
+    font-family: 'Be Vietnam Pro', Inter, sans-serif;
+    font-size: 0.875rem; /* 14px */
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: normal;
+  }
+}
+
+/* 9. Mobile Input Zoom Prevention (iOS Safari: font-size >= 16px on mobile screens <= 767px) */
+@media screen and (max-width: 767px) {
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  input[type="number"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+

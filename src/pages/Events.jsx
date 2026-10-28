@@ -5,6 +5,7 @@ import { CalendarDays, MapPin, Users, Plus, CheckCircle2, Clock, Sparkles, Searc
 import { Modal } from '@/components/ui/Modal';
 import { EventRegistrationModal } from '@/components/events/EventRegistrationModal';
 import { formatDate } from '@/utils/formatters';
+import { Breadcrumb } from '@/components/common/Breadcrumb';
 
 export const Events = () => {
   const navigate = useNavigate();
@@ -68,8 +69,8 @@ export const Events = () => {
       <div className="pointer-events-none absolute bottom-0 left-0 w-64 h-96 bg-[url('/images/lotus-left.svg')] bg-no-repeat bg-bottom bg-contain opacity-10" />
       <div className="pointer-events-none absolute bottom-0 right-0 w-64 h-96 bg-[url('/images/lotus-right.svg')] bg-no-repeat bg-bottom bg-contain opacity-10" />
 
-      {/* ── Hero Banner ── */}
-      <div className="relative overflow-hidden h-[255px] bg-[#3a2213]">
+      {/* ── Hero Banner: Chiều cao chuẩn linh hoạt, nền màu nâu di sản ── */}
+      <div className="relative overflow-hidden min-h-[260px] md:h-[280px] bg-[#3a2213] flex flex-col justify-center py-6 select-none">
         
         {/* Full pre-designed background image with gradient overlay */}
         <div className="absolute inset-0" style={{
@@ -80,34 +81,61 @@ export const Events = () => {
         <div className="absolute inset-0 pointer-events-none opacity-20 bg-[url('/images/lotus-left.svg')] bg-no-repeat" style={{ backgroundPosition: '-50px bottom', backgroundSize: '400px' }} />
 
         {/* Content Container */}
-        <div className="relative max-w-7xl mx-auto px-6 h-full flex flex-col justify-center">
-          <div className="max-w-max relative z-10">
-            <p className="text-sm font-medium mb-2">
-              <span className="text-[#E8E0D5]">Tổng quan</span> 
-              <span className="text-white/40 mx-2">/</span> 
-              <span className="text-[#c8952e]">Sự kiện</span>
-            </p>
-            <h1 className="text-[28px] md:text-[44px] lg:text-[48px] font-[800] text-white leading-tight uppercase whitespace-nowrap">
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center">
+          <div className="max-w-2xl relative z-10">
+            {/* Breadcrumb: TRANG CHỦ / SỰ KIỆN */}
+            <div className="relative z-10">
+              <Breadcrumb
+                items={[
+                  { label: 'TRANG CHỦ', path: '/' },
+                  { label: 'SỰ KIỆN' },
+                ]}
+                variant="dark"
+              />
+            </div>
+
+            {/* Title: Serif bold, large, white */}
+            <h1 
+              className="typo-page-title text-white tracking-wide leading-tight uppercase relative z-10"
+              style={{ textShadow: '0 2px 12px rgba(0,0,0,.45)' }}
+            >
               SỰ KIỆN & TỌA ĐÀM VĂN HÓA
             </h1>
-            <p className="text-[#FAF8F5] text-[16px] md:text-[17px] mt-2 mb-6">
-              Các sự kiện văn hóa, tọa đàm và triển lãm đặc biệt của Bảo tàng
+
+            {/* Description */}
+            <p className="typo-body text-[#FAF8F5]/85 mt-2 mb-4 line-clamp-2 max-w-xl relative z-10">
+              Các sự kiện văn hóa, tọa đàm và triển lãm đặc biệt của Bảo tàng.
             </p>
 
-            <div className="relative w-full md:w-[680px]">
-              <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-stone-400" />
+            {/* Embedded Search Box (Standardized h-11) */}
+            <div className="relative w-full max-w-xl">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-stone-400" />
               </div>
               <input 
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm sự kiện, chủ đề, thời gian..." 
-                className="w-full h-[54px] pl-14 pr-16 bg-white rounded-full border-none shadow-lg text-base focus:outline-none focus:ring-2 focus:ring-[#c8952e] text-gray-800"
+                className="w-full h-11 pl-11 pr-20 bg-white rounded-full border border-stone-200/80 shadow-md text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5A1E]/30 text-gray-800 placeholder:text-stone-400"
               />
-              <div className="absolute inset-y-0 right-2 flex items-center">
-                <button className="w-10 h-10 bg-[#c8952e] hover:bg-[#b8860b] text-white rounded-full flex items-center justify-center transition-colors shadow-sm">
-                  <Search className="h-4 w-4" />
+              <div className="absolute inset-y-0 right-1.5 flex items-center gap-1">
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="w-6 h-6 flex items-center justify-center text-stone-400 hover:text-stone-700 text-xs font-bold cursor-pointer transition-colors"
+                    title="Xóa tìm kiếm"
+                  >
+                    ✕
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="w-8 h-8 btn-primary rounded-full flex items-center justify-center transition-colors shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A1E]/40"
+                  title="Tìm kiếm"
+                >
+                  <Search className="h-3.5 w-3.5 text-white" />
                 </button>
               </div>
             </div>
@@ -127,10 +155,10 @@ export const Events = () => {
           </div>
           <button 
             onClick={() => setShowAllEvents(!showAllEvents)}
-            className="group inline-flex items-center text-[15px] font-semibold text-[#3a2213] hover:text-[#c8952e] transition-colors"
+            className="group inline-flex items-center gap-1.5 px-4 h-9 typo-btn text-xs sm:text-[13px] rounded-full bg-white border border-stone-200/80 shadow-2xs text-[#3a2213] hover:text-[#8B5A1E] hover:bg-stone-50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A1E]/40"
           >
-            {showAllEvents ? 'Thu gọn' : 'Xem tất cả'}
-            <ArrowRight className="ml-1.5 w-4 h-4 transition-transform group-hover:translate-x-1" />
+            <span>{showAllEvents ? 'Thu gọn' : 'Xem tất cả'}</span>
+            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
           </button>
         </div>
 
@@ -149,10 +177,10 @@ export const Events = () => {
               const imageUrl = getEventImage(ev.id) || ev.image;
 
               return (
-                <div key={ev.id} className="group bg-white rounded-[18px] p-[12px] overflow-hidden border border-stone-100 hover:-translate-y-1 transition-all duration-300 flex flex-col" style={{ boxShadow: '0 6px 24px rgba(92,58,30,0.08)' }}>
+                <div key={ev.id} className="group bg-white rounded-2xl overflow-hidden border border-stone-200/80 shadow-xs hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col">
                   
                   {/* Image Container */}
-                  <div className="relative h-[125px] w-full rounded-[12px] overflow-hidden mb-4 shrink-0">
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-museum-cream">
                     {imageUrl ? (
                       <img src={imageUrl} alt={ev.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                     ) : (
@@ -162,45 +190,45 @@ export const Events = () => {
                     )}
                     
                     {/* Status Badge */}
-                    <div className="absolute top-2 left-2">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white rounded-full text-[12px] font-bold text-museum-brown shadow-sm">
+                    <div className="absolute top-3 left-3 z-10">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/95 backdrop-blur-xs rounded-full text-xs font-bold text-museum-brown shadow-sm">
                         <span className={`w-2 h-2 rounded-full ${ss.dot}`} />
                         {ev.status}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col flex-1 gap-4 px-1">
+                  <div className="p-5 flex flex-col flex-1 justify-between gap-4">
                     {/* Title + Desc */}
                     <div>
-                      <h3 className="font-bold text-[20px] text-[#3a2213] leading-snug line-clamp-1 mb-1.5">{ev.title}</h3>
-                      <p className="text-[15px] text-stone-500 leading-relaxed line-clamp-2">{ev.description}</p>
+                      <h3 className="typo-card-title text-[#3a2213] group-hover:text-[#8B5A1E] transition-colors min-h-[2.7em] mb-1.5">{ev.title}</h3>
+                      <p className="typo-body text-xs text-stone-500 leading-relaxed line-clamp-2">{ev.description}</p>
                     </div>
 
                     {/* Info */}
-                    <div className="space-y-2.5 text-[14px] text-stone-600 mt-auto">
-                      <div className="flex items-center gap-3">
-                        <CalendarDays className="w-4 h-4 text-[#c8952e] shrink-0" />
+                    <div className="space-y-2 text-xs text-stone-600 mt-auto">
+                      <div className="flex items-center gap-2.5">
+                        <CalendarDays className="w-3.5 h-3.5 text-[#c8952e] shrink-0" />
                         <span className="font-medium">{formatDate(ev.date)} {ev.time && `— ${ev.time}`}</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <MapPin className="w-4 h-4 text-[#c8952e] shrink-0" />
-                        <span>{ev.location}</span>
+                      <div className="flex items-center gap-2.5">
+                        <MapPin className="w-3.5 h-3.5 text-[#c8952e] shrink-0" />
+                        <span className="truncate">{ev.location}</span>
                       </div>
                       {ev.speaker && (
-                        <div className="flex items-center gap-3">
-                          <Sparkles className="w-4 h-4 text-[#c8952e] shrink-0" />
-                          <span className="font-bold text-[#3a2213]">Diễn giả: {ev.speaker}</span>
+                        <div className="flex items-center gap-2.5">
+                          <Sparkles className="w-3.5 h-3.5 text-[#c8952e] shrink-0" />
+                          <span className="font-bold text-[#3a2213] truncate">Diễn giả: {ev.speaker}</span>
                         </div>
                       )}
                     </div>
 
                     {/* Capacity */}
                     {ev.seats > 0 && (
-                      <div className="space-y-2 mt-2">
-                        <div className="flex items-center justify-between text-[14px]">
+                      <div className="space-y-1.5 pt-2 border-t border-stone-100">
+                        <div className="flex items-center justify-between text-xs">
                           <span className="flex items-center gap-1.5 text-stone-500 font-medium">
-                            <Users className="w-4 h-4 text-emerald-600" />Đăng ký
+                            <Users className="w-3.5 h-3.5 text-emerald-600" />Đăng ký
                           </span>
                           <span className="font-bold text-[#3a2213]">{ev.registered}/{ev.seats}</span>
                         </div>
@@ -214,10 +242,10 @@ export const Events = () => {
                     <button
                       onClick={() => handleEventRegistration(ev)}
                       disabled={isUserRegistered}
-                      className={`w-full h-[44px] rounded-full font-bold text-[14px] transition-all flex items-center justify-center gap-2 mt-2 ${
+                      className={`w-full h-11 rounded-full typo-btn transition-all flex items-center justify-center gap-2 mt-1 ${
                         isUserRegistered
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-default'
-                          : 'bg-[#3a2213] hover:bg-[#5a3a1f] text-white cursor-pointer group/btn'
+                          : 'btn-primary shadow-xs hover:shadow-md cursor-pointer group/btn'
                       }`}
                     >
                       {isUserRegistered ? (

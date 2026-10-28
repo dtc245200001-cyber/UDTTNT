@@ -68,7 +68,7 @@ export const ReviewFormModal = ({ isOpen, onClose, artifactName = 'Bảo tàng L
             value={selectedArtifact}
             onChange={(e) => setSelectedArtifact(e.target.value)}
             placeholder="Tên hiện vật hoặc bảo tàng..."
-            className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-museum-gold font-medium"
+            className="input-base w-full px-3.5 py-2.5 text-xs sm:text-sm font-medium"
           />
         </div>
 
@@ -110,7 +110,7 @@ export const ReviewFormModal = ({ isOpen, onClose, artifactName = 'Bảo tàng L
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Chia sẻ trải nghiệm hoặc cảm nhận của bạn về hiện vật, không gian triển lãm (không chứa từ cấm/spam)..."
-            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-museum-gold leading-relaxed"
+            className="input-base w-full p-3 text-xs sm:text-sm leading-relaxed"
           />
         </div>
 
@@ -125,13 +125,13 @@ export const ReviewFormModal = ({ isOpen, onClose, artifactName = 'Bảo tàng L
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors cursor-pointer"
+            className="h-10 px-5 bg-gray-100 hover:bg-gray-200 text-gray-700 typo-btn rounded-full transition-colors cursor-pointer"
           >
             Hủy
           </button>
           <button
             type="submit"
-            className="px-6 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold rounded-xl shadow-md transition-colors cursor-pointer"
+            className="btn-primary h-10 px-6 typo-btn rounded-full shadow-md transition-colors cursor-pointer"
           >
             Gửi đánh giá công khai
           </button>

@@ -106,7 +106,7 @@ export const ArtifactDetail = () => {
                 <span>•</span>
                 <span>{artifact.category}</span>
               </div>
-              <h1 className="text-2xl lg:text-3xl font-extrabold text-museum-brown">
+              <h1 className="typo-page-title text-2xl lg:text-3xl text-museum-brown">
                 {artifact.name}
               </h1>
             </div>
@@ -152,7 +152,7 @@ export const ArtifactDetail = () => {
               <h3 className="font-bold text-sm text-museum-brown uppercase mb-2 tracking-wider">
                 MÔ TẢ CHI TIẾT
               </h3>
-              <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
+              <p className="typo-body text-sm text-gray-700 leading-relaxed bg-gray-50 p-4 rounded-xl border border-gray-100">
                 {artifact.description}
               </p>
             </div>

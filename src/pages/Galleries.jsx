@@ -30,6 +30,7 @@ import {
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { Breadcrumb } from '@/components/common/Breadcrumb';
 import { formatDate } from '@/utils/formatters';
 import { removeVietnameseTones } from '@/utils/artifactSearch';
 
@@ -364,8 +365,8 @@ export const Galleries = () => {
   return (
     <div className="min-h-screen bg-[#FBF7F0] animate-fadeIn font-sans pb-12 relative overflow-hidden">
 
-      {/* ── Hero Banner: Chiều cao ~215px, nền một màu nâu tối, ảnh mờ dần ── */}
-      <div className="relative h-[215px] bg-[#200e05] overflow-hidden select-none">
+      {/* ── Hero Banner: Chiều cao chuẩn 220-240px, nền màu nâu tối, ảnh mờ dần ── */}
+      <div className="relative min-h-[220px] md:h-[240px] bg-[#200e05] overflow-hidden select-none flex items-center">
         {/* Right side museum image with glass cabinets & statues */}
         <div className="absolute right-0 top-0 bottom-0 w-full md:w-[70%] opacity-35 md:opacity-100 pointer-events-none">
           <img
@@ -389,25 +390,29 @@ export const Galleries = () => {
         />
 
         {/* Content container */}
-        <div className="relative z-10 max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex flex-col justify-center">
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-0 flex flex-col justify-center">
           <div className="max-w-full md:max-w-[60%] relative z-10">
-            {/* Breadcrumb: TRANG CHỦ / TRƯNG BÀY CHUYÊN ĐỀ in gold uppercase */}
-            <div className="text-[#D4A359] text-[11px] font-bold tracking-widest uppercase mb-1.5 flex items-center gap-1.5 relative z-10">
-              <Link to="/" className="hover:underline">TRANG CHỦ</Link>
-              <span className="text-[#D4A359]/60">/</span>
-              <span className="text-white/90">TRƯNG BÀY CHUYÊN ĐỀ</span>
+            {/* Breadcrumb: TRANG CHỦ / TRƯNG BÀY CHUYÊN ĐỀ */}
+            <div className="relative z-10">
+              <Breadcrumb
+                items={[
+                  { label: 'TRANG CHỦ', path: '/' },
+                  { label: 'CHUYÊN ĐỀ' },
+                ]}
+                variant="dark"
+              />
             </div>
 
             {/* Title: Serif bold, large, white, no icon */}
             <h1 
-              className="text-3xl sm:text-[40px] lg:text-[44px] font-serif font-extrabold text-white tracking-wide leading-tight relative z-10"
+              className="typo-page-title text-white tracking-wide leading-tight relative z-10"
               style={{ textShadow: '0 2px 12px rgba(0,0,0,.45)' }}
             >
               TRƯNG BÀY CHUYÊN ĐỀ
             </h1>
 
-            {/* Description: cream/white, ~16px, max 2 lines */}
-            <p className="text-[#F5EFE0]/80 text-[14px] sm:text-[15px] leading-relaxed line-clamp-2 mt-2 max-w-lg relative z-10">
+            {/* Description: cream/white, max 2 lines */}
+            <p className="typo-body text-[#F5EFE0]/80 line-clamp-2 mt-2 max-w-lg relative z-10">
               Không gian giới thiệu các chuyên đề văn hóa, lịch sử và hiện vật tiêu biểu của Bảo tàng.
             </p>
 
@@ -420,7 +425,7 @@ export const Galleries = () => {
             <div className="absolute right-6 top-6 z-20">
               <button
                 onClick={openAdd}
-                className="btn-primary inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-full shadow-md cursor-pointer"
+                className="btn-primary inline-flex items-center gap-1.5 px-4 py-2 typo-btn rounded-full shadow-md cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>+ Thêm chuyên đề</span>
@@ -433,29 +438,29 @@ export const Galleries = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6 pt-5 relative z-10">
 
       {/* ── Filter Tabs & Search Bar ── */}
-      <div className="bg-white px-5 py-3 rounded-2xl md:rounded-full border border-stone-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-white px-4 sm:px-5 py-3 rounded-2xl md:rounded-full border border-stone-200/70 shadow-[0_4px_20px_rgba(0,0,0,0.04)] flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         {/* Status Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 [&::-webkit-scrollbar]:hidden scroll-smooth flex-1 min-w-0">
           {[
-            { key: 'all', label: 'Tất cả', icon: <LayoutGrid className="w-3.5 h-3.5" /> },
-            { key: 'Đang diễn ra', label: 'Đang diễn ra', icon: <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> },
-            { key: 'Sắp diễn ra', label: 'Sắp diễn ra', icon: <Clock className="w-3.5 h-3.5" /> },
-            { key: 'Đã diễn ra', label: 'Đã diễn ra', icon: <Clock className="w-3.5 h-3.5" /> },
+            { key: 'all', label: 'Tất cả', icon: <LayoutGrid className="w-3.5 h-3.5 shrink-0" /> },
+            { key: 'Đang diễn ra', label: 'Đang diễn ra', icon: <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block shrink-0" /> },
+            { key: 'Sắp diễn ra', label: 'Sắp diễn ra', icon: <Clock className="w-3.5 h-3.5 shrink-0" /> },
+            { key: 'Đã diễn ra', label: 'Đã diễn ra', icon: <Clock className="w-3.5 h-3.5 shrink-0" /> },
           ].map((tab) => {
             const active = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className={`relative px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                className={`relative h-9 sm:h-10 px-3.5 sm:px-4 rounded-full typo-btn text-xs sm:text-[13px] tracking-normal transition-all duration-200 shrink-0 cursor-pointer flex items-center justify-center gap-1.5 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A1E]/40 ${
                   active
-                    ? 'bg-[#8B5A1E] text-white shadow-xs'
-                    : 'bg-[#F4EFEA] hover:bg-[#EAE2D8] text-[#5C4535]'
+                    ? 'bg-[#8B5A1E] text-white shadow-xs font-bold'
+                    : 'bg-[#F4EFEA] hover:bg-[#EAE2D8] text-[#5C4535] font-semibold'
                 }`}
               >
-                <span className={active ? 'text-amber-200' : 'text-stone-400'}>{tab.icon}</span>
+                <span className={active ? 'text-amber-200 flex items-center' : 'text-stone-400 flex items-center'}>{tab.icon}</span>
                 <span>{tab.label}</span>
-                <span className={`px-2 py-0.5 text-[11px] rounded-full font-bold ml-1 ${
+                <span className={`px-2 py-0.5 text-[11px] rounded-full font-bold ml-1.5 shrink-0 inline-flex items-center justify-center leading-none ${
                   active ? 'bg-[#B8860B] text-white' : 'bg-stone-200/80 text-stone-600'
                 }`}>
                   {counts[tab.key] || 0}
@@ -466,20 +471,30 @@ export const Galleries = () => {
         </div>
 
         {/* Search Input & Sliders Filter Button */}
-        <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0">
-          <div className="relative flex-1 md:w-72">
-            <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <div className="flex items-center gap-2.5 w-full md:w-80 shrink-0">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Tìm theo tên chuyên đề, hiện vật..."
-              className="w-full pl-9 pr-4 py-2 bg-[#F7F3EE] text-xs text-stone-800 rounded-full border border-stone-200/70 focus:outline-none focus:ring-2 focus:ring-[#8B5A1E]/30 focus:bg-white transition-all placeholder:text-stone-400"
+              className="search-input w-full pl-10 pr-9 text-xs sm:text-sm placeholder:text-stone-400"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="w-5 h-5 flex items-center justify-center absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 text-xs font-bold cursor-pointer transition-colors"
+                title="Xóa tìm kiếm"
+              >
+                ✕
+              </button>
+            )}
           </div>
           <button
             type="button"
-            className="w-9 h-9 rounded-xl bg-white border border-stone-200 flex items-center justify-center text-stone-600 hover:text-[#8B5A1E] hover:bg-stone-50 shadow-2xs shrink-0 cursor-pointer transition-colors"
+            className="w-11 h-11 rounded-full bg-white border border-stone-200 flex items-center justify-center text-stone-600 hover:text-[#8B5A1E] hover:bg-stone-50 shadow-2xs shrink-0 cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A1E]/40"
             title="Bộ lọc nâng cao"
           >
             <SlidersHorizontal className="w-4 h-4" />
@@ -487,9 +502,9 @@ export const Galleries = () => {
         </div>
       </div>
 
-      {/* 3. Thematic Galleries Cards Grid: 5 columns on desktop */}
+      {/* 3. Thematic Galleries Cards Grid: 4 columns on 1280px, 5 columns on >=1536px */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
             <div key={n} className="bg-white rounded-[14px] border border-stone-100 p-4 space-y-3 shadow-xs">
               <Skeleton className="aspect-[4/3] w-full rounded-xl" />
@@ -505,7 +520,7 @@ export const Galleries = () => {
           subtitle="Hiện tại không tìm thấy chuyên đề trưng bày nào theo bộ lọc hoặc từ khóa đã chọn. Vui lòng thử chuyển tab trạng thái khác."
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
           {filteredGalleries.map((g) => {
             const coverUrl = getCoverImageUrl(g);
             const artifactsCount = g.highlightArtifacts?.length || 0;
@@ -515,10 +530,10 @@ export const Galleries = () => {
               <div
                 key={g.id}
                 onClick={() => openDetail(g)}
-                className="bg-white rounded-[14px] border border-stone-100 shadow-[0_4px_16px_rgba(0,0,0,0.04)] hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full overflow-hidden group cursor-pointer"
+                className="bg-white rounded-2xl border border-stone-200/80 shadow-xs hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col h-full overflow-hidden group cursor-pointer"
               >
                 {/* Image area */}
-                <div className="relative h-44 overflow-hidden rounded-t-[14px] bg-stone-100">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-t-2xl bg-stone-100">
                   <img
                     src={coverUrl}
                     alt={g.name}
@@ -527,7 +542,7 @@ export const Galleries = () => {
                     className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => { e.target.src = '/images/museum-hero.jpg'; }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
 
                   {/* Status badge top-left */}
                   <div className="absolute top-2.5 left-2.5 z-10">
@@ -536,42 +551,35 @@ export const Galleries = () => {
 
                   {/* Artifact count top-right */}
                   {artifactsCount > 0 && (
-                    <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-xs text-[#F5E6B3] border border-white/10 text-[10px] font-medium rounded flex items-center gap-1">
+                    <div className="absolute top-2.5 right-2.5 z-10 px-2 py-0.5 bg-black/60 backdrop-blur-xs text-[#F5E6B3] border border-white/10 text-[10px] font-medium rounded-full flex items-center gap-1">
                       <Layers className="w-2.5 h-2.5 text-[#F5E6B3]" />
-                      <span>{artifactsCount} hiện vật tiêu biểu</span>
+                      <span>{artifactsCount} hiện vật</span>
                     </div>
                   )}
-
-                  {/* Category tag at bottom-left */}
-                  <div className="absolute bottom-2.5 left-2.5 z-10">
-                    <span className="px-2 py-0.5 bg-black/60 backdrop-blur-xs text-white text-[9px] font-extrabold rounded tracking-wider uppercase">
-                      HIỆN VẬT
-                    </span>
-                  </div>
                 </div>
 
                 {/* Card Body */}
-                <div className="p-3.5 flex-1 flex flex-col justify-between">
+                <div className="p-4 flex-1 flex flex-col justify-between">
                   <div className="space-y-1.5">
                     {/* Period */}
-                    <div className="flex items-center gap-1.5 text-[11px] text-stone-400 font-medium">
+                    <div className="flex items-center gap-1.5 text-xs text-stone-500 font-medium">
                       <CalendarDays className="w-3.5 h-3.5 text-[#8B5A1E] shrink-0" />
                       <span className="truncate">{periodStr}</span>
                     </div>
 
                     {/* Title */}
-                    <h3 className="font-bold text-[13.5px] text-[#2D241E] line-clamp-2 group-hover:text-[#8B5A1E] transition-colors leading-snug">
+                    <h3 className="typo-card-title text-[#2D241E] group-hover:text-[#8B5A1E] transition-colors min-h-[2.7em]">
                       {g.name}
                     </h3>
 
                     {/* Short Description */}
-                    <p className="text-[11.5px] text-stone-500 line-clamp-2 leading-relaxed">
+                    <p className="typo-body text-xs text-stone-500 line-clamp-2 leading-relaxed">
                       {g.description}
                     </p>
                   </div>
 
                   {/* Card Footer */}
-                  <div className="pt-2.5 border-t border-stone-100 flex items-center justify-between text-xs mt-3">
+                  <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-xs mt-3">
                     <span className="text-[#8B5A1E] font-bold flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
                       <span>Xem chi tiết</span>
                       <ChevronRight className="w-3.5 h-3.5" />

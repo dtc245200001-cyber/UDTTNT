@@ -136,25 +136,25 @@ export const VisitorHome = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/40" />
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 text-center text-white space-y-6">
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight uppercase drop-shadow-md">
+          <h1 className="typo-hero-title text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight leading-[1.12] uppercase drop-shadow-md">
             KHÁM PHÁ BẢO VẬT & <br />
             <span className="text-museum-gold-lt">DI SẢN VĂN HÓA VIỆT NAM</span>
           </h1>
 
-          <p className="text-sm sm:text-lg text-museum-cream/90 max-w-2xl mx-auto leading-relaxed font-normal">
+          <p className="typo-body text-sm sm:text-lg text-museum-cream/90 max-w-2xl mx-auto leading-relaxed font-normal">
             Hành trình kết nối lịch sử hàng nghìn năm từ thời kỳ Đông Sơn, các triều đại Lý, Trần, Lê, Nguyễn đến tinh hoa di sản đương đại.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <button
               onClick={() => navigate('/artifacts')}
-              className="w-full sm:w-auto px-8 py-3.5 bg-museum-gold hover:bg-museum-gold-lt text-white font-extrabold text-sm rounded-xl shadow-lg transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              className="w-full sm:w-auto h-12 px-8 bg-museum-gold hover:bg-museum-gold-lt text-white typo-btn rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 cursor-pointer inline-flex items-center justify-center"
             >
               Khám phá toàn bộ {artifacts.length} hiện vật &rarr;
             </button>
             <a
               href="#tickets"
-              className="w-full sm:w-auto px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white border border-white/30 font-extrabold text-sm rounded-xl backdrop-blur-sm transition-all"
+              className="w-full sm:w-auto h-12 px-8 bg-white/10 hover:bg-white/20 text-white border border-white/30 typo-btn rounded-full backdrop-blur-sm transition-all transform hover:-translate-y-0.5 inline-flex items-center justify-center"
             >
               <Ticket className="w-4 h-4 inline mr-2" />
               Đặt vé tham quan
@@ -199,7 +199,7 @@ export const VisitorHome = () => {
         <div className="text-center pt-2">
           <button
             onClick={() => navigate('/artifacts')}
-            className="inline-flex items-center gap-2 px-8 py-3 bg-white hover:bg-museum-cream text-museum-brown font-extrabold text-xs sm:text-sm rounded-xl border-2 border-museum-gold/40 shadow-xs hover:shadow-md transition-all cursor-pointer"
+            className="btn-secondary h-11 px-8 typo-btn gap-2 shadow-xs hover:shadow-md cursor-pointer"
           >
             <span>Xem thêm kho tàng {artifacts.length} hiện vật theo {categories.length} danh mục</span>
             <ChevronRight className="w-4 h-4 text-museum-gold" />
@@ -225,7 +225,7 @@ export const VisitorHome = () => {
             {activeExhibitions.slice(0, 3).map((ex) => (
               <div
                 key={ex.id}
-                className="bg-white rounded-2xl overflow-hidden shadow-xs border border-gray-100 hover:shadow-md transition-all group flex flex-col"
+                className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1 border border-stone-200/80 transition-all duration-300 group flex flex-col"
               >
                 <div className="aspect-[16/9] relative overflow-hidden bg-museum-cream">
                   <img
@@ -241,18 +241,18 @@ export const VisitorHome = () => {
                 </div>
                 <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
                   <div>
-                    <h3 className="font-bold text-base text-museum-brown group-hover:text-museum-gold transition-colors">
+                    <h3 className="typo-card-title text-museum-brown group-hover:text-museum-gold transition-colors min-h-[2.7em]">
                       {ex.name}
                     </h3>
-                    <p className="text-xs text-gray-500 mt-1.5 leading-relaxed">{ex.description}</p>
+                    <p className="typo-body text-xs text-stone-500 mt-1.5 leading-relaxed line-clamp-2">{ex.description}</p>
                   </div>
-                  <div className="pt-3 border-t border-gray-100 text-xs text-gray-500 space-y-1">
+                  <div className="pt-3 border-t border-stone-100 text-xs text-stone-500 space-y-1">
                     <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-museum-gold" />
+                      <Calendar className="w-3.5 h-3.5 text-museum-gold shrink-0" />
                       <span>{formatDate(ex.startDate)} - {formatDate(ex.endDate)}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-museum-brown" />
+                      <MapPin className="w-3.5 h-3.5 text-museum-brown shrink-0" />
                       <span>{ex.location}</span>
                     </div>
                   </div>
@@ -276,7 +276,7 @@ export const VisitorHome = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {events.map((ev) => (
-            <div key={ev.id} className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 flex flex-col justify-between space-y-4 hover:shadow-md transition-all">
+            <div key={ev.id} className="bg-white rounded-2xl p-6 shadow-xs border border-stone-200/80 flex flex-col justify-between space-y-4 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-museum-gold bg-museum-cream px-2.5 py-0.5 rounded-full">
@@ -284,8 +284,8 @@ export const VisitorHome = () => {
                   </span>
                   <span className="text-xs text-gray-400 font-semibold">{formatDate(ev.date)}</span>
                 </div>
-                <h3 className="font-bold text-base text-museum-brown">{ev.title}</h3>
-                <p className="text-xs text-gray-600 leading-relaxed">{ev.description}</p>
+                <h3 className="typo-card-title text-museum-brown min-h-[2.7em]">{ev.title}</h3>
+                <p className="typo-body text-xs text-stone-600 leading-relaxed line-clamp-2">{ev.description}</p>
               </div>
 
               <div className="pt-3 border-t border-gray-100 text-xs space-y-2 text-gray-500">
@@ -339,7 +339,7 @@ export const VisitorHome = () => {
                   </div>
                   <button
                     onClick={() => handleBookTicket(t)}
-                    className="w-full py-2.5 bg-museum-gold hover:bg-museum-gold-lt text-white font-bold text-xs rounded-xl shadow-md transition-colors"
+                    className="w-full h-11 bg-museum-gold hover:bg-museum-gold-lt text-white typo-btn rounded-full shadow-md transition-colors cursor-pointer flex items-center justify-center"
                   >
                     Đặt vé này
                   </button>
@@ -387,7 +387,7 @@ export const VisitorHome = () => {
                 setPendingAuthTicket(null);
                 navigate('/login');
               }}
-              className="w-full sm:w-auto px-5 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-md transition-colors cursor-pointer"
+              className="btn-primary w-full sm:w-auto h-10 px-6 typo-btn rounded-full shadow-md cursor-pointer"
             >
               Đăng nhập ngay
             </button>
@@ -396,7 +396,7 @@ export const VisitorHome = () => {
                 setPendingAuthTicket(null);
                 navigate('/register');
               }}
-              className="w-full sm:w-auto px-5 py-2.5 bg-museum-cream hover:bg-museum-gold/20 text-museum-brown font-bold text-xs rounded-xl border border-museum-gold/40 transition-colors cursor-pointer"
+              className="btn-secondary w-full sm:w-auto h-10 px-6 typo-btn rounded-full cursor-pointer"
             >
               Đăng ký tài khoản
             </button>

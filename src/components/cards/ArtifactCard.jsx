@@ -23,7 +23,7 @@ export const ArtifactCard = ({ artifact, onClick }) => {
   return (
     <div
       onClick={handleClick}
-      className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1 border border-gray-100 transition-all duration-300 cursor-pointer group flex flex-col justify-between"
+      className="bg-white rounded-2xl overflow-hidden shadow-xs hover:shadow-lg hover:-translate-y-1 border border-stone-200/80 transition-all duration-300 cursor-pointer group flex flex-col justify-between"
     >
       <div>
         <div className="aspect-[4/3] overflow-hidden bg-museum-cream relative">
@@ -46,20 +46,20 @@ export const ArtifactCard = ({ artifact, onClick }) => {
         </div>
 
         <div className="p-4 space-y-1.5">
-          <h4 className="card-title font-bold text-base text-museum-brown group-hover:text-museum-gold transition-colors line-clamp-1">
+          <h4 className="typo-card-title text-museum-brown group-hover:text-museum-gold transition-colors min-h-[2.7em]">
             {artifact.name}
           </h4>
           {artifact.date && (
-            <p className="text-xs font-semibold text-museum-gold">Niên đại: {artifact.date}</p>
+            <p className="typo-meta text-xs font-semibold text-museum-gold">Niên đại: {artifact.date}</p>
           )}
-          <p className="card-description text-xs text-gray-500 line-clamp-2 leading-relaxed font-normal">
+          <p className="typo-body text-xs text-stone-500 line-clamp-2 leading-relaxed font-normal">
             {artifact.description}
           </p>
         </div>
       </div>
 
       {/* Card Footer: Display Location Only (NO "AI phân tích" button) */}
-      <div className="px-4 pb-4 pt-2.5 border-t border-gray-100 flex items-center gap-1.5 text-xs font-medium text-gray-600">
+      <div className="px-4 pb-4 pt-2.5 border-t border-stone-100 flex items-center gap-1.5 text-xs font-medium text-stone-600">
         <MapPin className="w-3.5 h-3.5 text-museum-gold shrink-0" />
         <span className="truncate">Vị trí: {locationText}</span>
       </div>

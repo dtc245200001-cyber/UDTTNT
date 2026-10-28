@@ -36,7 +36,7 @@ export const MyTickets = () => {
         </p>
         <button
           onClick={() => navigate('/login?redirect=/my-tickets')}
-          className="px-6 py-3 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md transition-colors"
+          className="btn-primary h-11 px-8 typo-btn shadow-md transition-colors cursor-pointer"
         >
           Đăng nhập ngay
         </button>
@@ -92,18 +92,18 @@ export const MyTickets = () => {
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Trang chủ
           </button>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-museum-brown tracking-tight flex items-center gap-2">
-            <Ticket className="w-7 h-7 text-museum-gold" />
+          <h1 className="typo-page-title text-2xl sm:text-3xl text-museum-brown tracking-tight flex items-center gap-2">
+            <Ticket className="w-7 h-7 text-museum-gold shrink-0" />
             VÉ THAM QUAN CỦA TÔI
           </h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+          <p className="typo-body text-xs sm:text-sm text-gray-500 mt-1">
             Quản lý danh sách vé điện tử đã đặt & mã QR check-in chính thức tại cổng bảo tàng.
           </p>
         </div>
 
         <button
           onClick={() => navigate('/#tickets')}
-          className="px-5 py-2.5 bg-museum-gold hover:bg-museum-gold-lt text-white font-bold text-xs rounded-xl shadow-md transition-colors w-fit cursor-pointer flex items-center gap-1.5"
+          className="btn-primary h-10 px-5 typo-btn shadow-md transition-colors w-fit cursor-pointer flex items-center gap-1.5"
         >
           <Ticket className="w-4 h-4" />
           <span>+ Đặt thêm vé mới</span>
@@ -122,7 +122,7 @@ export const MyTickets = () => {
           </p>
           <button
             onClick={() => navigate('/#tickets')}
-            className="px-6 py-3 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-md transition-colors cursor-pointer"
+            className="btn-primary h-11 px-8 typo-btn shadow-md transition-colors cursor-pointer"
           >
             Đặt vé tham quan ngay
           </button>
@@ -296,7 +296,7 @@ export const MyTickets = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => resendTicketEmail(t.orderCode || t.ticketCode)}
-                    className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5 hover:shadow-md"
+                    className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white typo-btn rounded-full shadow-xs transition-all cursor-pointer flex items-center gap-1.5 hover:shadow-md"
                   >
                     <Mail className="w-3.5 h-3.5" />
                     <span>Gửi lại vé qua email</span>
@@ -304,7 +304,7 @@ export const MyTickets = () => {
 
                   <button
                     onClick={() => handlePrintTicket(t)}
-                    className="px-4 py-2 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5 hover:shadow-md"
+                    className="btn-primary h-9 px-4 typo-btn rounded-full shadow-xs transition-all cursor-pointer flex items-center gap-1.5 hover:shadow-md"
                   >
                     <Printer className="w-3.5 h-3.5 text-museum-gold" />
                     <span>In / Tải vé PDF</span>

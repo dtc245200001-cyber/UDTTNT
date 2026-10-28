@@ -4,6 +4,7 @@ import { useApp } from '@/context/AppContext';
 import { Star, MessageSquare, Plus, Trash2, User, LogIn, AlertCircle, Quote, TrendingUp, CalendarDays, MapPin, Bot, Landmark } from 'lucide-react';
 import { ReviewFormModal } from '@/components/reviews/ReviewFormModal';
 import { Modal } from '@/components/ui/Modal';
+import { Breadcrumb } from '@/components/common/Breadcrumb';
 
 export const Reviews = () => {
   const navigate = useNavigate();
@@ -40,35 +41,47 @@ export const Reviews = () => {
   return (
     <div className="min-h-screen bg-[#faf6ef] font-sans pb-[90px] relative">
 
-      {/* ── Hero Banner ── */}
-      <div className="relative w-full h-[190px]">
+      {/* ── Hero Banner: Chiều cao chuẩn 220-240px, nền màu nâu di sản ── */}
+      <div className="relative overflow-hidden min-h-[220px] md:h-[240px] bg-[#200e05] flex items-center select-none">
         {/* Background Image on the right */}
         <div className="absolute inset-0 bg-[url('/images/museum-hero.jpg')]" style={{ backgroundPosition: 'right center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat' }} />
         {/* Gradient Overlay */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, #3a2213 0%, rgba(58,34,19,0.92) 35%, rgba(58,34,19,0.3) 70%, rgba(58,34,19,0) 100%)' }} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, #200e05 0%, rgba(58,34,19,0.92) 40%, rgba(58,34,19,0.4) 75%, transparent 100%)' }} />
         
         {/* Content */}
-        <div className="relative max-w-7xl mx-auto px-6 h-full flex items-center gap-6 z-10">
-          <div className="w-[90px] h-[90px] rounded-full bg-[#c8952e]/20 border border-[#c8952e]/40 flex items-center justify-center flex-none">
-            <MessageSquare className="w-10 h-10 text-[#c8952e]" />
-          </div>
-          <div>
-            <h1 className="text-[48px] font-bold text-white tracking-tight leading-none whitespace-nowrap">
-              Đánh giá & Phản hồi
+        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-0 flex flex-col justify-center">
+          <div className="max-w-full md:max-w-[60%] relative z-10">
+            {/* Breadcrumb: TRANG CHỦ / ĐÁNH GIÁ */}
+            <div className="relative z-10">
+              <Breadcrumb
+                items={[
+                  { label: 'TRANG CHỦ', path: '/' },
+                  { label: 'ĐÁNH GIÁ' },
+                ]}
+                variant="dark"
+              />
+            </div>
+
+            {/* Title: Serif bold, large, white */}
+            <h1 
+              className="typo-page-title text-white tracking-wide leading-tight uppercase relative z-10"
+              style={{ textShadow: '0 2px 12px rgba(0,0,0,.45)' }}
+            >
+              ĐÁNH GIÁ & PHẢN HỒI
             </h1>
-            <p className="text-[#faf6ef] text-[18px] mt-2">Ý kiến phản hồi công khai đã qua hệ thống kiểm duyệt tự động</p>
+
+            {/* Description */}
+            <p className="typo-body text-[#F5EFE0]/80 line-clamp-2 mt-2 max-w-xl relative z-10">
+              Ý kiến phản hồi công khai đã qua hệ thống kiểm duyệt tự động của Bảo tàng.
+            </p>
+
+            {/* Short gold divider bar */}
+            <div className="w-14 h-[2px] bg-[#D4A359] mt-3 rounded-full relative z-10" />
           </div>
-        </div>
-        
-        {/* Wavy bottom */}
-        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none z-20" style={{ transform: 'translateY(1px)' }}>
-          <svg className="block w-full h-[30px]" viewBox="0 0 1200 120" preserveAspectRatio="none">
-            <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V95.8C59.71,118.4,142.3,122.9,208.5,108.5Z" fill="#faf6ef"></path>
-          </svg>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 space-y-10 relative z-30 -mt-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 relative z-30 mt-8">
 
         {/* ── Rating Summary Card ── */}
         <div className="bg-white rounded-[24px] shadow-sm border border-stone-100 p-[28px] flex flex-col md:flex-row items-center gap-8 w-full box-border" style={{ boxShadow: '0 8px 30px rgba(58,34,19,0.06)' }}>
@@ -151,11 +164,11 @@ export const Reviews = () => {
               <div className="h-[3px] w-12 bg-[#c8952e] mt-1" />
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button onClick={handleOpenCreateReview} className="flex items-center gap-2 text-[#3a2213] font-medium text-[15px] hover:text-[#c8952e] transition-colors">
+          <div className="flex items-center gap-3">
+            <button onClick={handleOpenCreateReview} className="btn-primary h-11 px-6 typo-btn gap-2 rounded-full shadow-md cursor-pointer">
               <Plus className="w-4 h-4" /> Gửi đánh giá mới
             </button>
-            <button className="px-5 py-2 rounded-full border border-stone-200 text-[#3a2213] bg-white font-medium hover:bg-stone-50 text-[14px]">
+            <button className="btn-secondary h-11 px-5 typo-btn rounded-full cursor-pointer">
               Xem tất cả →
             </button>
           </div>
@@ -170,19 +183,19 @@ export const Reviews = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredReviews.map((rev) => (
-              <div key={rev.id} className="bg-white rounded-[20px] p-6 border border-stone-100 flex flex-col gap-4 transition-all duration-300 h-full" style={{ boxShadow: '0 4px 20px rgba(58,34,19,0.04)' }}>
+              <div key={rev.id} className="bg-white rounded-2xl p-5 sm:p-6 border border-stone-200/80 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col gap-4 h-full">
                 
                 {/* Author row */}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#3a2213] flex items-center justify-center font-bold text-white text-[15px] flex-none">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-[#3a2213] flex items-center justify-center font-bold text-white text-sm shrink-0">
                       {rev.author.charAt(0)}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-[16px] text-[#3a2213] truncate">{rev.author}</p>
+                      <p className="font-bold text-sm sm:text-base text-[#3a2213] truncate">{rev.author}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0 ml-2">
                     {Array.from({ length: rev.rating || 5 }).map((_, i) => (
                       <Star key={i} className="w-4 h-4 fill-[#c8952e] text-[#c8952e]" />
                     ))}
@@ -191,21 +204,21 @@ export const Reviews = () => {
 
                 {/* Comment box */}
                 <div className="relative bg-[#fbf6ec] rounded-xl p-4 border border-[#f0e6d2] flex-1">
-                  <Quote className="absolute top-2 left-2 w-4 h-4 text-[#e6d0a1] fill-[#e6d0a1]" />
-                  <p className="text-[15px] text-[#5a3a1f] leading-relaxed italic pl-6 line-clamp-3">
+                  <Quote className="absolute top-2.5 left-2.5 w-4 h-4 text-[#e6d0a1] fill-[#e6d0a1]" />
+                  <p className="typo-body text-xs sm:text-sm text-[#5a3a1f] leading-relaxed italic pl-6 line-clamp-3">
                     "{rev.comment}"
                   </p>
                 </div>
 
                 {/* Footer info */}
-                <div className="flex items-start justify-between text-[13px] text-[#786a5f] pt-1">
+                <div className="flex items-start justify-between text-xs text-[#786a5f] pt-1 gap-2">
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <CalendarDays className="w-3.5 h-3.5" />
+                    <CalendarDays className="w-3.5 h-3.5 text-museum-gold" />
                     <span>{rev.date}</span>
                   </div>
                   <div className="flex items-start gap-1.5 max-w-[65%] text-right justify-end">
-                    <MapPin className="w-3.5 h-3.5 flex-none mt-0.5" />
-                    <span className="leading-snug">{rev.artifactName}</span>
+                    <MapPin className="w-3.5 h-3.5 text-museum-brown shrink-0 mt-0.5" />
+                    <span className="leading-snug truncate">{rev.artifactName}</span>
                   </div>
                 </div>
               </div>
@@ -226,12 +239,12 @@ export const Reviews = () => {
           </div>
           <div className="flex items-center justify-center gap-3 pt-2">
             <button onClick={() => { setIsAuthPromptOpen(false); navigate('/login?redirect=/reviews'); }}
-              className="px-6 py-2.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-xl shadow-md transition-colors flex items-center gap-1.5 cursor-pointer">
+              className="btn-primary h-10 px-6 typo-btn gap-1.5 rounded-full shadow-md transition-colors cursor-pointer">
               <LogIn className="w-4 h-4" />
               <span>Đăng nhập</span>
             </button>
             <button onClick={() => setIsAuthPromptOpen(false)}
-              className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold text-xs rounded-xl transition-colors cursor-pointer">
+              className="h-10 px-5 bg-gray-100 hover:bg-gray-200 text-gray-700 typo-btn rounded-full transition-colors cursor-pointer">
               Để sau
             </button>
           </div>

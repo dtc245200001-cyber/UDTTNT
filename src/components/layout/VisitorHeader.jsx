@@ -83,10 +83,10 @@ export const VisitorHeader = () => {
   const isStaffOrAdmin = currentUser?.role === 'staff' || isAdmin;
 
   const navItemBase = (active) =>
-    `relative h-8 sm:h-9 px-3.5 rounded-full text-[14px] font-medium transition-all duration-200 flex items-center gap-1.5 select-none cursor-pointer whitespace-nowrap flex-none ${
+    `relative h-8 sm:h-9 px-2.5 min-[1200px]:px-3 min-[1350px]:px-3.5 rounded-full text-[12.5px] min-[1200px]:text-[13px] min-[1350px]:text-[14px] font-medium transition-all duration-200 flex items-center gap-1.5 select-none cursor-pointer whitespace-nowrap flex-none ${
       active
-        ? 'bg-[#b8862b] text-white font-bold shadow-sm'
-        : 'bg-transparent text-[#2D241E] hover:text-[#b8862b] hover:bg-[#F5EFE0]/70'
+        ? 'bg-[#8B5A1E] text-white font-bold shadow-xs'
+        : 'bg-transparent text-[#2D241E] hover:text-[#8B5A1E] hover:bg-[#F5EFE0]/70'
     }`;
 
   return (
@@ -94,7 +94,7 @@ export const VisitorHeader = () => {
       {/* ─────────────────────────────────────────────────────────────────────
           DESKTOP HEADER  (viewport ≥ 1100px → hamburger ngưỡng dưới)
       ───────────────────────────────────────────────────────────────────── */}
-      <div className="hidden min-[1100px]:flex w-full max-w-[1800px] mx-auto px-6 xl:px-8 h-[4.25rem] items-center justify-between gap-4 overflow-visible box-border">
+      <div className="hidden min-[1100px]:flex w-full max-w-[1800px] mx-auto px-4 xl:px-8 h-[4.25rem] items-center justify-between gap-3 xl:gap-4 overflow-visible box-border">
 
         {/* 1 ── LOGO: Round dark brown background with gold icon + brown/gold text */}
         <div style={{ flex: '0 1 auto', minWidth: 0, overflow: 'hidden' }} className="flex items-center">
@@ -105,10 +105,10 @@ export const VisitorHeader = () => {
             </div>
             {/* Text block */}
             <div className="flex flex-col justify-center min-w-0 overflow-hidden">
-              <span className="font-extrabold text-[0.88rem] tracking-wide text-[#3E2712] leading-tight group-hover:text-[#8B5A1E] transition-colors whitespace-nowrap overflow-hidden text-ellipsis block">
+              <span className="font-extrabold text-[0.85rem] xl:text-[0.88rem] tracking-wide text-[#3E2712] leading-tight group-hover:text-[#8B5A1E] transition-colors whitespace-nowrap overflow-hidden text-ellipsis block">
                 BẢO TÀNG QUỐC GIA VIỆT NAM
               </span>
-              <span className="text-[0.6rem] font-bold text-[#C59B27] uppercase tracking-widest mt-0.5 whitespace-nowrap">
+              <span className="text-[0.58rem] xl:text-[0.6rem] font-bold text-[#C59B27] uppercase tracking-widest mt-0.5 whitespace-nowrap">
                 DI SẢN VĂN HÓA DÂN TỘC
               </span>
             </div>
@@ -118,7 +118,7 @@ export const VisitorHeader = () => {
         {/* 2 ── MENU: Inactive text dark, active pill brown var(--color-[#8B5A1E]) with white text */}
         <nav
           style={{ flex: '1 1 0%', minWidth: 0 }}
-          className="flex items-center justify-center overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-1 px-2"
+          className="flex items-center justify-center overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] gap-1 px-1 sm:px-2"
         >
           {/* Primary links – always shown */}
           {primaryLinks.map((link) => {
@@ -129,7 +129,7 @@ export const VisitorHeader = () => {
             const content = (
               <>
                 <Icon className={`w-3.5 h-3.5 flex-none transition-colors ${active ? 'text-white' : 'text-stone-500 group-hover:text-[#8B5A1E]'}`} />
-                <span className="hidden min-[1280px]:inline">{link.name}</span>
+                <span className="inline">{link.name}</span>
               </>
             );
             return isInternal ? (
@@ -164,18 +164,18 @@ export const VisitorHeader = () => {
             <div ref={moreMenuRef} className="relative min-[1400px]:hidden flex-none">
               <button
                 onClick={() => setMoreMenuOpen(!moreMenuOpen)}
-                className={`h-9 px-3 rounded-full text-[0.78rem] font-medium transition-all duration-200 flex items-center gap-1 select-none cursor-pointer ${
+                className={`h-8 sm:h-9 px-2.5 min-[1200px]:px-3 rounded-full text-[12.5px] min-[1200px]:text-[13px] min-[1350px]:text-[14px] font-medium transition-all duration-200 flex items-center gap-1 select-none cursor-pointer ${
                   moreMenuOpen
                     ? 'bg-[#F5EFE0] text-[#8B5A1E]'
                     : 'bg-transparent text-[#2D241E] hover:text-[#8B5A1E] hover:bg-[#F5EFE0]/60'
                 }`}
               >
-                <span className="hidden min-[1280px]:inline">Thêm</span>
+                <span className="inline">Thêm</span>
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${moreMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {moreMenuOpen && (
-                <div className="absolute top-full right-0 mt-2 min-w-[9rem] bg-white rounded-2xl border border-stone-200 shadow-xl z-50 py-1 overflow-hidden">
+                <div className="absolute top-full right-0 mt-2 min-w-[9.5rem] bg-white rounded-2xl border border-stone-200 shadow-xl z-50 py-1 overflow-hidden">
                   {secondaryLinks.map((link) => {
                     const active = isLinkActive(link);
                     const Icon = link.icon;

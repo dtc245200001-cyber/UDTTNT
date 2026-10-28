@@ -70,8 +70,8 @@ export const MuseumAI = () => {
     if (!isDragging.current) return;
     requestAnimationFrame(() => {
       setDimensions({
-        w: Math.min(Math.max(380, window.innerWidth - e.clientX - 20), window.innerWidth * 0.95),
-        h: Math.min(Math.max(600, window.innerHeight - e.clientY - 20), window.innerHeight * 0.9)
+        w: Math.min(Math.max(340, window.innerWidth - e.clientX - 20), window.innerWidth - 32),
+        h: Math.min(Math.max(460, window.innerHeight - e.clientY - 20), window.innerHeight - 40)
       });
     });
   };
@@ -521,25 +521,18 @@ export const MuseumAI = () => {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 font-sans select-none">
-      {/* CỬA SỔ MODAL CHI TIẾT HIỆN VẬT */}
-      <ArtifactDetailModal
-        artifact={selectedArtifact}
-        isOpen={!!selectedArtifact}
-        onClose={() => setSelectedArtifact(null)}
-      />
-
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 font-sans select-none">
       {/* 1. NÚT NỔI "TRỢ LÝ AI" Ở GÓC PHẢI MÀN HÌNH */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative w-12 h-12 bg-[#4A2810] hover:bg-[#381D0B] text-[#D8A452] rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer fixed bottom-6 right-6 z-50 flex items-center justify-center"
+          className="group relative w-12 h-12 sm:w-14 sm:h-14 bg-[#4A2810] hover:bg-[#381D0B] text-[#D8A452] rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D8A452]/50"
           title="Mở Trợ lý AI - Khám phá bảo tàng"
         >
-          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 fill-current" viewBox="0 0 24 24">
             <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" />
           </svg>
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+          <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[#D32F2F] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
             1
           </span>
         </button>
@@ -548,27 +541,27 @@ export const MuseumAI = () => {
       {/* 2. CỬA SỔ CHATBOT DẠNG FLOATING WIDGET (RESIZABLE) */}
       {isOpen && (
         <div 
-          className="bg-white rounded-3xl shadow-2xl border border-museum-gold/40 flex flex-col overflow-hidden animate-fadeIn pointer-events-auto relative"
+          className="bg-white rounded-3xl shadow-2xl border border-museum-gold/40 flex flex-col overflow-hidden animate-fadeIn pointer-events-auto relative w-[calc(100vw-2rem)] sm:w-[380px] md:w-[400px] h-[calc(100dvh-5rem)] sm:h-[600px] max-w-[calc(100vw-2rem)] sm:max-w-[460px] max-h-[calc(100dvh-2.5rem)]"
           style={{ 
-            width: `${dimensions.w}px`, 
-            height: `${dimensions.h}px`,
-            minWidth: '380px',
-            minHeight: '600px',
-            maxWidth: 'calc(100vw - 2.5rem)',
-            maxHeight: '90vh'
+            width: typeof window !== 'undefined' && window.innerWidth < 640 ? 'calc(100vw - 2rem)' : `${dimensions.w}px`, 
+            height: typeof window !== 'undefined' && window.innerWidth < 640 ? 'calc(100dvh - 5rem)' : `${dimensions.h}px`,
+            maxWidth: 'calc(100vw - 2rem)',
+            maxHeight: 'calc(100dvh - 2.5rem)',
+            minWidth: 'min(350px, calc(100vw - 2rem))',
+            minHeight: 'min(460px, calc(100dvh - 4rem))'
           }}
         >
-          {/* Resize Handle */}
+          {/* Resize Handle (Desktop only) */}
           <div 
             onMouseDown={handleMouseDown}
-            className="absolute top-0 left-0 w-8 h-8 cursor-nwse-resize z-50 flex items-start justify-start p-2 opacity-60 hover:opacity-100 transition-opacity"
+            className="hidden sm:flex absolute top-0 left-0 w-8 h-8 cursor-nwse-resize z-50 items-start justify-start p-2 opacity-60 hover:opacity-100 transition-opacity"
             title="Kéo để thay đổi kích thước"
           >
             <div className="w-2.5 h-2.5 border-t-[2.5px] border-l-[2.5px] border-white rounded-[2px] pointer-events-none" />
           </div>
 
           {/* HEADER CHATBOT */}
-          <div className="bg-museum-brown text-white pl-8 pr-4 py-3.5 flex items-center justify-between shadow-md relative border-b border-museum-gold/30">
+          <div className="bg-museum-brown text-white pl-8 pr-4 py-3.5 flex items-center justify-between shadow-md relative border-b border-museum-gold/30 shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-museum-gold flex items-center justify-center text-white shadow-xs">
                 <Bot className="w-6 h-6" />
@@ -608,7 +601,7 @@ export const MuseumAI = () => {
           </div>
 
           {/* VÙNG DANH SÁCH TIN NHẮN (MESSAGES CONTAINER) */}
-          <div className="flex-1 p-3.5 overflow-y-auto space-y-3.5 bg-museum-ivory/60">
+          <div className="flex-1 min-h-0 p-3.5 overflow-y-auto space-y-3.5 bg-museum-ivory/60">
             {messages.map((msg, idx) => (
               <div
                 key={msg.id}
@@ -762,7 +755,7 @@ export const MuseumAI = () => {
                 </div>
                 <div className="bg-white p-3 rounded-2xl rounded-tl-none border border-museum-gold/30 shadow-2xs flex items-center gap-2 text-xs font-semibold text-museum-brown">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin text-museum-gold" />
-                  <span>'Trợ lý AI đang suy nghĩ và tra cứu tư liệu...'}</span>
+                  <span>Trợ lý AI đang suy nghĩ và tra cứu tư liệu...</span>
                 </div>
               </div>
             )}
@@ -773,7 +766,7 @@ export const MuseumAI = () => {
           {/* GỢI Ý CÂU HỎI NHANH (CUỘN NGANG) */}
           {!isSearching && (
             <ErrorBoundary fallback={null}>
-              <div className="px-3 pb-3 pt-1 bg-transparent relative z-10">
+              <div className="px-3 pb-3 pt-1 bg-transparent relative z-10 shrink-0">
                 <div 
                   className="flex items-center gap-2.5 overflow-x-auto pb-2 pt-1 scrollbar-hide snap-x snap-mandatory scroll-smooth"
                   style={{ WebkitMaskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)' }}
@@ -798,7 +791,7 @@ export const MuseumAI = () => {
           )}
 
           {/* KHUNG NHẬP CÂU HỎI & NÚT GỬI */}
-          <div className="p-3 bg-white border-t border-gray-100">
+          <div className="p-3 bg-white border-t border-gray-100 shrink-0">
             <div className="flex items-center gap-2 bg-gray-50 rounded-2xl p-1.5 border border-gray-200 focus-within:border-museum-gold focus-within:bg-white focus-within:ring-2 focus-within:ring-museum-gold/20 transition-all">
               <input 
                 type="file" 
