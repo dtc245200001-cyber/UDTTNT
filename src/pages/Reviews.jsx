@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { Star, MessageSquare, Plus, Trash2, User, LogIn, AlertCircle, Quote, TrendingUp, CalendarDays, MapPin, Bot, Landmark } from 'lucide-react';
+import { Star, MessageSquare, Plus, Trash2, User, LogIn, AlertCircle, Quote, TrendingUp, CalendarDays, MapPin, Bot, Landmark, MessageSquareQuote } from 'lucide-react';
 import { ReviewFormModal } from '@/components/reviews/ReviewFormModal';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -11,7 +11,7 @@ export const Reviews = () => {
   const navigate = useNavigate();
   const { reviews, currentUser, isAuthenticated, deleteReview } = useApp();
 
-  const isAdmin = currentUser?.role === 'admin';
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'manager';
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAuthPromptOpen, setIsAuthPromptOpen] = useState(false);
@@ -56,49 +56,67 @@ export const Reviews = () => {
   }));
 
   return (
-    <div className="min-h-screen bg-[#faf6ef] font-sans pb-[90px] relative">
+    <div className={isAdmin ? 'space-y-6 animate-fadeIn' : 'min-h-screen bg-[#faf6ef] font-sans pb-[90px] relative'}>
 
-      {/* ── Hero Banner: Chiều cao chuẩn 220-240px, nền màu nâu di sản ── */}
-      <div className="relative overflow-hidden min-h-[220px] md:h-[240px] bg-[#200e05] flex items-center select-none">
-        {/* Background Image on the right */}
-        <div className="absolute inset-0 bg-[url('/images/museum-hero.jpg')]" style={{ backgroundPosition: 'right center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat' }} />
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, #200e05 0%, rgba(58,34,19,0.92) 40%, rgba(58,34,19,0.4) 75%, transparent 100%)' }} />
-        
-        {/* Content */}
-        <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-0 flex flex-col justify-center">
-          <div className="max-w-full md:max-w-[60%] relative z-10">
-            {/* Breadcrumb: TRANG CHỦ / ĐÁNH GIÁ */}
-            <div className="relative z-10">
-              <Breadcrumb
-                items={[
-                  { label: 'TRANG CHỦ', path: '/' },
-                  { label: 'ĐÁNH GIÁ' },
-                ]}
-                variant="dark"
-              />
+      {/* ── Admin Header (nếu đăng nhập quyền Quản trị) ── */}
+      {isAdmin ? (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="text-xs font-medium text-[#8A7D6B] mb-1">
+              Tổng quan / <span className="text-[#3E2712] font-semibold">Đánh giá & Phản hồi</span>
             </div>
-
-            {/* Title: Serif bold, large, white */}
-            <h1 
-              className="typo-page-title text-white tracking-wide leading-tight uppercase relative z-10"
-              style={{ textShadow: '0 2px 12px rgba(0,0,0,.45)' }}
-            >
-              ĐÁNH GIÁ & PHẢN HỒI
-            </h1>
-
-            {/* Description */}
-            <p className="typo-body text-[#F5EFE0]/80 line-clamp-2 mt-2 max-w-xl relative z-10">
-              Ý kiến phản hồi công khai đã qua hệ thống kiểm duyệt tự động của Bảo tàng.
+            <h2 className="text-xl sm:text-2xl font-bold text-[#3E2712] tracking-tight flex items-center gap-2 uppercase">
+              <MessageSquareQuote className="w-6 h-6 text-[#B8860B]" />
+              <span>QUẢN LÝ ĐÁNH GIÁ & Ý KIẾN KHÁCH HÀNG</span>
+            </h2>
+            <p className="text-xs text-[#8A7D6B] mt-1">
+              Theo dõi ý kiến khách tham quan, thống kê điểm số và kiểm duyệt các phản hồi vi phạm.
             </p>
+          </div>
+          <button
+            onClick={handleOpenCreateReview}
+            className="btn-primary inline-flex items-center gap-2 px-5 py-2.5 typo-btn rounded-full shadow-sm cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Viết đánh giá mới</span>
+          </button>
+        </div>
+      ) : (
+        /* ── Visitor Hero Banner ── */
+        <div className="relative overflow-hidden min-h-[220px] md:h-[240px] bg-[#200e05] flex items-center select-none">
+          <div className="absolute inset-0 bg-[url('/images/museum-hero.jpg')]" style={{ backgroundPosition: 'right center', backgroundSize: 'cover', backgroundRepeat: 'no-repeat' }} />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, #200e05 0%, rgba(58,34,19,0.92) 40%, rgba(58,34,19,0.4) 75%, transparent 100%)' }} />
+          
+          <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-0 flex flex-col justify-center">
+            <div className="max-w-full md:max-w-[60%] relative z-10">
+              <div className="relative z-10">
+                <Breadcrumb
+                  items={[
+                    { label: 'TRANG CHỦ', path: '/' },
+                    { label: 'ĐÁNH GIÁ' },
+                  ]}
+                  variant="dark"
+                />
+              </div>
 
-            {/* Short gold divider bar */}
-            <div className="w-14 h-[2px] bg-[#D4A359] mt-3 rounded-full relative z-10" />
+              <h1 
+                className="typo-page-title text-white tracking-wide leading-tight uppercase relative z-10"
+                style={{ textShadow: '0 2px 12px rgba(0,0,0,.45)' }}
+              >
+                ĐÁNH GIÁ & PHẢN HỒI
+              </h1>
+
+              <p className="typo-body text-[#F5EFE0]/80 line-clamp-2 mt-2 max-w-xl relative z-10">
+                Ý kiến phản hồi công khai đã qua hệ thống kiểm duyệt tự động của Bảo tàng.
+              </p>
+
+              <div className="w-14 h-[2px] bg-[#D4A359] mt-3 rounded-full relative z-10" />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-8 relative z-30 mt-8">
+      <div className={isAdmin ? 'space-y-6' : 'max-w-7xl mx-auto px-4 sm:px-6 space-y-8 relative z-30 mt-8'}>
 
         {/* ── Rating Summary Card ── */}
         <div className="bg-white rounded-[24px] shadow-sm border border-stone-100 p-[28px] flex flex-col md:flex-row items-center gap-8 w-full box-border" style={{ boxShadow: '0 8px 30px rgba(58,34,19,0.06)' }}>

@@ -33,6 +33,7 @@ import { Tickets } from '@/pages/Tickets';
 import { UsersPage } from '@/pages/Users';
 import { Articles } from '@/pages/Articles';
 import { Reviews } from '@/pages/Reviews';
+import { AdminReviews } from '@/pages/AdminReviews';
 import { Reports } from '@/pages/Reports';
 import { Settings } from '@/pages/Settings';
 import { NotFound } from '@/pages/NotFound';
@@ -74,7 +75,8 @@ export const AppRoutes = () => {
             <Route path="/staff/checkin" element={<StaffCheckin />} />
             <Route path="/users" element={<UsersPage />} />
             <Route path="/articles" element={<Articles />} />
-            <Route path="/reviews" element={<Reviews />} />
+            <Route path="/reviews" element={<AdminReviews />} />
+            <Route path="/admin/reviews" element={<AdminReviews />} />
             <Route path="/visitor-reviews" element={<Reviews />} />
             <Route path="/ai-assistant" element={<AiAssistant />} />
             <Route path="/reports" element={<Reports />} />

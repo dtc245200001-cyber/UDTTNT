@@ -13,6 +13,7 @@ import {
   Users,
   FileText,
   X,
+  MessageSquareQuote,
 } from 'lucide-react';
 
 const VaseIcon = ({ className = 'w-5 h-5' }) => (
@@ -47,6 +48,7 @@ export const navItems = [
   { name: 'Soát vé Quầy', icon: QrCode, path: '/staff/checkin' },
   { name: 'Người dùng', icon: Users, path: '/users' },
   { name: 'Bài viết', icon: FileText, path: '/articles' },
+  { name: 'Đánh giá', icon: MessageSquareQuote, path: '/reviews' },
 ];
 
 export const Sidebar = () => {

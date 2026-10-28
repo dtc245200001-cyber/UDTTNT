@@ -1585,6 +1585,24 @@ export const AppProvider = ({ children }) => {
     return true;
   };
 
+  const replyReview = async (id, replyText) => {
+    setReviewsList((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              adminReply: replyText,
+              repliedAt: new Date().toISOString().split('T')[0],
+              repliedBy: currentUser?.name || 'Ban Quản Trị',
+            }
+          : r
+      )
+    );
+    addToast('Đã lưu phản hồi của Ban Quản Trị thành công.', 'success');
+    logAudit('REPLY_REVIEW', `Phản hồi đánh giá ID: ${id}`);
+    return true;
+  };
+
   // 16. Exhibitions (Đồng bộ trực tiếp Supabase)
   const addExhibition = async (exhibition) => {
     const nextId = exhibition.id || getNextMaxId('EX', exhibitionsList, 3);
@@ -2286,6 +2304,7 @@ export const AppProvider = ({ children }) => {
         reviews: reviewsList,
         addReview,
         deleteReview,
+        replyReview,
 
         // Articles (Tin tức & Bài viết - bai_viet)
         articles: articlesList,
