@@ -40,7 +40,6 @@ const TicketNavIcon = ({ className = 'w-5 h-5' }) => (
 export const navItems = [
   { name: 'Tổng quan', icon: Home, path: '/dashboard' },
   { name: 'Hiện vật', icon: VaseIcon, path: '/artifacts' },
-  { name: 'Danh mục', icon: CategoryIcon, path: '/categories' },
   { name: 'Chuyên đề nổi bật', icon: Star, path: '/galleries' },
   { name: 'Triển lãm', icon: Archive, path: '/exhibitions' },
   { name: 'Sự kiện', icon: CalendarDays, path: '/events' },
@@ -48,6 +47,7 @@ export const navItems = [
   { name: 'Soát vé Quầy', icon: QrCode, path: '/staff/checkin' },
   { name: 'Người dùng', icon: Users, path: '/users' },
   { name: 'Bài viết', icon: FileText, path: '/articles' },
+  { name: 'Đánh giá', icon: FileText, path: '/reviews' },
 ];
 
 export const Sidebar = () => {

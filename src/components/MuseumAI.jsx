@@ -52,6 +52,116 @@ export const MuseumAI = () => {
   const [dimensions, setDimensions] = useState({ w: 380, h: 600 });
   const isDragging = useRef(false);
 
+  // ── Khả năng kéo thả cho nút Chatbot nổi (Draggable Floating Launcher) ──
+  const LAUNCHER_SIZE = 56;
+  const PADDING = 16;
+  const [launcherPos, setLauncherPos] = useState(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('museum_chatbot_pos') : null;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+          const maxX = Math.max(PADDING, (typeof window !== 'undefined' ? window.innerWidth : 1200) - LAUNCHER_SIZE - PADDING);
+          const maxY = Math.max(PADDING, (typeof window !== 'undefined' ? window.innerHeight : 800) - LAUNCHER_SIZE - PADDING);
+          return {
+            x: Math.min(Math.max(PADDING, parsed.x), maxX),
+            y: Math.min(Math.max(PADDING, parsed.y), maxY),
+          };
+        }
+      } catch (_) {}
+    }
+    const initialX = typeof window !== 'undefined' ? window.innerWidth - LAUNCHER_SIZE - 24 : 1000;
+    const initialY = typeof window !== 'undefined' ? window.innerHeight - LAUNCHER_SIZE - 24 : 700;
+    return { x: initialX, y: initialY };
+  });
+
+  const dragInfoRef = useRef({
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    initX: 0,
+    initY: 0,
+    hasMoved: false,
+  });
+  const justDraggedRef = useRef(false);
+
+  // Đảm bảo nút luôn nằm trong viewport an toàn khi resize màn hình
+  useEffect(() => {
+    const handleResize = () => {
+      setLauncherPos((prev) => {
+        const maxX = Math.max(PADDING, window.innerWidth - LAUNCHER_SIZE - PADDING);
+        const maxY = Math.max(PADDING, window.innerHeight - LAUNCHER_SIZE - PADDING);
+        const newX = Math.min(Math.max(PADDING, prev.x), maxX);
+        const newY = Math.min(Math.max(PADDING, prev.y), maxY);
+        if (newX !== prev.x || newY !== prev.y) {
+          return { x: newX, y: newY };
+        }
+        return prev;
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleLauncherPointerDown = (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    dragInfoRef.current = {
+      isDragging: true,
+      startX: e.clientX,
+      startY: e.clientY,
+      initX: launcherPos.x,
+      initY: launcherPos.y,
+      hasMoved: false,
+    };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (_) {}
+  };
+
+  const handleLauncherPointerMove = (e) => {
+    if (!dragInfoRef.current.isDragging) return;
+    const dx = e.clientX - dragInfoRef.current.startX;
+    const dy = e.clientY - dragInfoRef.current.startY;
+
+    if (!dragInfoRef.current.hasMoved && Math.hypot(dx, dy) > 4) {
+      dragInfoRef.current.hasMoved = true;
+    }
+
+    if (dragInfoRef.current.hasMoved) {
+      const maxX = Math.max(PADDING, window.innerWidth - LAUNCHER_SIZE - PADDING);
+      const maxY = Math.max(PADDING, window.innerHeight - LAUNCHER_SIZE - PADDING);
+      const nextX = Math.min(Math.max(PADDING, dragInfoRef.current.initX + dx), maxX);
+      const nextY = Math.min(Math.max(PADDING, dragInfoRef.current.initY + dy), maxY);
+      setLauncherPos({ x: nextX, y: nextY });
+    }
+  };
+
+  const handleLauncherPointerUp = (e) => {
+    if (!dragInfoRef.current.isDragging) return;
+    const wasMoved = dragInfoRef.current.hasMoved;
+    dragInfoRef.current.isDragging = false;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (_) {}
+
+    if (wasMoved) {
+      justDraggedRef.current = true;
+      localStorage.setItem('museum_chatbot_pos', JSON.stringify(launcherPos));
+      setTimeout(() => {
+        justDraggedRef.current = false;
+      }, 100);
+    }
+  };
+
+  const handleLauncherClick = (e) => {
+    if (justDraggedRef.current || dragInfoRef.current.hasMoved) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    setIsOpen(true);
+  };
+
   const handleMouseDown = (e) => {
     e.preventDefault();
     isDragging.current = true;
@@ -228,12 +338,15 @@ export const MuseumAI = () => {
       try {
         const res = await sendChatQuery(textToSend, messages);
         if (res.success && res.answer && !res.answer.includes('Mình đang gặp một chút gián đoạn khi kết nối với AI')) {
-          let mappedArtifacts = (res.artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
-          if (intent === 'artifact_search' && mappedArtifacts.length === 0) {
+          let mappedArtifacts = [];
+          if (intent !== 'statistical_count' && intent !== 'general_knowledge') {
+            mappedArtifacts = (res.artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
+            if (intent === 'artifact_search' && mappedArtifacts.length === 0) {
               const localResult = searchArtifacts(artifacts, textToSend);
-              if (localResult && localResult.matchedArtifacts) {
-                  mappedArtifacts = localResult.matchedArtifacts.slice(0, 4).map(normalizeArtifact);
+              if (localResult && localResult.matchedArtifacts && !localResult.isStatistical) {
+                mappedArtifacts = localResult.matchedArtifacts.slice(0, 4).map(normalizeArtifact);
               }
+            }
           }
           
           const aiMsg = {
@@ -248,6 +361,10 @@ export const MuseumAI = () => {
         } else {
           // Fallback local search
           const localResult = searchArtifacts(artifacts, textToSend, { events, tickets });
+          const mappedArtifacts = (intent === 'statistical_count' || localResult.isStatistical) 
+            ? [] 
+            : (localResult.matchedArtifacts || []).slice(0, 4).map(normalizeArtifact);
+
           const aiMsg = {
             id: aiMsgId,
             sender: 'ai',
@@ -258,7 +375,7 @@ export const MuseumAI = () => {
               snippet: String(art.description || ''),
               period: String(art.period || ''),
             })),
-            artifacts: (localResult.matchedArtifacts || []).slice(0, 4).map(normalizeArtifact),
+            artifacts: mappedArtifacts,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           };
           setMessages((prev) => [...prev, aiMsg]);
@@ -270,7 +387,9 @@ export const MuseumAI = () => {
           {
             id: aiMsgId,
             sender: 'ai',
-            text: 'Rất tiếc, đã có chút gián đoạn kết nối. Bạn vui lòng thử lại sau giây lát nhé! 🏛️',
+            text: 'Rất tiếc, đã có chút gián đoạn kết nối tới máy chủ. Bạn vui lòng thử lại sau giây lát nhé! 🏛️',
+            isError: true,
+            failedText: textToSend,
             sources: [],
             artifacts: [],
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -302,12 +421,15 @@ export const MuseumAI = () => {
             return;
           }
 
-          let mappedArtifacts = (artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
-          if (intent === 'artifact_search' && mappedArtifacts.length === 0) {
+          let mappedArtifacts = [];
+          if (intent !== 'statistical_count' && intent !== 'general_knowledge') {
+            mappedArtifacts = (artifactIds || []).map(id => artifacts.find(a => String(a.id) === String(id))).filter(Boolean).map(normalizeArtifact);
+            if (intent === 'artifact_search' && mappedArtifacts.length === 0) {
               const localResult = searchArtifacts(artifacts, textToSend);
-              if (localResult && localResult.matchedArtifacts) {
-                  mappedArtifacts = localResult.matchedArtifacts.slice(0, 4).map(normalizeArtifact);
+              if (localResult && localResult.matchedArtifacts && !localResult.isStatistical) {
+                mappedArtifacts = localResult.matchedArtifacts.slice(0, 4).map(normalizeArtifact);
               }
+            }
           }
           
           const aiMsg = {
@@ -499,7 +621,7 @@ export const MuseumAI = () => {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 font-sans select-none">
+    <div className="font-sans select-none">
       {/* CỬA SỔ MODAL CHI TIẾT HIỆN VẬT */}
       <ArtifactDetailModal
         artifact={selectedArtifact}
@@ -507,26 +629,38 @@ export const MuseumAI = () => {
         onClose={() => setSelectedArtifact(null)}
       />
 
-      {/* 1. NÚT NỔI "TRỢ LÝ AI" Ở GÓC PHẢI MÀN HÌNH */}
+      {/* 1. NÚT NỔI "TRỢ LÝ AI" KÉO THẢ TỰ DO TRÊN MÀN HÌNH */}
       {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="group relative w-12 h-12 bg-[#4A2810] hover:bg-[#381D0B] text-[#D8A452] rounded-full shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer fixed bottom-6 right-6 z-50 flex items-center justify-center"
-          title="Mở Trợ lý AI - Khám phá bảo tàng"
+        <div
+          style={{
+            position: 'fixed',
+            left: `${launcherPos.x}px`,
+            top: `${launcherPos.y}px`,
+            zIndex: 9999,
+            touchAction: 'none',
+          }}
+          className="select-none"
         >
-          <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" />
-          </svg>
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#D32F2F] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
-            1
-          </span>
-        </button>
+          <button
+            onPointerDown={handleLauncherPointerDown}
+            onPointerMove={handleLauncherPointerMove}
+            onPointerUp={handleLauncherPointerUp}
+            onPointerCancel={handleLauncherPointerUp}
+            onClick={handleLauncherClick}
+            className="w-14 h-14 rounded-full bg-gradient-to-br from-[#D85A32] via-[#C84F27] to-[#A33B18] text-white border border-white/20 shadow-[0_8px_25px_rgba(200,79,39,0.4)] hover:shadow-[0_12px_30px_rgba(200,79,39,0.5)] transition-transform duration-200 hover:scale-105 active:scale-95 cursor-grab active:cursor-grabbing flex items-center justify-center select-none"
+            title="Trợ lý AI Bảo tàng"
+            aria-label="Mở Trợ lý AI Bảo tàng"
+          >
+            {/* Robot Icon căn giữa chính xác */}
+            <Bot className="w-6 h-6 text-white" />
+          </button>
+        </div>
       )}
 
       {/* 2. CỬA SỔ CHATBOT DẠNG FLOATING WIDGET (RESIZABLE) */}
       {isOpen && (
         <div 
-          className="bg-white rounded-3xl shadow-2xl border border-museum-gold/40 flex flex-col overflow-hidden animate-fadeIn pointer-events-auto relative"
+          className="fixed bottom-5 right-5 z-[9999] bg-white rounded-3xl shadow-2xl border border-museum-gold/40 flex flex-col overflow-hidden animate-fadeIn pointer-events-auto"
           style={{ 
             width: `${dimensions.w}px`, 
             height: `${dimensions.h}px`,
@@ -623,27 +757,39 @@ export const MuseumAI = () => {
                         <MarkdownMessage content={msg.text} />
                       )}
 
-                      {/* NÚT COPY CÂU TRẢ LỜI CHO TIN NHẮN AI */}
+                      {/* NÚT COPY & THỬ LẠI CHO TIN NHẮN AI */}
                       {msg.sender === 'ai' && (
                         <div className="mt-2.5 pt-2 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
                           <span className="text-[10px] text-gray-400">{msg.timestamp}</span>
-                          <button
-                            onClick={() => handleCopy(msg.id, msg.text)}
-                            className="flex items-center gap-1 text-[11px] font-semibold text-museum-brown hover:text-museum-gold transition-colors px-2 py-0.5 rounded-md hover:bg-museum-cream/50 cursor-pointer"
-                            title="Sao chép câu trả lời"
-                          >
-                            {copiedMessageId === msg.id ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                                <span className="text-emerald-600">Đã sao chép</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3.5 h-3.5 text-museum-gold" />
-                                <span>Sao chép</span>
-                              </>
+                          <div className="flex items-center gap-2">
+                            {msg.isError && msg.failedText && (
+                              <button
+                                onClick={() => handleSendMessage(msg.failedText)}
+                                className="flex items-center gap-1 text-[11px] font-semibold text-museum-brown hover:text-museum-gold transition-colors px-2 py-0.5 rounded-md hover:bg-museum-cream/50 cursor-pointer"
+                                title="Thử lại câu hỏi này"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5 text-museum-gold" />
+                                <span>Thử lại</span>
+                              </button>
                             )}
-                          </button>
+                            <button
+                              onClick={() => handleCopy(msg.id, msg.text)}
+                              className="flex items-center gap-1 text-[11px] font-semibold text-museum-brown hover:text-museum-gold transition-colors px-2 py-0.5 rounded-md hover:bg-museum-cream/50 cursor-pointer"
+                              title="Sao chép câu trả lời"
+                            >
+                              {copiedMessageId === msg.id ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span className="text-emerald-600">Đã sao chép</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5 text-museum-gold" />
+                                  <span>Sao chép</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
