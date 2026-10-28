@@ -1,0 +1,248 @@
+{
+  "tourId": "vietnamthoitiensu",
+  "title": "Bảo tàng Lịch sử Quốc gia - Thời Tiền Sử",
+  "defaultSceneId": "tiensu-entrance",
+  "settings": {
+    "mouseControlMode": "drag_rotation",
+    "touchControlMode": "drag_rotation",
+    "enterPointingToHorizon": true,
+    "translationTransitionDuration": 1000,
+    "autoRotateSpeed": 0.13,
+    "minFov": 40,
+    "maxFov": 100,
+    "defaultFov": 75
+  },
+  "scenes": [
+    {
+      "id": "tiensu-entrance",
+      "title": "Cửa Phòng Trưng Bày Tiền Sử",
+      "subtitle": "Khu vực lối vào chính diện phòng Tiền Sử",
+      "preview": "/tours/thoitiensu/front.jpg",
+      "cubeFaces": {
+        "front": "/tours/thoitiensu/front.jpg",
+        "right": "/tours/thoitiensu/right.jpg",
+        "back": "/tours/thoitiensu/back.jpg",
+        "left": "/tours/thoitiensu/left.jpg",
+        "up": "/tours/thoitiensu/up.jpg",
+        "down": "/tours/thoitiensu/down.jpg"
+      },
+      "initialView": {
+        "yaw": 0,
+        "pitch": 0,
+        "fov": 75
+      },
+      "hotspots": [
+        {
+          "type": "floor-arrow",
+          "yaw": -16.85,
+          "pitch": -24,
+          "arrowAngle": 0,
+          "distance": 4.5,
+          "target": "tiensu-room-1",
+          "label": "Bước vào Phòng 1: Văn hóa Sơn Vi & Hòa Bình",
+          "arrivalView": {
+            "yaw": 0,
+            "pitch": 0,
+            "fov": 75
+          }
+        },
+        {
+          "type": "floor-arrow",
+          "yaw": 18.5,
+          "pitch": -24,
+          "arrowAngle": 0,
+          "distance": 4.2,
+          "target": "tiensu-room-1",
+          "label": "Không Gian Trưng Bày Hiện Vật",
+          "arrivalView": {
+            "yaw": 0,
+            "pitch": 0,
+            "fov": 75
+          }
+        }
+      ]
+    },
+    {
+      "id": "tiensu-room-1",
+      "title": "Phòng 1: Văn Hóa Sơn Vi & Hòa Bình",
+      "subtitle": "Thời đại đồ đá cũ & dấu tích người tối cổ (1 [Group 2])",
+      "preview": "/tours/thoitiensu/gian1/front.jpg",
+      "cubeFaces": {
+        "front": "/tours/thoitiensu/gian1/front.jpg",
+        "right": "/tours/thoitiensu/gian1/right.jpg",
+        "back": "/tours/thoitiensu/gian1/back.jpg",
+        "left": "/tours/thoitiensu/gian1/left.jpg",
+        "up": "/tours/thoitiensu/gian1/up.jpg",
+        "down": "/tours/thoitiensu/gian1/down.jpg"
+      },
+      "initialView": {
+        "yaw": 0,
+        "pitch": 0,
+        "fov": 75
+      },
+      "hotspots": [
+        {
+          "type": "floor-arrow",
+          "yaw": -16.85,
+          "pitch": -20.32,
+          "arrowAngle": 0,
+          "distance": 4.59,
+          "target": "tiensu-room-2",
+          "label": "Đi tiếp sang Phòng 2: Văn hóa Bắc Sơn",
+          "arrivalView": {
+            "yaw": 0,
+            "pitch": 0,
+            "fov": 75
+          }
+        },
+        {
+          "type": "floor-arrow",
+          "yaw": 163.15,
+          "pitch": -20.77,
+          "arrowAngle": 0,
+          "distance": 4.48,
+          "target": "tiensu-entrance",
+          "label": "Quay lại Cửa Lối Vào",
+          "arrivalView": {
+            "yaw": 180,
+            "pitch": 0,
+            "fov": 75
+          }
+        }
+      ]
+    },
+    {
+      "id": "tiensu-room-2",
+      "title": "Phòng 2: Văn Hóa Bắc Sơn & Đồ Gốm Sơ Khai",
+      "subtitle": "Kỹ thuật mài lưỡi đá & bước chuyển cách mạng đá mới (2 [Group 4])",
+      "preview": "/tours/thoitiensu/gian2/front.jpg",
+      "cubeFaces": {
+        "front": "/tours/thoitiensu/gian2/front.jpg",
+        "right": "/tours/thoitiensu/gian2/right.jpg",
+        "back": "/tours/thoitiensu/gian2/back.jpg",
+        "left": "/tours/thoitiensu/gian2/left.jpg",
+        "up": "/tours/thoitiensu/gian2/up.jpg",
+        "down": "/tours/thoitiensu/gian2/down.jpg"
+      },
+      "initialView": {
+        "yaw": 0,
+        "pitch": 0,
+        "fov": 75
+      },
+      "hotspots": [
+        {
+          "type": "floor-arrow",
+          "yaw": 3.7,
+          "pitch": -30.77,
+          "arrowAngle": 0,
+          "distance": 2.85,
+          "target": "tiensu-room-3",
+          "label": "Đi tiếp sang Phòng 3: Văn hóa Phùng Nguyên",
+          "arrivalView": {
+            "yaw": 0,
+            "pitch": 0,
+            "fov": 75
+          }
+        },
+        {
+          "type": "floor-arrow",
+          "yaw": -109.63,
+          "pitch": -34.44,
+          "arrowAngle": 0,
+          "distance": 2.48,
+          "target": "tiensu-room-1",
+          "label": "Quay lại Phòng 1: Sơn Vi & Hòa Bình",
+          "arrivalView": {
+            "yaw": 163.15,
+            "pitch": 0,
+            "fov": 75
+          }
+        }
+      ]
+    },
+    {
+      "id": "tiensu-room-3",
+      "title": "Phòng 3: Văn Hóa Phùng Nguyên & Đồng Thau",
+      "subtitle": "Bình minh của thời đại kim khí rực rỡ (3 [Group 5])",
+      "preview": "/tours/thoitiensu/gian3/front.jpg",
+      "cubeFaces": {
+        "front": "/tours/thoitiensu/gian3/front.jpg",
+        "right": "/tours/thoitiensu/gian3/right.jpg",
+        "back": "/tours/thoitiensu/gian3/back.jpg",
+        "left": "/tours/thoitiensu/gian3/left.jpg",
+        "up": "/tours/thoitiensu/gian3/up.jpg",
+        "down": "/tours/thoitiensu/gian3/down.jpg"
+      },
+      "initialView": {
+        "yaw": 0,
+        "pitch": 0,
+        "fov": 75
+      },
+      "hotspots": [
+        {
+          "type": "floor-arrow",
+          "yaw": 101.78,
+          "pitch": -30.69,
+          "arrowAngle": 0,
+          "distance": 2.86,
+          "target": "tiensu-room-4",
+          "label": "Đi tiếp sang Phòng 4: Văn hóa Đông Sơn",
+          "arrivalView": {
+            "yaw": 83.94,
+            "pitch": -2.62,
+            "fov": 75
+          }
+        },
+        {
+          "type": "floor-arrow",
+          "yaw": -128.94,
+          "pitch": -42.07,
+          "arrowAngle": 0,
+          "distance": 1.88,
+          "target": "tiensu-room-2",
+          "label": "Quay lại Phòng 2: Bắc Sơn",
+          "arrivalView": {
+            "yaw": -109.63,
+            "pitch": 0,
+            "fov": 75
+          }
+        }
+      ]
+    },
+    {
+      "id": "tiensu-room-4",
+      "title": "Phòng 4: Văn Hóa Đông Sơn & Đỉnh Cao Đồ Đồng",
+      "subtitle": "Nền văn minh rực rỡ thời đại Hùng Vương dựng nước (4 [Group 6])",
+      "preview": "/tours/thoitiensu/gian4/front.jpg",
+      "cubeFaces": {
+        "front": "/tours/thoitiensu/gian4/front.jpg",
+        "right": "/tours/thoitiensu/gian4/right.jpg",
+        "back": "/tours/thoitiensu/gian4/back.jpg",
+        "left": "/tours/thoitiensu/gian4/left.jpg",
+        "up": "/tours/thoitiensu/gian4/up.jpg",
+        "down": "/tours/thoitiensu/gian4/down.jpg"
+      },
+      "initialView": {
+        "yaw": 83.94,
+        "pitch": -2.62,
+        "fov": 75
+      },
+      "hotspots": [
+        {
+          "type": "floor-arrow",
+          "yaw": -58.22,
+          "pitch": -31.78,
+          "arrowAngle": 0,
+          "distance": 2.74,
+          "target": "tiensu-room-3",
+          "label": "Quay lại Phòng 3: Phùng Nguyên",
+          "arrivalView": {
+            "yaw": -128.94,
+            "pitch": 0,
+            "fov": 75
+          }
+        }
+      ]
+    }
+  ]
+}
