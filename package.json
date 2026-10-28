@@ -10,7 +10,8 @@
     "dev:backend:mac": "cd backend && PYTHONIOENCODING=utf-8 ./venv/bin/python -m uvicorn main:app --reload",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "validate:tour": "node scripts/validate-tour.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

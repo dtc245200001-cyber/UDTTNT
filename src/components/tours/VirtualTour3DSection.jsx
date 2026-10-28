@@ -244,6 +244,7 @@ export const VirtualTour3DSection = () => {
               scenes={active3DModalTour.scenes}
               cubeFaces={active3DModalTour.cubeFaces}
               title={active3DModalTour.title}
+              autoRotateDefault={false}
               className="h-[540px] sm:h-[680px]"
             />
           </div>
