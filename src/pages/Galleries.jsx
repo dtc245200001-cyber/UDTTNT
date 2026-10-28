@@ -31,6 +31,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Breadcrumb } from '@/components/common/Breadcrumb';
+import { ImageUploadField } from '@/components/common/ImageUploadField';
 import { formatDate } from '@/utils/formatters';
 import { removeVietnameseTones } from '@/utils/artifactSearch';
 
@@ -44,8 +45,8 @@ const EMPTY_GALLERY = {
   location: 'Bảo tàng Lịch sử Quốc gia – Số 1 Tràng Tiền / 216 Trần Quang Khải, Hoàn Kiếm, Hà Nội',
   sourceUrl: 'https://baotanglichsu.vn/vi/Articles/4002/chuyen-dje-dja-dien-ra',
   sourceNote: '',
-  image: '/images/museum-hero.jpg',
-  galleryImages: ['/images/museum-hero.jpg'],
+  image: '',
+  galleryImages: [],
   highlightArtifacts: [{ name: '', description: '', image: '', period: '' }],
 };
 
@@ -260,6 +261,9 @@ export const Galleries = () => {
     const errs = {};
     if (!formData.name.trim()) errs.name = 'Vui lòng nhập tên trưng bày chuyên đề.';
     if (!formData.description.trim()) errs.description = 'Vui lòng nhập mô tả chuyên đề.';
+    if (!formData.image || !formData.image.trim()) {
+      errs.image = 'Vui lòng chọn hình ảnh bìa chuyên đề từ máy tính (bắt buộc).';
+    }
     if (formData.startDate && formData.endDate && formData.startDate > formData.endDate) {
       errs.endDate = 'Ngày kết thúc phải sau ngày bắt đầu.';
     }
@@ -1049,33 +1053,37 @@ export const Galleries = () => {
                 </div>
               </div>
 
-              {/* Image URL & Source URL */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-museum-brown mb-1.5">
-                    Đường dẫn ảnh bìa
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.image}
-                    onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                    placeholder="https://... hoặc /images/tuong-phat.jpg"
-                    className="w-full px-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold"
-                  />
-                </div>
+              {/* Image Upload from Computer (BẮT BUỘC) */}
+              <div>
+                <ImageUploadField
+                  value={formData.image}
+                  onChange={(val) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      image: val,
+                      galleryImages: val ? [val, ...(prev.galleryImages || []).filter((img) => img !== val)] : [],
+                    }));
+                    if (errors.image) setErrors((prev) => ({ ...prev, image: null }));
+                  }}
+                  error={errors.image}
+                  label="Hình ảnh bìa chuyên đề"
+                  required={true}
+                  description="Ảnh này sẽ hiển thị làm ảnh bìa chính trên trang chuyên đề trưng bày và hệ thống."
+                />
+              </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-museum-brown mb-1.5">
-                    Ghi chú nguồn tư liệu (source_note)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.sourceNote}
-                    onChange={(e) => setFormData({ ...formData, sourceNote: e.target.value })}
-                    placeholder="Báo Nhân Dân / Báo điện tử ĐCSVN"
-                    className="w-full px-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold"
-                  />
-                </div>
+              {/* Source Note */}
+              <div>
+                <label className="block text-xs font-bold text-museum-brown mb-1.5">
+                  Ghi chú nguồn tư liệu (source_note)
+                </label>
+                <input
+                  type="text"
+                  value={formData.sourceNote}
+                  onChange={(e) => setFormData({ ...formData, sourceNote: e.target.value })}
+                  placeholder="Báo Nhân Dân / Báo điện tử ĐCSVN..."
+                  className="w-full px-4 py-2.5 bg-gray-50 text-xs sm:text-sm rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold"
+                />
               </div>
 
               {/* Description */}

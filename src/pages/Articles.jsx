@@ -19,6 +19,7 @@ import {
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { ImageUploadField } from '@/components/common/ImageUploadField';
 
 const DEFAULT_CATEGORIES = [
   'Nghiên cứu di sản',
@@ -35,6 +36,7 @@ const EMPTY_FORM = {
   status: 'Đã xuất bản',
   date: new Date().toISOString().split('T')[0],
   content: '',
+  image: '',
 };
 
 export const Articles = () => {
@@ -107,6 +109,7 @@ export const Articles = () => {
       status: art.status || 'Đã xuất bản',
       date: art.date || new Date().toISOString().split('T')[0],
       content: art.content || '',
+      image: art.image || '',
     });
     setFormErrors({});
     setIsFormOpen(true);
@@ -116,6 +119,9 @@ export const Articles = () => {
     const errors = {};
     if (!formData.title.trim()) {
       errors.title = 'Vui lòng nhập tiêu đề bài viết.';
+    }
+    if (!formData.image || !formData.image.trim()) {
+      errors.image = 'Vui lòng chọn hình ảnh bìa bài viết từ máy tính (bắt buộc).';
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -486,6 +492,21 @@ export const Articles = () => {
                 className="w-full px-3.5 py-2.5 bg-white border border-stone-200/80 rounded-xl text-sm text-[#3E2712] focus:outline-none focus:ring-2 focus:ring-[#B8860B] transition-all"
               />
             </div>
+          </div>
+
+          {/* Chọn ảnh bài viết từ máy tính (BẮT BUỘC) */}
+          <div>
+            <ImageUploadField
+              value={formData.image}
+              onChange={(val) => {
+                setFormData((prev) => ({ ...prev, image: val }));
+                if (formErrors.image) setFormErrors((prev) => ({ ...prev, image: null }));
+              }}
+              error={formErrors.image}
+              label="Hình ảnh bìa bài viết"
+              required={true}
+              description="Ảnh này sẽ hiển thị làm ảnh minh họa chính cho bài viết trên thư viện tin tức và bài nghiên cứu."
+            />
           </div>
 
           {/* Nội dung bài viết */}

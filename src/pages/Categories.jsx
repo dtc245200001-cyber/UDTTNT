@@ -4,6 +4,7 @@ import { useApp } from '@/context/AppContext';
 import { Plus, ChevronRight, FolderTree, Pencil, Trash2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { ImageUploadField } from '@/components/common/ImageUploadField';
 
 // Specific image mappings matching the screenshot
 const categoryImageMap = {
@@ -22,7 +23,7 @@ const categoryImageMap = {
   DM13: '/images/bia-tien-si.jpg',
 };
 
-const EMPTY_FORM = { name: '', description: '' };
+const EMPTY_FORM = { name: '', description: '', image: '' };
 
 export const Categories = () => {
   const navigate = useNavigate();
@@ -48,7 +49,11 @@ export const Categories = () => {
   const openEdit = (item, e) => {
     if (e) e.stopPropagation();
     setEditingCategory(item);
-    setFormData({ name: item.name || '', description: item.description || '' });
+    setFormData({
+      name: item.name || '',
+      description: item.description || '',
+      image: item.image || categoryImageMap[item.id] || '',
+    });
     setErrors({});
     setIsFormOpen(true);
   };
@@ -56,6 +61,9 @@ export const Categories = () => {
   const validate = () => {
     const errs = {};
     if (!formData.name.trim()) errs.name = 'Vui lòng nhập tên danh mục.';
+    if (!formData.image || !formData.image.trim()) {
+      errs.image = 'Vui lòng chọn hình ảnh danh mục từ máy tính (bắt buộc).';
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -123,7 +131,7 @@ export const Categories = () => {
       {/* Categories Grid (4 columns matching screenshot) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {categories.map((c) => {
-          const imageSrc = categoryImageMap[c.id] || '/images/dong-son-showcase.jpg';
+          const imageSrc = c.image || categoryImageMap[c.id] || '/images/dong-son-showcase.jpg';
           const isFeatured = c.id === 'DM02'; // Highlights DM02 with warm gold title
 
           return (
@@ -232,6 +240,21 @@ export const Categories = () => {
               className={`w-full px-3.5 py-2.5 rounded-xl border text-xs text-[#3E2712] focus:outline-none focus:ring-2 focus:ring-[#B8860B] bg-white ${errors.name ? 'border-red-400 bg-red-50' : 'border-stone-200/80'}`}
             />
             {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name}</p>}
+          </div>
+
+          {/* Chọn ảnh danh mục từ máy tính (BẮT BUỘC) */}
+          <div>
+            <ImageUploadField
+              value={formData.image}
+              onChange={(val) => {
+                setFormData((prev) => ({ ...prev, image: val }));
+                if (errors.image) setErrors((prev) => ({ ...prev, image: null }));
+              }}
+              error={errors.image}
+              label="Hình ảnh đại diện danh mục"
+              required={true}
+              description="Ảnh này sẽ hiển thị làm ảnh minh họa của thẻ danh mục trên hệ thống."
+            />
           </div>
 
           <div>

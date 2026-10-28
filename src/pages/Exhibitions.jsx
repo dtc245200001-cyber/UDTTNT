@@ -5,10 +5,11 @@ import {
   CalendarDays, MapPin, Users, ImageIcon, Search, Clock, CheckCircle2, Landmark, LayoutGrid
 } from 'lucide-react';
 import { Breadcrumb } from '@/components/common/Breadcrumb';
+import { ImageUploadField } from '@/components/common/ImageUploadField';
 
 const EMPTY_EXHIBITION = {
   name: '', status: 'Sắp diễn ra', startDate: '', endDate: '',
-  location: '', description: '', image: '/images/hero-exhibition.jpg',
+  location: '', description: '', image: '',
 };
 
 const StatusBadge = ({ status }) => {
@@ -58,6 +59,8 @@ export const Exhibitions = () => {
     if (formData.startDate && formData.endDate && formData.startDate > formData.endDate)
       errs.endDate = 'Ngày kết thúc phải sau ngày bắt đầu.';
     if (!formData.location.trim()) errs.location = 'Vui lòng nhập địa điểm.';
+    if (!formData.image || !formData.image.trim())
+      errs.image = 'Vui lòng chọn hình ảnh triển lãm từ máy tính (bắt buộc).';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -310,8 +313,17 @@ export const Exhibitions = () => {
                   </select>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-museum-brown mb-1">URL Ảnh bìa</label>
-                  <input type="text" value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} placeholder="/images/museum-hero.jpg" className={inputCls(false)} />
+                  <ImageUploadField
+                    value={formData.image}
+                    onChange={(val) => {
+                      setFormData((prev) => ({ ...prev, image: val }));
+                      if (errors.image) setErrors((prev) => ({ ...prev, image: null }));
+                    }}
+                    error={errors.image}
+                    label="Hình ảnh triển lãm"
+                    required={true}
+                    description="Ảnh này sẽ hiển thị làm ảnh bìa chính của triển lãm trên toàn bộ hệ thống."
+                  />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-museum-brown mb-1">Mô tả</label>

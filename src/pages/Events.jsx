@@ -18,6 +18,7 @@ import {
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EventRegistrationModal } from '@/components/events/EventRegistrationModal';
+import { ImageUploadField } from '@/components/common/ImageUploadField';
 import { formatDate } from '@/utils/formatters';
 import { Breadcrumb } from '@/components/common/Breadcrumb';
 
@@ -30,6 +31,7 @@ const EMPTY_EVENT_FORM = {
   status: 'Sắp diễn ra',
   seats: 100,
   description: '',
+  image: '',
 };
 
 export const Events = () => {
@@ -132,6 +134,7 @@ export const Events = () => {
       status: ev.status || 'Sắp diễn ra',
       seats: ev.seats !== undefined ? ev.seats : 100,
       description: ev.description || '',
+      image: ev.image || '',
     });
     setFormErrors({});
     setIsFormOpen(true);
@@ -141,6 +144,9 @@ export const Events = () => {
     const errors = {};
     if (!formData.title.trim()) {
       errors.title = 'Vui lòng nhập tiêu đề sự kiện.';
+    }
+    if (!formData.image || !formData.image.trim()) {
+      errors.image = 'Vui lòng chọn hình ảnh sự kiện từ máy tính (bắt buộc).';
     }
 
     const seatsNum = Number(formData.seats);
@@ -587,6 +593,21 @@ export const Events = () => {
                 </p>
               )}
             </div>
+          </div>
+
+          {/* Chọn ảnh sự kiện từ máy tính (BẮT BUỘC) */}
+          <div>
+            <ImageUploadField
+              value={formData.image}
+              onChange={(val) => {
+                setFormData((prev) => ({ ...prev, image: val }));
+                if (formErrors.image) setFormErrors((prev) => ({ ...prev, image: null }));
+              }}
+              error={formErrors.image}
+              label="Hình ảnh sự kiện"
+              required={true}
+              description="Ảnh này sẽ hiển thị làm banner đại diện cho sự kiện trên toàn hệ thống."
+            />
           </div>
 
           {/* Mô tả sự kiện */}
