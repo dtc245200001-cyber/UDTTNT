@@ -4,6 +4,8 @@ import { Bot, Send, Plus, MessageSquare, User, Sparkles, Copy, Check, BookOpen, 
 import { sendChatQuery, streamChatQuery } from '@/services/aiChatService';
 import { MarkdownMessage } from '@/components/ai/MarkdownMessage';
 import { ChatArtifactCards } from '@/components/ai/ChatArtifactCards';
+import { ChatRelatedItems } from '@/components/ai/ChatRelatedItems';
+import { ItemDetailModal } from '@/components/ai/ItemDetailModal';
 import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal';
 import { searchArtifacts } from '@/utils/artifactSearch';
 import { getFollowUps } from '@/utils/followUpSuggestions';
@@ -14,6 +16,7 @@ export const AiAssistant = () => {
   const navigate = useNavigate();
   const { artifacts, events, tickets } = useApp();
   const [selectedArtifact, setSelectedArtifact] = useState(null);
+  const [selectedRelatedItem, setSelectedRelatedItem] = useState(null);
   const [streamingText, setStreamingText] = useState('');
   const [streamingMsgId, setStreamingMsgId] = useState(null);
   // C3: text trạng thái khi backend báo first token chậm (status:"processing")
@@ -104,6 +107,7 @@ export const AiAssistant = () => {
     let fullText = '';
     let artifactIds = [];
     let streamedSources = [];
+    let streamedRelatedItems = [];
 
     const abort = streamChatQuery(
       query,
@@ -130,6 +134,7 @@ export const AiAssistant = () => {
           text: fullText || '...',
           sources: streamedSources,
           artifacts: mappedArtifacts,
+          relatedItems: streamedRelatedItems,
           // L2b2: doc ref (khong phai state) vi closure giu gia tri cu
           interrupted: interruptedRef.current,
           retryText: interruptedRef.current ? query : undefined,
@@ -160,14 +165,16 @@ export const AiAssistant = () => {
               text: res.answer,
               sources: res.sources || [],
               artifacts: mappedArtifacts,
+              relatedItems: res.relatedItems || res.related_items || [],
             };
             setMessages((prev) => [...prev, aiMsg]);
           } else {
             const localResult = searchArtifacts(artifacts, query, { events, tickets });
+            const fallbackText = localResult.message || 'Rất tiếc, câu hỏi của bạn hiện chưa có trong cơ sở dữ liệu bảo tàng và kết nối AI đang gián đoạn. Bạn vui lòng thử lại sau giây lát hoặc hỏi về các hiện vật, triển lãm, giá vé của bảo tàng nhé! 🏛️';
             const aiMsg = {
               id: aiMsgId,
               sender: 'ai',
-              text: localResult.message,
+              text: fallbackText,
               sources: (localResult.matchedArtifacts || []).map((art) => ({
                 title: art.name,
                 category: art.period || 'Hiện vật bảo tàng',
@@ -210,6 +217,10 @@ export const AiAssistant = () => {
       // onSources: trích dẫn RAG gửi kèm đầu stream
       (sources) => {
         streamedSources = sources || [];
+      },
+      // onRelatedItems: thẻ liên quan (triển lãm, chuyên đề, sự kiện, vé)
+      (relatedItems) => {
+        streamedRelatedItems = relatedItems || [];
       }
     );
 
@@ -249,6 +260,11 @@ export const AiAssistant = () => {
         artifact={selectedArtifact}
         isOpen={!!selectedArtifact}
         onClose={() => setSelectedArtifact(null)}
+      />
+      <ItemDetailModal
+        item={selectedRelatedItem}
+        isOpen={!!selectedRelatedItem}
+        onClose={() => setSelectedRelatedItem(null)}
       />
       <div className="text-xs font-semibold text-gray-500">
         Khám phá / <span className="text-museum-brown font-bold">Trợ lý AI Di sản (RAG)</span>
@@ -434,6 +450,11 @@ export const AiAssistant = () => {
                   <ChatArtifactCards 
                     artifacts={msg.artifacts} 
                     onViewDetail={setSelectedArtifact} 
+                  />
+
+                  <ChatRelatedItems 
+                    items={msg.relatedItems} 
+                    onViewDetail={setSelectedRelatedItem} 
                   />
 
                   {/* NÚT KỂ CHI TIẾT HƠN */}

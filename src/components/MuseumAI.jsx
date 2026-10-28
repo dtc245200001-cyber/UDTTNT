@@ -13,6 +13,8 @@ import { detectIntent } from '@/utils/chatIntent';
 import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { normalizeArtifact, resolveChatArtifacts } from '@/utils/normalizeArtifact';
+import { ChatRelatedItems } from '@/components/ai/ChatRelatedItems';
+import { ItemDetailModal } from '@/components/ai/ItemDetailModal';
 import {
   Bot,
   Sparkles,
@@ -37,6 +39,7 @@ export const MuseumAI = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedArtifact, setSelectedArtifact] = useState(null);
+  const [selectedRelatedItem, setSelectedRelatedItem] = useState(null);
   const [ticketModalOpen, setTicketModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [inputText, setInputText] = useState('');
@@ -230,6 +233,7 @@ export const MuseumAI = () => {
     let fullText = '';
     let artifactIds = [];
     let streamedSources = [];
+    let streamedRelatedItems = [];
 
     const handleFallback = async (errMsg) => {
       console.warn('[MuseumAI] Fallback handler called:', errMsg);
@@ -254,10 +258,11 @@ export const MuseumAI = () => {
         } else {
           // Fallback local search
           const localResult = searchArtifacts(artifacts, textToSend, { events, tickets });
+          const fallbackText = localResult.message || 'Rất tiếc, câu hỏi của bạn hiện chưa có trong cơ sở dữ liệu bảo tàng và kết nối AI đang gián đoạn. Bạn vui lòng thử lại sau giây lát hoặc hỏi về các hiện vật, triển lãm, giá vé của bảo tàng nhé! 🏛️';
           const aiMsg = {
             id: aiMsgId,
             sender: 'ai',
-            text: localResult.message,
+            text: fallbackText,
             sources: (localResult.matchedArtifacts || []).map((art) => ({
               title: String(art.name || ''),
               category: String(art.period || 'Hiện vật bảo tàng'),
@@ -318,6 +323,7 @@ export const MuseumAI = () => {
             text: fullText || '...',
             sources: streamedSources,
             artifacts: mappedArtifacts,
+            relatedItems: streamedRelatedItems,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             // L2b2: doc ref (khong phai state) vi closure giu gia tri cu
             interrupted: interruptedRef.current,
@@ -356,6 +362,10 @@ export const MuseumAI = () => {
       // onSources: trích dẫn RAG gửi kèm đầu stream
       (sources) => {
         streamedSources = sources || [];
+      },
+      // onRelatedItems: thẻ liên quan (triển lãm, chuyên đề, sự kiện, vé)
+      (relatedItems) => {
+        streamedRelatedItems = relatedItems || [];
       }
     );
     abortStreamRef.current = abort;
@@ -692,6 +702,11 @@ export const MuseumAI = () => {
                       />
                     </ErrorBoundary>
 
+                    {/* HIỂN THỊ THẺ LIÊN QUAN (TRIỂN LÃM / CHUYÊN ĐỀ / SỰ KIỆN / VÉ) */}
+                    <ErrorBoundary fallback={null}>
+                      <ChatRelatedItems items={msg.relatedItems} onViewDetail={setSelectedRelatedItem} />
+                    </ErrorBoundary>
+
                     {/* HIỂN THỊ THẺ VÉ */}
                     {msg.ticketOptions && (
                       <ErrorBoundary fallback={<div className="text-xs text-red-500 mt-2">Không hiển thị được thẻ vé.</div>}>
@@ -755,7 +770,7 @@ export const MuseumAI = () => {
                 </div>
                 <div className="bg-white p-3 rounded-2xl rounded-tl-none border border-museum-gold/30 shadow-2xs flex items-center gap-2 text-xs font-semibold text-museum-brown">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin text-museum-gold" />
-                  <span>Trợ lý AI đang suy nghĩ và tra cứu tư liệu...</span>
+                  <span>{statusText || 'Trợ lý AI đang suy nghĩ và tra cứu tư liệu...'}</span>
                 </div>
               </div>
             )}
@@ -855,6 +870,17 @@ export const MuseumAI = () => {
             isOpen={!!selectedArtifact} 
             onClose={() => setSelectedArtifact(null)} 
             artifact={selectedArtifact} 
+          />
+        </ErrorBoundary>,
+        document.body
+      )}
+
+      {selectedRelatedItem && createPortal(
+        <ErrorBoundary fallback={null}>
+          <ItemDetailModal 
+            isOpen={!!selectedRelatedItem} 
+            onClose={() => setSelectedRelatedItem(null)} 
+            item={selectedRelatedItem} 
           />
         </ErrorBoundary>,
         document.body

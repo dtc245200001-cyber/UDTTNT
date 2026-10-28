@@ -20,3 +20,8 @@ vite.config.js.timestamp-*
 backend/logs/
 *.log
 backend/data/*backup*/
+
+# Archives & Large Files
+*.zip
+*.tar.gz
+*.rar

@@ -39,7 +39,265 @@ EMPTY_MUSEUM_NOTICE = (
 )
 
 _embed_cache = TTLCache(maxsize=500, ttl=3600)
+
+
+def _extract_related_items(intent: str, direct_data: dict) -> list:
+    """
+    Trích xuất danh sách thẻ liên quan từ dữ liệu DB thật theo intent.
+    Mỗi item có dạng: {"type": "gallery"|"exhibition"|"event"|"ticket", "name", ...}
+    - Chuyên đề: chỉ lấy đang diễn ra (loại bỏ "Đã diễn ra" / "Đã kết thúc")
+    - Triển lãm: chỉ lấy đang diễn ra
+    - Sự kiện: lấy sắp / đang diễn ra (đã lọc từ DB theo ngày)
+    - Tối đa 5 item.
+    """
+    if not isinstance(direct_data, dict) or direct_data.get("status") not in ("ok", "no_data"):
+        return []
+
+    # Các từ khóa trạng thái đã kết thúc cần loại bỏ
+    ENDED_KEYWORDS = ("đã diễn ra", "đã kết thúc", "kết thúc", "da dien ra", "da ket thuc")
+
+    def is_ended(status_str: str) -> bool:
+        return any(k in (status_str or "").lower() for k in ENDED_KEYWORDS)
+
+    items = []
+
+    if intent in ("chuyen_de",):
+        for g in (direct_data.get("galleries") or []):
+            if not g.get("name"):
+                continue
+            # Chỉ hiện chuyên đề đang hoạt động
+            if is_ended(g.get("status", "")):
+                continue
+            items.append({
+                "type": "gallery",
+                "id": g.get("id"),
+                "name": g.get("name", ""),
+                "location": g.get("location", ""),
+                "status": g.get("status", "Đang diễn ra"),
+                "image": g.get("image", ""),
+                "description": g.get("description", "") or g.get("detailed_content", ""),
+                "start_date": g.get("start_date", ""),
+                "end_date": g.get("end_date", ""),
+                "detailed_content": g.get("detailed_content", ""),
+                "gallery_images": g.get("gallery_images", []),
+                "highlight_artifacts": g.get("highlight_artifacts", []),
+            })
+            if len(items) >= 5:
+                break
+
+    elif intent in ("trien_lam", "trien_lam_dang_dien_ra"):
+        for ex in (direct_data.get("exhibitions") or []):
+            if not ex.get("name"):
+                continue
+            # Chỉ hiện triển lãm đang diễn ra
+            if is_ended(ex.get("status", "")):
+                continue
+            items.append({
+                "type": "exhibition",
+                "id": ex.get("id"),
+                "name": ex.get("name", ""),
+                "location": ex.get("location", ""),
+                "start_date": ex.get("start_date", ""),
+                "end_date": ex.get("end_date", ""),
+                "status": ex.get("status", ""),
+                "artifacts_count": ex.get("artifacts_count", 0),
+                "image": ex.get("image", ""),
+                "description": ex.get("description", ""),
+            })
+            if len(items) >= 5:
+                break
+
+    elif intent in ("su_kien",):
+        # Sự kiện đã được lọc từ DB theo ngày >= hôm nay nên giữ nguyên
+        for ev in (direct_data.get("events") or [])[:5]:
+            if ev.get("title"):
+                items.append({
+                    "type": "event",
+                    "id": ev.get("id"),
+                    "name": ev.get("title", ""),
+                    "date": ev.get("date", ""),
+                    "time": ev.get("time", ""),
+                    "location": ev.get("location", ""),
+                    "seats_remaining": ev.get("seats_remaining", 0),
+                    "image": ev.get("image", ""),
+                    "description": ev.get("description", ""),
+                })
+
+    elif intent in ("gia_ve",):
+        for t in (direct_data.get("tickets") or [])[:5]:
+            if t.get("name"):
+                items.append({
+                    "type": "ticket",
+                    "id": t.get("id"),
+                    "name": t.get("name", ""),
+                    "price": t.get("price", 0),
+                    "image": t.get("image", ""),
+                    "description": t.get("description", ""),
+                })
+
+    return items
+
 _answer_cache = TTLCache(maxsize=200, ttl=600)
+
+
+def _format_thong_ke_answer(direct_data: dict) -> str | None:
+    """Trả lời thống kê trực tiếp từ DB, không qua LLM (nhanh + không rò JSON)."""
+    if not isinstance(direct_data, dict):
+        return None
+    if direct_data.get("status") == "error":
+        return "Mình không thể truy xuất số liệu chính xác lúc này."
+    stats = direct_data.get("stats", {}) or {}
+    tong = stats.get("tong_hien_vat")
+    if tong is None:
+        return None
+    parts = [f"Bảo tàng hiện lưu giữ **{tong} hiện vật**"]
+    sub = []
+    if stats.get("hien_vat_dang_trung_bay") is not None:
+        sub.append(f"{stats['hien_vat_dang_trung_bay']} đang trưng bày")
+    if stats.get("tong_trien_lam") is not None:
+        sub.append(f"{stats['tong_trien_lam']} triển lãm")
+    if stats.get("tong_su_kien") is not None:
+        sub.append(f"{stats['tong_su_kien']} sự kiện")
+    if stats.get("tong_phong") is not None:
+        sub.append(f"{stats['tong_phong']} phòng trưng bày")
+    if stats.get("tong_danh_muc") is not None:
+        sub.append(f"{stats['tong_danh_muc']} danh mục")
+    text = parts[0]
+    if sub:
+        text += f" ({', '.join(sub)})"
+    text += ". Bạn muốn khám phá khu nào trước?"
+    return text
+
+
+def _format_su_kien_answer(direct_data: dict) -> str | None:
+    """Trả lời thông tin sự kiện trực tiếp từ DB, nhanh và thân thiện."""
+    if not isinstance(direct_data, dict):
+        return None
+    events = direct_data.get("events") or []
+    if not events:
+        return "Hiện tại Bảo tàng chưa có sự kiện mới nào sắp diễn ra trong thời gian tới. Bạn theo dõi thêm thông tin trên website nhé!"
+    lines = ["Bảo tàng hiện có các sự kiện sắp diễn ra nổi bật:"]
+    for ev in events[:4]:
+        title = ev.get("title") or ev.get("name") or ""
+        date_str = ev.get("date", "")
+        time_str = ev.get("time", "")
+        loc = ev.get("location", "")
+        time_part = f" (ngày {date_str}{f', lúc {time_str}' if time_str else ''})" if date_str else ""
+        loc_part = f" tại {loc}" if loc else ""
+        lines.append(f"- **{title}**{time_part}{loc_part}")
+    lines.append("\nBạn có thể bấm vào các thẻ bên dưới để xem thông tin chi tiết và đăng ký tham gia nhé!")
+    return "\n".join(lines)
+
+
+def _format_chuyen_de_answer(direct_data: dict) -> str | None:
+    """Trả lời thông tin chuyên đề trưng bày trực tiếp từ DB."""
+    if not isinstance(direct_data, dict):
+        return None
+    galleries = direct_data.get("galleries") or []
+    active_g = [
+        g for g in galleries 
+        if not any(k in (g.get("status") or "").lower() for k in ("đã kết thúc", "đã diễn ra", "da ket thuc", "da dien ra"))
+    ]
+    if not active_g:
+        active_g = galleries
+    if not active_g:
+        return "Hiện tại Bảo tàng chưa có thông tin chuyên đề trưng bày mới."
+    lines = ["Bảo tàng hiện đang trưng bày các chuyên đề đặc sắc:"]
+    for g in active_g[:4]:
+        name = g.get("name") or ""
+        loc = g.get("location") or ""
+        loc_part = f" tại {loc}" if loc else ""
+        lines.append(f"- **{name}**{loc_part}")
+    lines.append("\nBạn có thể bấm vào các thẻ bên dưới để xem nội dung chi tiết từng chuyên đề nhé!")
+    return "\n".join(lines)
+
+
+def _format_trien_lam_answer(direct_data: dict) -> str | None:
+    """Trả lời thông tin triển lãm trực tiếp từ DB."""
+    if not isinstance(direct_data, dict):
+        return None
+    exhibitions = direct_data.get("exhibitions") or []
+    active_ex = [
+        ex for ex in exhibitions 
+        if not any(k in (ex.get("status") or "").lower() for k in ("đã kết thúc", "đã diễn ra", "da ket thuc", "da dien ra"))
+    ]
+    if not active_ex:
+        active_ex = exhibitions
+    if not active_ex:
+        return "Hiện tại Bảo tàng chưa có triển lãm mới nào đang diễn ra."
+    lines = ["Bảo tàng hiện đang diễn ra các triển lãm nổi bật:"]
+    for ex in active_ex[:4]:
+        name = ex.get("name") or ""
+        loc = ex.get("location") or ""
+        loc_part = f" tại {loc}" if loc else ""
+        lines.append(f"- **{name}**{loc_part}")
+    lines.append("\nBạn có thể bấm vào các thẻ bên dưới để xem chi tiết triển lãm nhé!")
+    return "\n".join(lines)
+
+
+def _format_gia_ve_answer(direct_data: dict) -> str | None:
+    """Trả lời bảng giá vé trực tiếp từ DB."""
+    if not isinstance(direct_data, dict):
+        return None
+    tickets = direct_data.get("tickets") or []
+    if not tickets:
+        return "Bảo tàng áp dụng vé vào cổng tham quan tiêu chuẩn. Bạn có thể tham khảo mục Vé tham quan nhé!"
+    lines = ["Bảng giá vé tham quan Bảo tàng:"]
+    for t in tickets[:5]:
+        name = t.get("name") or ""
+        price = t.get("price", 0)
+        price_str = "Miễn phí" if price == 0 else f"{price:,.0f}đ"
+        lines.append(f"- **{name}**: {price_str}")
+    lines.append("\nBạn có thể đặt vé trực tiếp hoặc xem chi tiết ở mục Vé tham quan nhé!")
+    return "\n".join(lines)
+
+
+def _should_bypass_answer_cache(text: str) -> bool:
+    """Số liệu live (số lượng, giá vé, triển lãm...) luôn đếm mới, không dùng cache."""
+    norm = remove_accents(text or "").lower()
+    keywords = (
+        "bao nhieu", "tong ", "thong ke", "dem ", "con bao",
+        "gia ve", "trien lam", "su kien", "danh muc",
+        "phong trung bay", "dang trung bay", "dang dien ra",
+    )
+    return any(k in norm for k in keywords)
+
+
+def _build_live_prompt_context(intent: str, label: str, direct_data: dict) -> str:
+    """Dựng prompt từ dữ liệu DB thật, cấm model nhả JSON thô ra UI."""
+    no_json_rule = (
+        "YÊU CẦU BẮT BUỘC:\n"
+        "- Trả lời bằng câu văn tiếng Việt tự nhiên, ngắn gọn, tối đa 3 câu.\n"
+        "- CẤM copy nguyên văn JSON, CẤM in các key kỹ thuật "
+        "(status, data_source, stats, tong_hien_vat...) và CẤM nhắc tên bảng DB.\n"
+        "- Chỉ nêu con số đã được diễn giải thành câu hoàn chỉnh."
+    )
+    if intent == "thong_ke_bao_tang" and isinstance(direct_data, dict):
+        summary = direct_data.get("summary", "")
+        stats = direct_data.get("stats", {}) or {}
+        clean = {
+            "tong_hien_vat": stats.get("tong_hien_vat"),
+            "dang_trung_bay": stats.get("hien_vat_dang_trung_bay"),
+            "tong_trien_lam": stats.get("tong_trien_lam"),
+            "tong_su_kien": stats.get("tong_su_kien"),
+            "tong_phong": stats.get("tong_phong"),
+            "tong_danh_muc": stats.get("tong_danh_muc"),
+        }
+        context_str = json.dumps(clean, ensure_ascii=False, indent=2)
+        example = (
+            'Ví dụ cách trả lời đúng: "Bảo tàng hiện lưu giữ 274 hiện vật, '
+            'trong đó 120 hiện vật đang trưng bày, cùng 5 triển lãm và 8 sự kiện. '
+            'Bạn muốn khám phá khu nào trước?"'
+        )
+        if summary:
+            example = f"Dữ liệu tóm tắt: {summary}\n" + example
+        return f"{label}:\n{context_str}\n\n{example}\n\n{no_json_rule}"
+    context_str = json.dumps(direct_data, ensure_ascii=False, indent=2)
+    return (
+        f"{label}:\n{context_str}\n\n"
+        f"{no_json_rule}\n"
+        f"- Trả lời chính xác, đầy đủ và trung thực dựa trên dữ liệu thật ở trên."
+    )
 
 
 def normalize_question(text: str) -> str:
@@ -263,9 +521,16 @@ class RAGPipeline:
             }
 
         # Cache HIT cho câu hỏi lặp lại không có history
-        cached = self._answer_cache_get(user_message, history)
-        if cached:
-            return {"answer": cached, "sources": [], "artifact_ids": []}
+        # (bỏ qua với câu hỏi số liệu live để luôn đếm mới từ DB)
+        if not _should_bypass_answer_cache(user_message):
+            cached = self._answer_cache_get(user_message, history)
+            if cached:
+                return {"answer": cached, "sources": [], "artifact_ids": []}
+
+        if self.is_conversational_chitchat(user_message, history):
+            cached_ans = get_cached_chitchat_response(user_message)
+            if cached_ans:
+                return {"answer": cached_ans, "sources": [], "artifact_ids": []}
 
         # ── 1. Định tuyến thông minh 3 Vùng ─────────────────────────────────
         decision: RouterDecision = await self.router.route_query(user_message, history=history)
@@ -301,13 +566,28 @@ class RAGPipeline:
         }
 
         if decision.intent in LIVE_INTENT_LABELS and decision.direct_data:
+            direct_ans = None
+            if decision.intent == "thong_ke_bao_tang":
+                direct_ans = _format_thong_ke_answer(decision.direct_data)
+            elif decision.intent in ("su_kien", "su_kien_sap_dien_ra"):
+                direct_ans = _format_su_kien_answer(decision.direct_data)
+            elif decision.intent in ("chuyen_de", "chuyen_de_trung_bay"):
+                direct_ans = _format_chuyen_de_answer(decision.direct_data)
+            elif decision.intent in ("trien_lam", "trien_lam_dang_dien_ra"):
+                direct_ans = _format_trien_lam_answer(decision.direct_data)
+            elif decision.intent in ("gia_ve", "ve_tham_quan"):
+                direct_ans = _format_gia_ve_answer(decision.direct_data)
+
+            if direct_ans:
+                return {
+                    "answer": direct_ans,
+                    "sources": [],
+                    "artifact_ids": [],
+                    "related_items": _extract_related_items(decision.intent, decision.direct_data)
+                }
             label = LIVE_INTENT_LABELS[decision.intent]
-            context_str = json.dumps(decision.direct_data, ensure_ascii=False, indent=2)
-            prompt_context = (
-                f"{label}:\n{context_str}\n\n"
-                f"YÊU CẦU BẮT BUỘC:\n"
-                f"- Trả lời chính xác, đầy đủ và trung thực dựa trên dữ liệu thật của hệ thống bảo tàng ở trên.\n"
-                f"- Tuyệt đối không tự bịa đặt hoặc dùng số liệu/quy định cũ ngoài hệ thống."
+            prompt_context = _build_live_prompt_context(
+                decision.intent, label, decision.direct_data
             )
             answer = await self.gemini.generate_response(
                 user_message=user_message,
@@ -316,7 +596,8 @@ class RAGPipeline:
                 system_instruction=MUSEUM_GROUNDED_PROMPT,
                 temperature=0.2
             )
-            return {"answer": answer, "sources": [], "artifact_ids": []}
+            related_items = _extract_related_items(decision.intent, decision.direct_data)
+            return {"answer": answer, "sources": [], "artifact_ids": [], "related_items": related_items}
 
         # ── 4. Chế độ General (Zone 3 hoặc Vùng xám không liên quan bảo tàng) ─
         if decision.final_mode == "general":
@@ -387,6 +668,12 @@ class RAGPipeline:
             yield "Chào bạn 👋 Hôm nay mình có thể giúp gì cho bạn?"
             return
 
+        if self.is_conversational_chitchat(user_message, history):
+            cached_ans = get_cached_chitchat_response(user_message)
+            if cached_ans:
+                yield cached_ans
+                return
+
         # 1. Định tuyến 3 Vùng
         decision: RouterDecision = await self.router.route_query(user_message, history=history)
 
@@ -425,13 +712,27 @@ class RAGPipeline:
         }
 
         if decision.intent in LIVE_INTENT_LABELS and decision.direct_data:
+            direct_ans = None
+            if decision.intent == "thong_ke_bao_tang":
+                direct_ans = _format_thong_ke_answer(decision.direct_data)
+            elif decision.intent in ("su_kien", "su_kien_sap_dien_ra"):
+                direct_ans = _format_su_kien_answer(decision.direct_data)
+            elif decision.intent in ("chuyen_de", "chuyen_de_trung_bay"):
+                direct_ans = _format_chuyen_de_answer(decision.direct_data)
+            elif decision.intent in ("trien_lam", "trien_lam_dang_dien_ra"):
+                direct_ans = _format_trien_lam_answer(decision.direct_data)
+            elif decision.intent in ("gia_ve", "ve_tham_quan"):
+                direct_ans = _format_gia_ve_answer(decision.direct_data)
+
+            if direct_ans:
+                yield direct_ans
+                related_items = _extract_related_items(decision.intent, decision.direct_data)
+                if related_items:
+                    yield {"related_items": related_items}
+                return
             label = LIVE_INTENT_LABELS[decision.intent]
-            context_str = json.dumps(decision.direct_data, ensure_ascii=False, indent=2)
-            prompt_context = (
-                f"{label}:\n{context_str}\n\n"
-                f"YÊU CẦU BẮT BUỘC:\n"
-                f"- Trả lời chính xác, đầy đủ và trung thực dựa trên dữ liệu thật của hệ thống bảo tàng ở trên.\n"
-                f"- Tuyệt đối không tự bịa đặt hoặc dùng số liệu/quy định cũ ngoài hệ thống."
+            prompt_context = _build_live_prompt_context(
+                decision.intent, label, decision.direct_data
             )
             async for chunk in self.gemini.generate_response_stream(
                 user_message=user_message,
@@ -441,6 +742,10 @@ class RAGPipeline:
                 temperature=0.2
             ):
                 yield chunk
+            # Yield related items for this intent so frontend shows relevant cards
+            related_items = _extract_related_items(decision.intent, decision.direct_data)
+            if related_items:
+                yield {"related_items": related_items}
             return
 
         # 4. Chế độ General

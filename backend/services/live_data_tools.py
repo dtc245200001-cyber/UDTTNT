@@ -11,7 +11,11 @@ Bốn functions:
   4. get_danh_gia_trung_binh(object_id) — điểm đánh giá trung bình
 """
 from datetime import date
+from cachetools import TTLCache
 from core.supabase_client import supabase_admin
+
+# Cache in-memory 60 giây để trả lời siêu tốc (< 1ms)
+_live_cache = TTLCache(maxsize=100, ttl=60)
 
 
 def get_thong_ke_tong_quan() -> dict:
@@ -20,6 +24,9 @@ def get_thong_ke_tong_quan() -> dict:
     Dùng khi người dùng hỏi về số lượng hiện vật, triển lãm, sự kiện...
     KHÔNG bao giờ tự bịa số liệu — luôn lấy từ dữ liệu thật.
     """
+    hit = _live_cache.get("thong_ke")
+    if hit:
+        return hit
     try:
         stats = {}
 
@@ -58,7 +65,7 @@ def get_thong_ke_tong_quan() -> dict:
         r7 = supabase_admin.table("bai_viet").select("id", count="exact").eq("status", "Đã xuất bản").execute()
         stats["bai_viet_xuat_ban"] = r7.count if r7.count is not None else len(r7.data or [])
 
-        return {
+        res = {
             "status": "ok",
             "data_source": "Supabase — dữ liệu thật, không ước tính",
             "stats": stats,
@@ -71,6 +78,8 @@ def get_thong_ke_tong_quan() -> dict:
                 f"{stats['tong_danh_muc']} danh mục hiện vật."
             )
         }
+        _live_cache["thong_ke"] = res
+        return res
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -79,6 +88,9 @@ def get_ve_gia_va_con_cho() -> dict:
     Tra cứu danh sách loại vé tham quan và giá vé hiện tại.
     Bảng ve_tham_quan: id, name, price, description, active.
     """
+    hit = _live_cache.get("ve_gia")
+    if hit:
+        return hit
     try:
         result = supabase_admin.table("ve_tham_quan").select(
             "id, name, price, description, active"
@@ -92,7 +104,7 @@ def get_ve_gia_va_con_cho() -> dict:
                 "tickets": []
             }
 
-        return {
+        res = {
             "status": "ok",
             "tickets": [
                 {
@@ -104,6 +116,8 @@ def get_ve_gia_va_con_cho() -> dict:
             ],
             "summary": f"Bảo tàng có {len(tickets)} loại vé. Giá từ {min(t.get('price', 0) for t in tickets):,.0f}đ đến {max(t.get('price', 0) for t in tickets):,.0f}đ."
         }
+        _live_cache["ve_gia"] = res
+        return res
     except Exception as e:
         return {"status": "error", "message": str(e), "tickets": []}
 
@@ -111,13 +125,16 @@ def get_ve_gia_va_con_cho() -> dict:
 def get_su_kien_sap_dien_ra() -> dict:
     """
     Tra cứu danh sách sự kiện sắp diễn ra (từ hôm nay trở đi), sắp xếp gần nhất.
-    Bảng su_kien: id, title, date, time, location, speaker, status, seats, registered, description.
+    Bảng su_kien: id, title, date, time, location, speaker, status, seats, registered, description, image.
     """
+    hit = _live_cache.get("su_kien")
+    if hit:
+        return hit
     try:
         today = date.today().isoformat()
 
         result = supabase_admin.table("su_kien").select(
-            "id, title, date, time, location, speaker, status, seats, registered, description"
+            "*"
         ).gte("date", today).order("date").limit(5).execute()
 
         events = result.data or []
@@ -132,6 +149,7 @@ def get_su_kien_sap_dien_ra() -> dict:
         for e in events:
             remaining = (e.get("seats", 0) or 0) - (e.get("registered", 0) or 0)
             formatted.append({
+                "id": e.get("id"),
                 "title": e.get("title", ""),
                 "date": e.get("date", ""),
                 "time": e.get("time", ""),
@@ -139,15 +157,18 @@ def get_su_kien_sap_dien_ra() -> dict:
                 "speaker": e.get("speaker", ""),
                 "status": e.get("status", ""),
                 "seats_remaining": max(0, remaining),
+                "image": e.get("image", ""),
                 "description": (e.get("description") or "")[:200],
             })
 
-        return {
+        res = {
             "status": "ok",
             "today": today,
             "events": formatted,
             "summary": f"Có {len(formatted)} sự kiện sắp diễn ra."
         }
+        _live_cache["su_kien"] = res
+        return res
     except Exception as e:
         return {"status": "error", "message": str(e), "events": []}
 
@@ -156,13 +177,16 @@ def get_trien_lam_dang_dien_ra() -> dict:
     """
     Tra cứu các triển lãm đang diễn ra (start_date <= hôm nay <= end_date)
     hoặc có status 'Đang diễn ra'.
-    Bảng trien_lam: id, name, status, start_date, end_date, location, description.
+    Bảng trien_lam: id, name, status, start_date, end_date, location, description, image.
     """
+    hit = _live_cache.get("trien_lam")
+    if hit:
+        return hit
     try:
         today = date.today().isoformat()
 
         result = supabase_admin.table("trien_lam").select(
-            "id, name, status, start_date, end_date, location, description, artifacts_count"
+            "*"
         ).or_(
             f"status.eq.Đang diễn ra,and(start_date.lte.{today},end_date.gte.{today})"
         ).order("start_date").execute()
@@ -175,23 +199,27 @@ def get_trien_lam_dang_dien_ra() -> dict:
                 "exhibitions": []
             }
 
-        return {
+        res = {
             "status": "ok",
             "today": today,
             "exhibitions": [
                 {
+                    "id": ex.get("id"),
                     "name": ex.get("name", ""),
                     "status": ex.get("status", ""),
                     "start_date": ex.get("start_date", ""),
                     "end_date": ex.get("end_date", ""),
                     "location": ex.get("location", ""),
                     "artifacts_count": ex.get("artifacts_count", 0),
+                    "image": ex.get("image", ""),
                     "description": (ex.get("description") or "")[:200],
                 }
                 for ex in exhibitions
             ],
             "summary": f"Có {len(exhibitions)} triển lãm đang diễn ra."
         }
+        _live_cache["trien_lam"] = res
+        return res
     except Exception as e:
         return {"status": "error", "message": str(e), "exhibitions": []}
 
@@ -247,12 +275,13 @@ def get_danh_gia_trung_binh(object_id: str) -> dict:
 def get_chuyen_de_trung_bay() -> dict:
     """
     Tra cứu các chuyên đề trưng bày từ bảng phong_trung_bay trên Supabase.
-    Bảng phong_trung_bay: id, name, location, status, description.
+    Bảng phong_trung_bay: id, name, location, status, description, image, start_date, end_date, etc.
     """
+    hit = _live_cache.get("chuyen_de")
+    if hit:
+        return hit
     try:
-        result = supabase_admin.table("phong_trung_bay").select(
-            "id, name, location, status, description"
-        ).execute()
+        result = supabase_admin.table("phong_trung_bay").select("*").execute()
 
         items = result.data or []
         if not items:
@@ -262,19 +291,28 @@ def get_chuyen_de_trung_bay() -> dict:
                 "galleries": []
             }
 
-        return {
+        res = {
             "status": "ok",
             "galleries": [
                 {
+                    "id": g.get("id"),
                     "name": g.get("name", ""),
                     "location": g.get("location", ""),
                     "status": g.get("status", ""),
-                    "description": (g.get("description") or "")[:200],
+                    "image": g.get("image", ""),
+                    "start_date": g.get("start_date", ""),
+                    "end_date": g.get("end_date", ""),
+                    "description": g.get("description", ""),
+                    "detailed_content": g.get("detailed_content", ""),
+                    "highlight_artifacts": g.get("highlight_artifacts", []),
+                    "gallery_images": g.get("gallery_images", []),
                 }
                 for g in items
             ],
             "summary": f"Bảo tàng có {len(items)} chuyên đề trưng bày."
         }
+        _live_cache["chuyen_de"] = res
+        return res
     except Exception as e:
         return {"status": "error", "message": str(e), "galleries": []}
 

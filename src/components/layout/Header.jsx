@@ -61,12 +61,12 @@ export const Header = () => {
   };
 
   return (
-    <header className="h-[72px] bg-[#F8F5EE] border-b border-[#ECE4D4] sticky top-0 z-20 flex items-center justify-between px-4 lg:px-8">
+    <header className="h-[72px] bg-white/95 backdrop-blur-md border-b border-stone-200/60 sticky top-0 z-20 flex items-center justify-between px-4 lg:px-8 shadow-[0_2px_15px_-3px_rgba(92,44,22,0.05)]">
       {/* Left: Mobile Toggle & Search */}
       <div className="flex items-center gap-3 flex-1 max-w-2xl">
         <button
           onClick={() => setIsMobileSidebarOpen(true)}
-          className="md:hidden p-2 rounded-xl text-museum-brown hover:bg-[#ECE4D4]/50 transition-colors"
+          className="md:hidden p-2 rounded-xl text-[#3E2712] hover:bg-[#F5EFE0] transition-colors cursor-pointer"
           title="Mở menu"
         >
           <Menu className="w-6 h-6" />
@@ -75,17 +75,17 @@ export const Header = () => {
         {/* Integrated Search Input Pill */}
         <form onSubmit={handleSearchSubmit} className="relative flex items-center w-full max-w-md gap-2">
           <div className="relative flex-1 flex items-center">
-            <Search className="w-4 h-4 text-[#8C7A6B] absolute left-4 pointer-events-none" />
+            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 pointer-events-none" />
             <input
               type="text"
               value={globalSearch}
               onChange={(e) => setGlobalSearch(e.target.value)}
               placeholder="Tìm kiếm hiện vật, triển lãm..."
-              className="w-full pl-10 pr-12 py-2 bg-white text-sm text-[#2B170B] placeholder-[#8C7A6B] rounded-full border border-[#E3DAC9] focus:outline-none focus:ring-2 focus:ring-[#C9974C] focus:border-transparent transition-all shadow-xs"
+              className="w-full pl-10 pr-10 py-2 bg-[#F7F3EE] text-sm text-[#2D241E] placeholder-stone-400 rounded-full border border-stone-200/80 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#B8860B]/20 focus:border-[#D4A359] transition-all shadow-2xs"
             />
             <button
               type="submit"
-              className="absolute right-1 w-8 h-8 bg-[#C9974C] hover:bg-[#B8860B] text-[#2B170B] rounded-full flex items-center justify-center transition-colors shadow-xs"
+              className="absolute right-1 w-7 h-7 bg-[#8B5A1E] hover:bg-[#734814] text-white rounded-full flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
               title="Tìm kiếm"
             >
               <Search className="w-3.5 h-3.5" />
@@ -94,7 +94,7 @@ export const Header = () => {
           <button
             type="button"
             onClick={() => navigate('/artifacts')}
-            className="w-8 h-8 rounded-full bg-white border border-[#E3DAC9] text-[#8C7A6B] hover:text-[#2B170B] hover:bg-[#FAF5EB] flex items-center justify-center transition-colors shadow-2xs shrink-0 cursor-pointer"
+            className="w-8 h-8 rounded-full bg-[#F7F3EE] border border-stone-200/80 text-stone-500 hover:text-[#3E2712] hover:bg-[#F5EFE0] flex items-center justify-center transition-colors shadow-2xs shrink-0 cursor-pointer"
             title="Lọc hiện vật"
           >
             <Filter className="w-3.5 h-3.5" />
@@ -107,10 +107,10 @@ export const Header = () => {
         {/* Link to Visitor Public Site */}
         <button
           onClick={() => navigate('/public-home')}
-          className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 border border-[#C9974C]/60 bg-white/60 hover:bg-[#C9974C]/10 text-[#3E2312] font-medium text-xs rounded-full transition-colors"
+          className="btn-outline hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs shadow-2xs cursor-pointer"
           title="Xem giao diện Khách tham quan"
         >
-          <Globe className="w-3.5 h-3.5 text-[#C9974C]" />
+          <Globe className="w-3.5 h-3.5 text-[#B8860B]" />
           <span>Trang công khai</span>
         </button>
 
@@ -121,36 +121,36 @@ export const Header = () => {
               setShowNotifications(!showNotifications);
               setShowUserMenu(false);
             }}
-            className="relative p-2 rounded-full text-[#8C7A6B] hover:bg-[#ECE4D4]/50 hover:text-[#2B170B] transition-colors"
+            className="relative p-2 rounded-full text-stone-500 hover:bg-[#F5EFE0] hover:text-[#3E2712] transition-colors cursor-pointer"
           >
-            <Bell className="w-5 h-5 text-[#8C7A6B]" />
-            <span className="absolute top-1 right-1 w-4 h-4 bg-[#D32F2F] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+            <Bell className="w-5 h-5 text-stone-500" />
+            <span className="absolute top-1 right-1 w-4 h-4 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
               3
             </span>
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-gray-100 py-3 z-40 animate-fadeIn">
-              <div className="flex items-center justify-between px-4 pb-3 border-b border-gray-100">
-                <h4 className="font-bold text-sm text-museum-brown">Thông báo mới</h4>
-                <span className="text-xs bg-museum-cream text-museum-brown px-2 py-0.5 rounded-full font-semibold">
+            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl shadow-xl border border-stone-200/70 py-3 z-40 animate-fadeIn">
+              <div className="flex items-center justify-between px-4 pb-3 border-b border-stone-100 bg-[#FAF6EF]/60">
+                <h4 className="font-bold text-sm text-[#3E2712]">Thông báo mới</h4>
+                <span className="text-xs bg-museum-cream text-[#3E2712] px-2 py-0.5 rounded-full font-semibold">
                   3 chưa đọc
                 </span>
               </div>
-              <div className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
+              <div className="divide-y divide-stone-100 max-h-80 overflow-y-auto">
                 {notifications.map((n) => {
                   const Icon = n.icon;
                   return (
                     <div
                       key={n.id}
-                      className="p-3.5 hover:bg-museum-ivory flex items-start gap-3 transition-colors cursor-pointer"
+                      className="p-3.5 hover:bg-[#FAF6EF]/60 flex items-start gap-3 transition-colors cursor-pointer"
                     >
                       <div className={`p-2 rounded-xl flex-shrink-0 ${n.iconBg}`}>
                         <Icon className="w-4 h-4" />
                       </div>
                       <div className="flex-1">
-                        <p className="text-xs font-medium text-gray-800 leading-snug">{n.text}</p>
-                        <span className="text-[11px] text-gray-400 mt-1 block">{n.time}</span>
+                        <p className="text-xs font-medium text-stone-800 leading-snug">{n.text}</p>
+                        <span className="text-[11px] text-stone-400 mt-1 block">{n.time}</span>
                       </div>
                     </div>
                   );
@@ -167,33 +167,33 @@ export const Header = () => {
               setShowUserMenu(!showUserMenu);
               setShowNotifications(false);
             }}
-            className="flex items-center gap-2.5 p-1 rounded-full hover:bg-[#ECE4D4]/50 transition-colors"
+            className="flex items-center gap-2.5 p-1 rounded-full hover:bg-[#F5EFE0]/60 transition-colors cursor-pointer border border-transparent hover:border-stone-200/60"
           >
             <img
               src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
               alt={currentUser?.name || 'ADMIN'}
-              className="w-9 h-9 rounded-full object-cover border border-[#C9974C]/50 shadow-xs"
+              className="w-9 h-9 rounded-full object-cover border border-[#D4A359]/60 shadow-xs"
             />
             <div className="hidden sm:block text-left leading-tight">
-              <div className="font-bold text-xs uppercase tracking-wide text-[#2B170B]">ADMIN</div>
-              <div className="text-[11px] text-[#8C7A6B]">Quản trị viên</div>
+              <div className="font-bold text-xs uppercase tracking-wide text-[#2D241E]">ADMIN</div>
+              <div className="text-[11px] text-stone-500">Quản trị viên</div>
             </div>
           </button>
 
           {showUserMenu && (
-            <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-40 animate-fadeIn">
-              <div className="px-4 py-2 border-b border-gray-100 sm:hidden">
-                <p className="font-bold text-sm text-museum-brown">{currentUser?.name || 'Admin'}</p>
-                <p className="text-xs text-gray-500">{currentUser?.roleLabel || 'Quản trị viên'}</p>
+            <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-stone-200/70 py-2 z-40 animate-fadeIn">
+              <div className="px-4 py-2 border-b border-stone-100 sm:hidden">
+                <p className="font-bold text-sm text-[#3E2712]">{currentUser?.name || 'Admin'}</p>
+                <p className="text-xs text-stone-500">{currentUser?.roleLabel || 'Quản trị viên'}</p>
               </div>
               <button
                 onClick={() => {
                   setShowUserMenu(false);
                   navigate('/settings');
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-museum-cream hover:text-museum-brown flex items-center gap-2.5 transition-colors"
+                className="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-[#FAF6EF] hover:text-[#3E2712] flex items-center gap-2.5 transition-colors cursor-pointer"
               >
-                <User className="w-4 h-4 text-museum-gold" />
+                <User className="w-4 h-4 text-[#B8860B]" />
                 Hồ sơ cá nhân
               </button>
               <button
@@ -201,15 +201,15 @@ export const Header = () => {
                   setShowUserMenu(false);
                   navigate('/settings');
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-museum-cream hover:text-museum-brown flex items-center gap-2.5 transition-colors"
+                className="w-full text-left px-4 py-2 text-sm text-stone-700 hover:bg-[#FAF6EF] hover:text-[#3E2712] flex items-center gap-2.5 transition-colors cursor-pointer"
               >
-                <Settings className="w-4 h-4 text-museum-gold" />
+                <Settings className="w-4 h-4 text-[#B8860B]" />
                 Cài đặt
               </button>
-              <div className="my-1 border-t border-gray-100" />
+              <div className="my-1 border-t border-stone-100" />
               <button
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-2 text-sm text-danger hover:bg-rose-50 flex items-center gap-2.5 font-medium transition-colors"
+                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-rose-50 flex items-center gap-2.5 font-medium transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 Đăng xuất

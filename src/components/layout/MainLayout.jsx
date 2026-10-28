@@ -22,7 +22,7 @@ const MuseumAIFallback = ({ reset }) => (
 
 export const MainLayout = () => {
   return (
-    <div className="min-h-screen flex bg-[#F8F5EE] text-[#2B170B] antialiased font-sans relative">
+    <div className="min-h-screen flex bg-[#FBF7F0] text-[#2D241E] antialiased font-sans relative">
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <Header />

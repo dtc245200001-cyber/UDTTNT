@@ -15,6 +15,7 @@ Tuân thủ đầy đủ các yêu cầu:
    - list_featured, trien_lam_dang_dien_ra, thong_ke_bao_tang, gia_ve...
 5. Ghi log quyết định ra file riêng (đã loại bỏ PII) khi RAG_ZONE_LOG=true.
 """
+import asyncio
 import os
 import re
 import sys
@@ -275,17 +276,17 @@ class RAGRouter:
         if intent:
             direct_data = None
             if intent in ("gia_ve", "ve_tham_quan"):
-                direct_data = get_ve_gia_va_con_cho()
+                direct_data = await asyncio.to_thread(get_ve_gia_va_con_cho)
             elif intent in ("trien_lam", "trien_lam_dang_dien_ra"):
-                direct_data = get_trien_lam_dang_dien_ra()
+                direct_data = await asyncio.to_thread(get_trien_lam_dang_dien_ra)
             elif intent in ("su_kien", "su_kien_sap_dien_ra"):
-                direct_data = get_su_kien_sap_dien_ra()
+                direct_data = await asyncio.to_thread(get_su_kien_sap_dien_ra)
             elif intent in ("chuyen_de", "chuyen_de_trung_bay"):
-                direct_data = get_chuyen_de_trung_bay()
+                direct_data = await asyncio.to_thread(get_chuyen_de_trung_bay)
             elif intent in ("danh_gia", "review"):
-                direct_data = get_danh_gia_tong_quan()
+                direct_data = await asyncio.to_thread(get_danh_gia_tong_quan)
             elif intent == "thong_ke_bao_tang":
-                direct_data = get_thong_ke_tong_quan()
+                direct_data = await asyncio.to_thread(get_thong_ke_tong_quan)
 
             # Các intent không có direct_data (gio_mo_cua, noi_quy, goi_y_tham_quan):
             # KHÔNG đi thẳng DB mà đi qua nhánh museum RAG chuẩn bên dưới

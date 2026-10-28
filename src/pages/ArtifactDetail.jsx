@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
+import { curatedShowcaseArtifacts } from '@/data/showcaseArtifacts';
 import { Pencil, Trash2, ArrowLeft, Bot, MapPin, Tag, Calendar, Shield } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
@@ -9,9 +10,15 @@ import { ArtifactFormModal } from '@/components/artifacts/ArtifactFormModal';
 export const ArtifactDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { artifacts, deleteArtifact } = useApp();
+  const { artifacts, deletedArtifactIds = [], deleteArtifact, currentUser } = useApp();
+  const isAdmin = currentUser?.role === 'admin';
 
-  const artifact = artifacts.find((a) => a.id === id);
+  const isDeleted = deletedArtifactIds.includes(id);
+  const dbArtifact = !isDeleted ? artifacts.find((a) => a.id === id) : null;
+  const showcaseArtifact = !isDeleted ? curatedShowcaseArtifacts.find((a) => a.id === id) : null;
+  const artifact = dbArtifact
+    ? (showcaseArtifact ? { ...showcaseArtifact, ...dbArtifact } : dbArtifact)
+    : showcaseArtifact;
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);

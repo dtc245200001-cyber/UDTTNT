@@ -158,7 +158,7 @@ export function searchArtifacts(rawArtifactsList = [], query = '', extraData = {
     cleanQuery.includes('co may hien vat') ||
     cleanQuery.includes('thong ke hien vat')
   ) {
-    const totalCount = artifactsList.length || 272;
+    const totalCount = artifactsList?.length || 274;
     return {
       success: true,
       message: `🏛️ Hiện tại Bảo tàng Quốc gia đang lưu giữ và trưng bày tổng cộng **${totalCount} hiện vật** thuộc 13 nhóm danh mục lịch sử (từ thời Tiền sử, Đông Sơn, các triều đại phong kiến đến thời kỳ cận - hiện đại). Bạn muốn tìm hiểu hiện vật thuộc giai đoạn nào?`,

@@ -70,7 +70,7 @@ export const sendChatQuery = async (message, history = []) => {
  *   (backend gửi kèm {sources:[...]} đầu stream; optional, caller cũ bỏ qua)
  * @returns {function} Hàm hủy streaming (AbortController.abort)
  */
-export const streamChatQuery = (message, history = [], onChunk, onDone, onError, onArtifacts, onStatus, onSources) => {
+export const streamChatQuery = (message, history = [], onChunk, onDone, onError, onArtifacts, onStatus, onSources, onRelatedItems) => {
   const controller = new AbortController();
 
   const run = async () => {
@@ -128,6 +128,10 @@ export const streamChatQuery = (message, history = [], onChunk, onDone, onError,
 
             if (parsed.artifacts) {
               onArtifacts?.(parsed.artifacts);
+            }
+
+            if (parsed.related_items) {
+              onRelatedItems?.(parsed.related_items);
             }
 
             if (parsed.sources) {

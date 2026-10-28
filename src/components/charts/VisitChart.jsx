@@ -24,9 +24,9 @@ export const VisitChart = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-2.5 rounded-xl shadow-lg border border-[#ECE4D4] text-xs">
-          <p className="font-semibold text-[#5B3A1F] mb-0.5">Tháng: {label}</p>
-          <p className="text-[#C9974C] font-bold">
+        <div className="bg-white p-2.5 rounded-xl shadow-lg border border-stone-200/80 text-xs">
+          <p className="font-semibold text-[#3E2712] mb-0.5">Tháng: {label}</p>
+          <p className="text-[#B8860B] font-bold">
             Lượt tham quan: <span>{formatNumber(payload[0].value)}</span>
           </p>
         </div>
@@ -36,17 +36,17 @@ export const VisitChart = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-[#ECE4D4] shadow-xs flex flex-col justify-between">
+    <div className="bg-white rounded-2xl p-5 border border-stone-200/80 shadow-xs flex flex-col justify-between">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <span className="w-5 h-5 rounded-full bg-[#C9974C]/15 flex items-center justify-center text-[#C9974C]">
-            <TrendingUp className="w-3 h-3 text-[#C9974C]" />
+          <span className="w-5 h-5 rounded-full bg-[#B8860B]/15 flex items-center justify-center text-[#B8860B]">
+            <TrendingUp className="w-3 h-3 text-[#B8860B]" />
           </span>
-          <h3 className="font-bold text-[11px] sm:text-xs uppercase tracking-wider text-[#2B170B]">
+          <h3 className="font-bold text-[11px] sm:text-xs uppercase tracking-wider text-[#3E2712]">
             LƯỢT THAM QUAN (6 THÁNG GẦN NHẤT)
           </h3>
         </div>
-        <span className="text-[11px] font-semibold text-[#2E7D32] bg-[#E8F5E9] px-2.5 py-0.5 rounded-full">
+        <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
           +18.5% tăng trưởng
         </span>
       </div>
@@ -56,8 +56,8 @@ export const VisitChart = () => {
           <AreaChart data={data} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
             <defs>
               <linearGradient id="visitorGoldGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#C9974C" stopOpacity={0.45} />
-                <stop offset="95%" stopColor="#C9974C" stopOpacity={0.03} />
+                <stop offset="5%" stopColor="#B8860B" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#B8860B" stopOpacity={0.03} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#F4EFE6" vertical={false} />

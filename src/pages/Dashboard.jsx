@@ -26,7 +26,11 @@ const VaseIcon = () => (
 
 export const Dashboard = () => {
   const navigate = useNavigate();
-  const { artifacts } = useApp();
+  const { artifacts, deletedArtifactIds, exhibitions, events, ticketStats } = useApp();
+
+  const realArtifactsCount = (artifacts || []).filter(
+    (a) => !(deletedArtifactIds || []).includes(a.id)
+  ).length;
   const [selectedArtifact, setSelectedArtifact] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -127,7 +131,7 @@ export const Dashboard = () => {
   return (
     <div className="space-y-6 animate-fadeIn pb-8">
       {/* 1. Hero Banner */}
-      <div className="relative rounded-2xl overflow-hidden shadow-sm border border-[#ECE4D4] min-h-[220px] sm:min-h-[240px] flex items-center">
+      <div className="relative rounded-2xl overflow-hidden shadow-sm border border-stone-200/80 min-h-[220px] sm:min-h-[240px] flex items-center">
         <img
           src="/images/dong-son-showcase.jpg"
           alt="Bảo tàng Quốc gia Việt Nam Showcase"
@@ -150,7 +154,7 @@ export const Dashboard = () => {
           <div className="mt-5">
             <button
               onClick={() => navigate('/artifacts')}
-              className="px-5 py-2.5 bg-[#D4A359] hover:bg-[#C9974C] text-[#2B170B] font-bold text-xs rounded-full inline-flex items-center gap-2 transition-all transform hover:translate-x-0.5 shadow-sm cursor-pointer"
+              className="btn-primary px-5 py-2.5 typo-btn rounded-full inline-flex items-center gap-2 transition-all transform hover:translate-x-0.5 shadow-sm cursor-pointer"
             >
               <span>Khám phá ngay</span>
               <span>&rarr;</span>
@@ -184,25 +188,25 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="HIỆN VẬT"
-          value={1254}
+          value={realArtifactsCount || (artifacts?.length ?? 274)}
           growth={24}
           customSvg={<VaseIcon />}
         />
         <StatCard
           title="TRIỂN LÃM"
-          value={18}
+          value={exhibitions?.length ?? 18}
           growth={2}
           icon={Landmark}
         />
         <StatCard
           title="SỰ KIỆN"
-          value={7}
+          value={events?.length ?? 7}
           growth={1}
           icon={CalendarDays}
         />
         <StatCard
           title="VÉ ĐÃ BÁN"
-          value={3246}
+          value={ticketStats?.totalSoldMonth ?? 3246}
           growth={320}
           icon={Ticket}
         />
@@ -216,14 +220,14 @@ export const Dashboard = () => {
           <div>
             <div className="flex items-center justify-between mb-3.5">
               <div className="flex items-center gap-2">
-                <Package className="w-4 h-4 text-[#8C5E28]" />
-                <h3 className="font-bold text-xs uppercase tracking-wider text-[#2B170B]">
+                <Package className="w-4 h-4 text-[#B8860B]" />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-[#3E2712]">
                   HIỆN VẬT MỚI THÊM
                 </h3>
               </div>
               <Link
                 to="/artifacts"
-                className="text-xs font-semibold text-[#8C7A6B] hover:text-[#C9974C] transition-colors flex items-center gap-1"
+                className="text-xs font-semibold text-stone-500 hover:text-[#B8860B] transition-colors flex items-center gap-1"
               >
                 <span>Xem tất cả</span>
                 <span>&rarr;</span>
@@ -235,7 +239,6 @@ export const Dashboard = () => {
                 <div
                   key={item.id}
                   onClick={() => {
-                    // Find actual artifact from full database if available, else use item
                     const realArtifact = artifacts.find(
                       (a) =>
                         a.name.toLowerCase().includes(item.name.toLowerCase()) ||
@@ -243,7 +246,7 @@ export const Dashboard = () => {
                     );
                     setSelectedArtifact(realArtifact || item);
                   }}
-                  className="bg-white rounded-xl overflow-hidden border border-[#ECE4D4] shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group"
+                  className="bg-white rounded-2xl overflow-hidden border border-stone-200/80 shadow-xs hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between group"
                 >
                   <div>
                     {/* Image with Tag */}
@@ -260,21 +263,21 @@ export const Dashboard = () => {
 
                     {/* Information */}
                     <div className="p-3.5">
-                      <h4 className="font-bold text-xs sm:text-[13px] text-[#2B170B] group-hover:text-[#C9974C] transition-colors truncate">
+                      <h4 className="font-bold text-xs sm:text-[13px] text-[#3E2712] group-hover:text-[#B8860B] transition-colors truncate">
                         {item.name}
                       </h4>
-                      <p className="text-[11px] font-semibold text-[#B88128] mt-0.5 mb-1.5">
+                      <p className="text-[11px] font-semibold text-[#B8860B] mt-0.5 mb-1.5">
                         Niên đại: {item.date}
                       </p>
-                      <p className="text-[11px] text-[#6B5A4E] line-clamp-2 leading-relaxed">
+                      <p className="text-[11px] text-stone-500 line-clamp-2 leading-relaxed">
                         {item.description}
                       </p>
                     </div>
                   </div>
 
                   {/* Location footer */}
-                  <div className="px-3.5 pb-3 pt-2 border-t border-[#F4EFE6] flex items-center gap-1 text-[11px] text-[#8C7A6B]">
-                    <MapPin className="w-3 h-3 text-[#B88128] shrink-0" />
+                  <div className="px-3.5 pb-3 pt-2 border-t border-stone-100 flex items-center gap-1 text-[11px] text-stone-500">
+                    <MapPin className="w-3 h-3 text-[#B8860B] shrink-0" />
                     <span className="truncate">Vị trí: {item.location}</span>
                   </div>
                 </div>
@@ -286,14 +289,14 @@ export const Dashboard = () => {
           <div>
             <div className="flex items-center justify-between mb-3.5">
               <div className="flex items-center gap-2">
-                <Landmark className="w-4 h-4 text-[#8C5E28]" />
-                <h3 className="font-bold text-xs uppercase tracking-wider text-[#2B170B]">
+                <Landmark className="w-4 h-4 text-[#B8860B]" />
+                <h3 className="font-bold text-xs uppercase tracking-wider text-[#3E2712]">
                   TRIỂN LÃM ĐANG DIỄN RA
                 </h3>
               </div>
               <Link
                 to="/exhibitions"
-                className="text-xs font-semibold text-[#8C7A6B] hover:text-[#C9974C] transition-colors flex items-center gap-1"
+                className="text-xs font-semibold text-stone-500 hover:text-[#B8860B] transition-colors flex items-center gap-1"
               >
                 <span>Xem tất cả</span>
                 <span>&rarr;</span>
@@ -305,7 +308,7 @@ export const Dashboard = () => {
                 <div
                   key={item.id}
                   onClick={() => navigate('/exhibitions')}
-                  className="bg-white rounded-xl overflow-hidden border border-[#ECE4D4] shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between group"
+                  className="bg-white rounded-2xl overflow-hidden border border-stone-200/80 shadow-xs hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between group"
                 >
                   <div>
                     {/* Exhibition Image */}
@@ -324,19 +327,19 @@ export const Dashboard = () => {
 
                     {/* Exhibition Details */}
                     <div className="p-3.5">
-                      <h4 className="font-bold text-xs sm:text-[13px] text-[#2B170B] group-hover:text-[#C9974C] transition-colors line-clamp-1">
+                      <h4 className="font-bold text-xs sm:text-[13px] text-[#3E2712] group-hover:text-[#B8860B] transition-colors line-clamp-1">
                         {item.name}
                       </h4>
-                      <div className="flex items-center gap-1.5 text-[11px] text-[#8C7A6B] mt-2">
-                        <Calendar className="w-3 h-3 text-[#B88128] shrink-0" />
+                      <div className="flex items-center gap-1.5 text-[11px] text-stone-500 mt-2">
+                        <Calendar className="w-3 h-3 text-[#B8860B] shrink-0" />
                         <span>{item.date}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Location */}
-                  <div className="px-3.5 pb-3 pt-2 border-t border-[#F4EFE6] flex items-center gap-1 text-[11px] text-[#8C7A6B]">
-                    <MapPin className="w-3 h-3 text-[#B88128] shrink-0" />
+                  <div className="px-3.5 pb-3 pt-2 border-t border-stone-100 flex items-center gap-1 text-[11px] text-stone-500">
+                    <MapPin className="w-3 h-3 text-[#B8860B] shrink-0" />
                     <span className="truncate">{item.location}</span>
                   </div>
                 </div>
@@ -351,7 +354,7 @@ export const Dashboard = () => {
           <VisitChart />
 
           {/* Historic Quote Card */}
-          <div className="bg-white rounded-2xl p-5 sm:p-6 border border-[#ECE4D4] shadow-xs relative overflow-hidden min-h-[140px] flex flex-col justify-center">
+          <div className="bg-white rounded-2xl p-5 sm:p-6 border border-stone-200/80 shadow-xs relative overflow-hidden min-h-[140px] flex flex-col justify-center">
             {/* Museum architectural illustration watermark */}
             <img
               src="/images/museum-building.jpg"
@@ -360,12 +363,12 @@ export const Dashboard = () => {
             />
 
             <div className="relative z-10">
-              <p className="font-serif italic text-xs sm:text-[13px] text-[#3E2312] leading-relaxed max-w-[85%]">
+              <p className="font-serif italic text-xs sm:text-[13px] text-[#3E2712] leading-relaxed max-w-[85%]">
                 “Bảo tàng là nơi quá khứ<br />
                 được kể lại bằng những chứng nhân<br />
                 của thời gian.”
               </p>
-              <div className="w-10 h-0.5 bg-[#C9974C] mt-3 rounded-full" />
+              <div className="w-10 h-0.5 bg-[#D4A359] mt-3 rounded-full" />
             </div>
           </div>
         </div>

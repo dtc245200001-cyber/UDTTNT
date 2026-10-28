@@ -85,6 +85,7 @@ class ChatResponse(BaseModel):
     answer: str = Field(..., description="Câu trả lời từ Trợ lý AI")
     sources: list[dict] = Field(default_factory=list, description="Danh sách các tài liệu nguồn được RAG tham chiếu")
     artifact_ids: list[str] = Field(default_factory=list, description="Danh sách ID hiện vật liên quan")
+    related_items: list[dict] = Field(default_factory=list, description="Danh sách thẻ liên quan (triển lãm, chuyên đề, sự kiện, vé)")
 
 
 async def periodic_sync_artifacts():
@@ -161,7 +162,7 @@ def health_check():
     return {
         "status": "healthy",
         "vector_db_chunks": vector_db_service.count(),
-        "gemini_configured": bool(os.getenv("GEMINI_API_KEY"))
+        "gemini_configured": bool(os.getenv("GEMINI_API_KEY") or os.getenv("GEMINI_API_KEYS"))
     }
 
 
@@ -185,7 +186,8 @@ async def chat_endpoint(request: ChatRequest):
         return ChatResponse(
             answer=result["answer"],
             sources=result["sources"],
-            artifact_ids=result.get("artifact_ids", [])
+            artifact_ids=result.get("artifact_ids", []),
+            related_items=result.get("related_items", [])
         )
     except Exception as e:
         print(f"❌ [API Error] /api/chat error: {e}")
@@ -214,6 +216,10 @@ async def chat_stream_endpoint(request: ChatRequest):
                         if chunk["artifact_ids"]:
                             payload = json.dumps({"artifacts": chunk["artifact_ids"]}, ensure_ascii=False)
                             yield f"data: {payload}\n\n"
+                    elif isinstance(chunk, dict) and "related_items" in chunk:
+                        if chunk["related_items"]:
+                            payload = json.dumps({"related_items": chunk["related_items"]}, ensure_ascii=False)
+                            yield f"data: {payload}\n\n"
                     elif isinstance(chunk, dict) and "sources" in chunk:
                         if chunk["sources"]:
                             payload = json.dumps({"sources": chunk["sources"]}, ensure_ascii=False)
@@ -227,7 +233,7 @@ async def chat_stream_endpoint(request: ChatRequest):
                             ensure_ascii=False,
                         )
                         yield f"data: {payload}\n\n"
-                    elif chunk:
+                    elif isinstance(chunk, str) and chunk:
                         # SSE format: "data: <payload>\n\n"
                         payload = json.dumps({"chunk": chunk}, ensure_ascii=False)
                         yield f"data: {payload}\n\n"

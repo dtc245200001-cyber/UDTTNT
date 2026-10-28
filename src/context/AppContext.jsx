@@ -9,6 +9,7 @@ import { categories as initialCategories } from '../data/categories';
 import { users as initialUsers } from '../data/users';
 import { reviews as initialReviews } from '../data/reviews';
 import { initialGalleries } from '../data/galleries';
+import { articles as initialArticles } from '../data/articles';
 import { getAuditLogs, logAction as createAuditLog } from '../utils/auditLogger';
 import { formatCurrency } from '@/utils/formatters';
 import {
@@ -51,6 +52,14 @@ const AppContext = createContext();
 export const AppProvider = ({ children }) => {
   // 1. Core Data States
   const [artifactsList, setArtifactsList] = useState(initialArtifacts);
+  const [deletedArtifactIds, setDeletedArtifactIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('museum_deleted_artifact_ids');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [exhibitionsList, setExhibitionsList] = useState(initialExhibitions);
   const [galleriesList, setGalleriesList] = useState(() => {
     const saved = localStorage.getItem('museum_galleries');
@@ -77,10 +86,37 @@ export const AppProvider = ({ children }) => {
     }
     return initialGalleries;
   });
-  const [eventsList, setEventsList] = useState(initialEvents);
+  const [eventsList, setEventsList] = useState(() => {
+    const saved = localStorage.getItem('museum_events');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Failed to parse museum_events from localStorage', e);
+      }
+    }
+    return initialEvents;
+  });
   const [ticketsList, setTicketsList] = useState(initialTickets);
   const [ticketStatsState, setTicketStatsState] = useState(initialTicketStats);
   const [categoriesList, setCategoriesList] = useState(initialCategories);
+  const [articlesList, setArticlesList] = useState(() => {
+    const saved = localStorage.getItem('museum_articles');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Failed to parse museum_articles from localStorage', e);
+      }
+    }
+    return initialArticles;
+  });
 
   // 2. Audit Logs State (Đồng bộ với Supabase PostgreSQL)
   const [auditLogsList, setAuditLogsList] = useState([]);
@@ -291,8 +327,114 @@ export const AppProvider = ({ children }) => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 3200);
   };
+
   const removeToast = (id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  // 8.1. Lượt lưu & Yêu thích hiện vật (Favorites & Likes) toàn hệ thống
+  const [favoritesSummary, setFavoritesSummary] = useState({
+    total_likes: 102,
+    featured_count: 8,
+    artifact_likes: {
+      AV001: 24,
+      AV002: 19,
+      AV003: 15,
+      AV004: 12,
+      AV005: 11,
+      AV008: 8,
+      AV010: 7,
+      AV015: 6,
+    },
+    featured_ids: ['AV001', 'AV002', 'AV003', 'AV004', 'AV005', 'AV008', 'AV010', 'AV015'],
+  });
+
+  const [userFavorites, setUserFavorites] = useState(() => {
+    try {
+      const saved = localStorage.getItem('user_favorite_artifacts');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const fetchFavoritesSummary = useCallback(async () => {
+    try {
+      const data = await api.get('/api/hien-vat/favorites/summary');
+      if (data && data.success) {
+        setFavoritesSummary({
+          total_likes: data.total_likes || 0,
+          featured_count: data.featured_count || 0,
+          artifact_likes: data.artifact_likes || {},
+          featured_ids: data.featured_ids || [],
+        });
+      }
+    } catch (err) {
+      console.warn('[AppContext] Không thể tải favorites summary:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFavoritesSummary();
+  }, [fetchFavoritesSummary]);
+
+  const toggleArtifactFavorite = async (artifactId) => {
+    if (!artifactId) return;
+    const currentUserId = currentUser?.id || currentUser?.email || 'guest_user';
+    const isCurrentlyFav = userFavorites.includes(artifactId);
+
+    // 1. Cập nhật optimistic ngay trên UI
+    const updatedUserFavs = isCurrentlyFav
+      ? userFavorites.filter((id) => id !== artifactId)
+      : [...userFavorites, artifactId];
+
+    setUserFavorites(updatedUserFavs);
+    try {
+      localStorage.setItem('user_favorite_artifacts', JSON.stringify(updatedUserFavs));
+    } catch (e) {
+      console.error(e);
+    }
+
+    setFavoritesSummary((prev) => {
+      const likes = { ...(prev.artifact_likes || {}) };
+      let newTotal = prev.total_likes || 0;
+      if (isCurrentlyFav) {
+        newTotal = Math.max(0, newTotal - 1);
+        if ((likes[artifactId] || 1) <= 1) {
+          delete likes[artifactId];
+        } else {
+          likes[artifactId] = likes[artifactId] - 1;
+        }
+      } else {
+        newTotal += 1;
+        likes[artifactId] = (likes[artifactId] || 0) + 1;
+      }
+      const featured = Object.keys(likes).filter((id) => likes[id] > 0);
+      return {
+        ...prev,
+        total_likes: newTotal,
+        featured_count: featured.length,
+        artifact_likes: likes,
+        featured_ids: featured,
+      };
+    });
+
+    // 2. Gửi đồng bộ lên backend
+    try {
+      const res = await api.post(`/api/hien-vat/${artifactId}/toggle-favorite`, {
+        user_id: currentUserId,
+      });
+      if (res && res.success) {
+        setFavoritesSummary({
+          total_likes: res.total_likes,
+          featured_count: res.featured_count,
+          artifact_likes: res.artifact_likes || {},
+          featured_ids: res.featured_ids || [],
+        });
+      }
+    } catch (err) {
+      console.warn('[AppContext] Lỗi đồng bộ favorite với server:', err);
+    }
   };
 
   // Sync state changes to localStorage
@@ -315,6 +457,14 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('museum_event_registrations', JSON.stringify(eventRegistrationsList));
   }, [eventRegistrationsList]);
+
+  useEffect(() => {
+    localStorage.setItem('museum_events', JSON.stringify(eventsList));
+  }, [eventsList]);
+
+  useEffect(() => {
+    localStorage.setItem('museum_articles', JSON.stringify(articlesList));
+  }, [articlesList]);
 
   useEffect(() => {
     if (currentUser) {
@@ -385,7 +535,7 @@ export const AppProvider = ({ children }) => {
       }
 
       // 4. Fetch Sự kiện
-      const { data: evData, error: evError } = await supabase.from('su_kien').select('*');
+      const { data: evData, error: evError } = await supabase.from('su_kien').select('*').order('date', { ascending: true });
       if (!evError && evData && evData.length > 0) {
         setEventsList(evData);
       }
@@ -405,6 +555,15 @@ export const AppProvider = ({ children }) => {
             artifactName: r.artifact_name || r.artifactName,
           }))
         );
+      }
+
+      // 6.1 Fetch Bài viết (bai_viet)
+      const { data: artcData, error: artcError } = await supabase
+        .from('bai_viet')
+        .select('*')
+        .order('date', { ascending: false });
+      if (!artcError && artcData && artcData.length > 0) {
+        setArticlesList(artcData);
       }
 
       // 7. Fetch Đặt vé
@@ -697,9 +856,13 @@ export const AppProvider = ({ children }) => {
   };
 
   const updateArtifact = async (id, updatedData) => {
-    setArtifactsList((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updatedData } : item))
-    );
+    setArtifactsList((prev) => {
+      const exists = prev.some((item) => item.id === id);
+      if (exists) {
+        return prev.map((item) => (item.id === id ? { ...item, ...updatedData } : item));
+      }
+      return [{ id, ...updatedData }, ...prev];
+    });
 
     try {
       await supabase
@@ -731,6 +894,15 @@ export const AppProvider = ({ children }) => {
   const deleteArtifact = async (id) => {
     const item = artifactsList.find((a) => a.id === id);
     setArtifactsList((prev) => prev.filter((a) => a.id !== id));
+    setDeletedArtifactIds((prev) => {
+      const next = Array.from(new Set([...prev, id]));
+      try {
+        localStorage.setItem('museum_deleted_artifact_ids', JSON.stringify(next));
+      } catch (err) {
+        console.error(err);
+      }
+      return next;
+    });
 
     try {
       await supabase.from('hien_vat').delete().eq('id', id);
@@ -1393,14 +1565,24 @@ export const AppProvider = ({ children }) => {
   };
 
   const deleteReview = async (id) => {
-    setReviewsList((prev) => prev.filter((r) => r.id !== id));
+    // Supabase trước, state sau — đúng convention deleteExhibition/deleteGallery.
+    // Lỗi Supabase trả về thì KHÔNG chạm local state, báo lỗi rõ ràng.
     try {
-      await supabase.from('danh_gia').delete().eq('id', id);
+      const { error } = await supabase.from('danh_gia').delete().eq('id', id);
+      if (error) {
+        console.error('Lỗi khi xóa đánh giá trên Supabase:', error);
+        addToast(`Lỗi xóa đánh giá: ${error.message}`, 'error');
+        return false;
+      }
     } catch (e) {
       console.warn('Supabase delete review notice', e);
+      addToast('Lỗi kết nối khi xóa đánh giá. Vui lòng thử lại.', 'error');
+      return false;
     }
+    setReviewsList((prev) => prev.filter((r) => r.id !== id));
     addToast('Đã xóa đánh giá thành công.', 'info');
     logAudit('DELETE_REVIEW', `Xóa đánh giá ID: ${id}`);
+    return true;
   };
 
   // 16. Exhibitions (Đồng bộ trực tiếp Supabase)
@@ -1553,6 +1735,112 @@ export const AppProvider = ({ children }) => {
     addToast('Đã xóa loại vé thành công!', 'info');
   };
 
+  // 17b. Categories CRUD (Đồng bộ trực tiếp Supabase - danh_muc)
+  // Convention: Supabase trước, lỗi rõ ràng thì toast + return (không chạm local state).
+  // count là số liệu lưu trong DB, không cho nhập tay khi thêm mới (mặc định 0).
+  const addCategory = async (category) => {
+    const name = (category?.name || '').trim();
+    if (!name) {
+      addToast('Vui lòng nhập tên danh mục.', 'error');
+      return null;
+    }
+    const duplicate = categoriesList.some(
+      (c) => String(c?.name || '').trim().toLowerCase() === name.toLowerCase()
+    );
+    if (duplicate) {
+      addToast(`Danh mục "${name}" đã tồn tại.`, 'error');
+      return null;
+    }
+    const nextId = category.id || getNextMaxId('DM', categoriesList, 2);
+    const created = {
+      id: nextId,
+      name,
+      count: 0,
+      description: (category.description || '').trim(),
+    };
+
+    try {
+      const { error } = await supabase.from('danh_muc').insert([{
+        id: created.id,
+        name: created.name,
+        count: created.count,
+        description: created.description || null,
+      }]);
+
+      if (error) {
+        console.error('Lỗi khi thêm danh mục lên Supabase:', error);
+        addToast(`Lỗi thêm danh mục: ${error.message}`, 'error');
+        return null;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối thêm danh mục:', e);
+    }
+
+    setCategoriesList((prev) => [...prev, created]);
+    addToast(`Đã thêm danh mục "${created.name}" thành công!`, 'success');
+    logAudit('CREATE_CATEGORY', `Thêm danh mục: ${created.name} (${created.id})`);
+    return created;
+  };
+
+  const updateCategory = async (id, data) => {
+    const name = (data?.name || '').trim();
+    if (!name) {
+      addToast('Vui lòng nhập tên danh mục.', 'error');
+      return false;
+    }
+    const duplicate = categoriesList.some(
+      (c) => c.id !== id && String(c?.name || '').trim().toLowerCase() === name.toLowerCase()
+    );
+    if (duplicate) {
+      addToast(`Danh mục "${name}" đã tồn tại.`, 'error');
+      return false;
+    }
+
+    try {
+      const { error } = await supabase.from('danh_muc').update({
+        name,
+        description: (data.description || '').trim() || null,
+      }).eq('id', id);
+
+      if (error) {
+        console.error('Lỗi khi cập nhật danh mục trên Supabase:', error);
+        addToast(`Lỗi cập nhật danh mục: ${error.message}`, 'error');
+        return false;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối cập nhật danh mục:', e);
+    }
+
+    setCategoriesList((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, name, description: (data.description || '').trim() } : c))
+    );
+    addToast('Đã cập nhật danh mục thành công!', 'success');
+    logAudit('UPDATE_CATEGORY', `Cập nhật danh mục: ${name} (${id})`);
+    return true;
+  };
+
+  const deleteCategory = async (id) => {
+    const target = categoriesList.find((c) => c.id === id);
+    try {
+      const { error } = await supabase.from('danh_muc').delete().eq('id', id);
+      if (error) {
+        console.error('Lỗi khi xóa danh mục trên Supabase:', error);
+        addToast(`Lỗi xóa danh mục: ${error.message}`, 'error');
+        return false;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối xóa danh mục:', e);
+    }
+
+    setCategoriesList((prev) => prev.filter((c) => c.id !== id));
+    addToast(
+      `Đã xóa danh mục "${target?.name || id}". Các hiện vật thuộc danh mục này vẫn được giữ lại.`,
+      'info'
+    );
+    logAudit('DELETE_CATEGORY', `Xóa danh mục: ${target?.name || id} (${id})`);
+    return true;
+  };
+
   // 18. Galleries / Thematic Exhibitions (Trưng bày chuyên đề - phong_trung_bay)
   const addGallery = async (gallery) => {
     const nextId = gallery.id || getNextMaxId('TBCD', galleriesList, 2);
@@ -1651,6 +1939,281 @@ export const AppProvider = ({ children }) => {
     logAudit('DELETE_GALLERY', `Xóa trưng bày mã: ${id}`);
   };
 
+  // 19. Articles / Tin tức & Bài viết (bai_viet)
+  const addArticle = async (article) => {
+    const title = (article?.title || '').trim();
+    if (!title) {
+      addToast('Vui lòng nhập tiêu đề bài viết.', 'error');
+      return null;
+    }
+
+    const nextId = article.id || getNextMaxId('ART', articlesList, 3);
+    const created = {
+      ...article,
+      id: nextId,
+      title,
+      author: (article.author || '').trim() || currentUser?.name || 'Ban biên tập',
+      category: (article.category || '').trim() || 'Nghiên cứu di sản',
+      date: article.date || new Date().toISOString().split('T')[0],
+      status: article.status || 'Đã xuất bản',
+      views: 0,
+      content: (article.content || '').trim() || '',
+      created_at: new Date().toISOString(),
+    };
+
+    try {
+      const { error } = await supabase.from('bai_viet').insert([{
+        id: created.id,
+        title: created.title,
+        author: created.author || null,
+        category: created.category || null,
+        date: created.date || null,
+        status: created.status || 'Đã xuất bản',
+        views: 0,
+        content: created.content || null,
+      }]);
+
+      if (error) {
+        console.error('Lỗi khi thêm bài viết lên Supabase:', error);
+        addToast(`Lỗi thêm bài viết: ${error.message}`, 'error');
+        return null;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối thêm bài viết:', e);
+      addToast('Không thể kết nối máy chủ khi thêm bài viết.', 'error');
+      return null;
+    }
+
+    setArticlesList((prev) => [created, ...prev]);
+    addToast(`Đã thêm bài viết "${created.title}" thành công!`, 'success');
+    logAudit('CREATE_ARTICLE', `Thêm bài viết: ${created.title} (${created.id})`);
+    return created;
+  };
+
+  const updateArticle = async (id, data) => {
+    const title = (data?.title || '').trim();
+    if (!title) {
+      addToast('Vui lòng nhập tiêu đề bài viết.', 'error');
+      return false;
+    }
+
+    const existing = articlesList.find((a) => a.id === id);
+    const author = data.author !== undefined ? (data.author || '').trim() : (existing?.author || '');
+    const category = data.category !== undefined ? (data.category || '').trim() : (existing?.category || '');
+    const date = data.date || existing?.date || new Date().toISOString().split('T')[0];
+    const status = data.status || existing?.status || 'Đã xuất bản';
+    const content = data.content !== undefined ? (data.content || '').trim() : (existing?.content || '');
+
+    try {
+      const { error } = await supabase.from('bai_viet').update({
+        title,
+        author: author || null,
+        category: category || null,
+        date: date || null,
+        status: status || 'Đã xuất bản',
+        content: content || null,
+      }).eq('id', id);
+
+      if (error) {
+        console.error('Lỗi khi cập nhật bài viết trên Supabase:', error);
+        addToast(`Lỗi cập nhật bài viết: ${error.message}`, 'error');
+        return false;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối cập nhật bài viết:', e);
+      addToast('Không thể kết nối máy chủ khi cập nhật bài viết.', 'error');
+      return false;
+    }
+
+    setArticlesList((prev) =>
+      prev.map((a) =>
+        a.id === id
+          ? {
+              ...a,
+              title,
+              author,
+              category,
+              date,
+              status,
+              content,
+            }
+          : a
+      )
+    );
+    addToast('Đã cập nhật bài viết thành công!', 'success');
+    logAudit('UPDATE_ARTICLE', `Cập nhật bài viết: ${title} (${id})`);
+    return true;
+  };
+
+  const deleteArticle = async (id) => {
+    const target = articlesList.find((a) => a.id === id);
+    try {
+      const { error } = await supabase.from('bai_viet').delete().eq('id', id);
+      if (error) {
+        console.error('Lỗi khi xóa bài viết trên Supabase:', error);
+        addToast(`Lỗi xóa bài viết: ${error.message}`, 'error');
+        return false;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối xóa bài viết:', e);
+      addToast('Không thể kết nối máy chủ khi xóa bài viết.', 'error');
+      return false;
+    }
+
+    setArticlesList((prev) => prev.filter((a) => a.id !== id));
+    addToast(`Đã xóa bài viết "${target?.title || id}" thành công!`, 'info');
+    logAudit('DELETE_ARTICLE', `Xóa bài viết: ${target?.title || id} (${id})`);
+    return true;
+  };
+
+  // 20. Events / Sự kiện & Tọa đàm (su_kien)
+  const addEvent = async (event) => {
+    const title = (event?.title || '').trim();
+    if (!title) {
+      addToast('Vui lòng nhập tiêu đề sự kiện.', 'error');
+      return null;
+    }
+
+    const nextId = event.id || getNextMaxId('EV', eventsList, 3);
+    const seats = Number(event.seats) >= 0 ? Number(event.seats) : 100;
+    const created = {
+      ...event,
+      id: nextId,
+      title,
+      date: event.date || new Date().toISOString().split('T')[0],
+      time: (event.time || '').trim() || '09:00 - 11:30',
+      location: (event.location || '').trim() || 'Hội trường 1 - Bảo tàng Việt Nam',
+      speaker: (event.speaker || '').trim() || 'Ban Quản lý Di sản',
+      status: event.status || 'Sắp diễn ra',
+      seats,
+      registered: 0,
+      description: (event.description || '').trim() || '',
+      created_at: new Date().toISOString(),
+    };
+
+    try {
+      const { error } = await supabase.from('su_kien').insert([{
+        id: created.id,
+        title: created.title,
+        date: created.date || null,
+        time: created.time || null,
+        location: created.location || null,
+        speaker: created.speaker || null,
+        status: created.status || 'Sắp diễn ra',
+        seats: created.seats,
+        registered: 0,
+        description: created.description || null,
+      }]);
+
+      if (error) {
+        console.error('Lỗi khi thêm sự kiện lên Supabase:', error);
+        addToast(`Lỗi thêm sự kiện: ${error.message}`, 'error');
+        return null;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối thêm sự kiện:', e);
+      addToast('Không thể kết nối máy chủ khi thêm sự kiện.', 'error');
+      return null;
+    }
+
+    setEventsList((prev) => [...prev, created]);
+    addToast(`Đã thêm sự kiện "${created.title}" thành công!`, 'success');
+    logAudit('CREATE_EVENT', `Thêm sự kiện: ${created.title} (${created.id})`);
+    return created;
+  };
+
+  const updateEvent = async (id, data) => {
+    const title = (data?.title || '').trim();
+    if (!title) {
+      addToast('Vui lòng nhập tiêu đề sự kiện.', 'error');
+      return false;
+    }
+
+    const existing = eventsList.find((e) => e.id === id);
+    const currentRegistered = Number(existing?.registered || 0);
+    const newSeats = Number(data.seats !== undefined ? data.seats : existing?.seats || 100);
+
+    if (newSeats < currentRegistered) {
+      addToast(`Số chỗ không thể nhỏ hơn số người đã đăng ký (${currentRegistered} người).`, 'error');
+      return false;
+    }
+
+    const date = data.date || existing?.date || new Date().toISOString().split('T')[0];
+    const time = data.time !== undefined ? (data.time || '').trim() : (existing?.time || '');
+    const location = data.location !== undefined ? (data.location || '').trim() : (existing?.location || '');
+    const speaker = data.speaker !== undefined ? (data.speaker || '').trim() : (existing?.speaker || '');
+    const status = data.status || existing?.status || 'Sắp diễn ra';
+    const description = data.description !== undefined ? (data.description || '').trim() : (existing?.description || '');
+
+    try {
+      const { error } = await supabase.from('su_kien').update({
+        title,
+        date: date || null,
+        time: time || null,
+        location: location || null,
+        speaker: speaker || null,
+        status: status || 'Sắp diễn ra',
+        seats: newSeats,
+        description: description || null,
+      }).eq('id', id);
+
+      if (error) {
+        console.error('Lỗi khi cập nhật sự kiện trên Supabase:', error);
+        addToast(`Lỗi cập nhật sự kiện: ${error.message}`, 'error');
+        return false;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối cập nhật sự kiện:', e);
+      addToast('Không thể kết nối máy chủ khi cập nhật sự kiện.', 'error');
+      return false;
+    }
+
+    setEventsList((prev) =>
+      prev.map((e) =>
+        e.id === id
+          ? {
+              ...e,
+              title,
+              date,
+              time,
+              location,
+              speaker,
+              status,
+              seats: newSeats,
+              description,
+              registered: currentRegistered,
+            }
+          : e
+      )
+    );
+    addToast('Đã cập nhật sự kiện thành công!', 'success');
+    logAudit('UPDATE_EVENT', `Cập nhật sự kiện: ${title} (${id})`);
+    return true;
+  };
+
+  const deleteEvent = async (id) => {
+    const target = eventsList.find((e) => e.id === id);
+    try {
+      const { error } = await supabase.from('su_kien').delete().eq('id', id);
+      if (error) {
+        console.error('Lỗi khi xóa sự kiện trên Supabase:', error);
+        addToast(`Lỗi xóa sự kiện: ${error.message}`, 'error');
+        return false;
+      }
+    } catch (e) {
+      console.warn('Lỗi kết nối xóa sự kiện:', e);
+      addToast('Không thể kết nối máy chủ khi xóa sự kiện.', 'error');
+      return false;
+    }
+
+    setEventsList((prev) => prev.filter((e) => e.id !== id));
+    // Dọn dẹp registration cục bộ nếu có để tránh registration mồ côi
+    setEventRegistrationsList((prev) => prev.filter((r) => r.eventId !== id));
+    addToast(`Đã xóa sự kiện "${target?.title || id}" thành công!`, 'info');
+    logAudit('DELETE_EVENT', `Xóa sự kiện: ${target?.title || id} (${id})`);
+    return true;
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1673,12 +2236,16 @@ export const AppProvider = ({ children }) => {
 
         // Artifacts
         artifacts: artifactsList,
+        deletedArtifactIds,
         addArtifact,
         updateArtifact,
         deleteArtifact,
 
         // Categories
         categories: categoriesList,
+        addCategory,
+        updateCategory,
+        deleteCategory,
 
         // Exhibitions (Triển lãm)
         exhibitions: exhibitionsList,
@@ -1694,7 +2261,12 @@ export const AppProvider = ({ children }) => {
 
         // Events
         events: eventsList,
+        eventsList,
+        addEvent,
+        updateEvent,
+        deleteEvent,
         registerForEvent,
+        eventRegistrations: eventRegistrationsList,
 
         // Tickets
         tickets: ticketsList,
@@ -1715,6 +2287,13 @@ export const AppProvider = ({ children }) => {
         addReview,
         deleteReview,
 
+        // Articles (Tin tức & Bài viết - bai_viet)
+        articles: articlesList,
+        articlesList,
+        addArticle,
+        updateArticle,
+        deleteArticle,
+
         // Audit Logs
         auditLogs: auditLogsList,
         logAudit,
@@ -1723,6 +2302,12 @@ export const AppProvider = ({ children }) => {
         toasts,
         addToast,
         removeToast,
+
+        // Favorites & Likes (Toàn hệ thống & Cá nhân)
+        favoritesSummary,
+        userFavorites,
+        toggleArtifactFavorite,
+        fetchFavoritesSummary,
       }}
     >
       {children}

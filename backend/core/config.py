@@ -36,21 +36,21 @@ class Settings(BaseSettings):
     GEMINI_API_KEYS: str = Field(default="", description="Danh sách key cách nhau bởi dấu phẩy")
 
     # NGUỒN CẤU HÌNH MODEL DUY NHẤT — services/gemini.py đọc từ đây, không os.getenv riêng
-    GEMINI_MODEL_NAME: str = Field(default="gemini-3.5-flash-lite", description="Model Gemini chính")
+    GEMINI_MODEL_NAME: str = Field(default="gemini-3.1-flash-lite", description="Model Gemini chính (siêu tốc)")
     GEMINI_FALLBACK_MODELS: str = Field(
-        default="gemini-3.1-flash-lite,gemini-flash-lite-latest",
+        default="gemini-3.5-flash-lite,gemini-flash-lite-latest",
         description="Các model dự phòng, cách nhau bằng dấu phẩy",
     )
 
     # ── Timeout / retry / circuit breaker / hedge (Nhóm B) ──
     LLM_CALL_TIMEOUT_S: float = Field(default=15.0, description="Timeout mỗi lượt gọi LLM non-stream")
-    LLM_FIRST_TOKEN_TIMEOUT_S: float = Field(default=6.0, description="Timeout chờ token đầu tiên khi stream")
+    LLM_FIRST_TOKEN_TIMEOUT_S: float = Field(default=10.0, description="Timeout chờ token đầu tiên khi stream")
     LLM_503_MAX_RETRIES: int = Field(default=1, description="Số lần retry khi 503 mỗi (model, key)")
     LLM_TOTAL_BUDGET_S: float = Field(default=30.0, description="Trần tổng thời gian thử mọi (model, key) cho 1 request")
     CIRCUIT_FAIL_THRESHOLD: int = Field(default=3, description="Số lỗi liên tiếp để đánh dấu (model, key) unhealthy")
     CIRCUIT_COOLDOWN_S: float = Field(default=120.0, description="Thời gian bỏ qua (model, key) unhealthy")
-    HEDGE_DELAY_S: float = Field(default=3.0, description="Chờ token đầu bao lâu trước khi gọi song song dự phòng")
-    STREAM_STATUS_DELAY_S: float = Field(default=3.0, description="Chờ bao lâu thì báo trạng thái đang xử lý khi stream")
+    HEDGE_DELAY_S: float = Field(default=4.0, description="Chờ token đầu bao lâu trước khi gọi song song dự phòng")
+    STREAM_STATUS_DELAY_S: float = Field(default=1.0, description="Chờ bao lâu thì báo trạng thái đang xử lý khi stream")
 
     # ── RAG (Nhóm B/D) ──
     RAG_COLLECTION_NAME: str = Field(default="museum_rag_knowledge", description="Ten collection Chroma (doi sang _v2 khi duyet)")

@@ -4,15 +4,20 @@ import { useApp } from '@/context/AppContext';
 import { Star, MessageSquare, Plus, Trash2, User, LogIn, AlertCircle, Quote, TrendingUp, CalendarDays, MapPin, Bot, Landmark } from 'lucide-react';
 import { ReviewFormModal } from '@/components/reviews/ReviewFormModal';
 import { Modal } from '@/components/ui/Modal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Breadcrumb } from '@/components/common/Breadcrumb';
 
 export const Reviews = () => {
   const navigate = useNavigate();
   const { reviews, currentUser, isAuthenticated, deleteReview } = useApp();
 
+  const isAdmin = currentUser?.role === 'admin';
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAuthPromptOpen, setIsAuthPromptOpen] = useState(false);
   const [filterRating, setFilterRating] = useState('ALL');
+  const [reviewToDelete, setReviewToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredReviews = reviews.filter((r) => {
     if (filterRating === 'ALL') return true;
@@ -24,6 +29,18 @@ export const Reviews = () => {
       setIsAuthPromptOpen(true);
     } else {
       setIsModalOpen(true);
+    }
+  };
+
+  const confirmDeleteReview = async () => {
+    if (!reviewToDelete || isDeleting) return false;
+    setIsDeleting(true);
+    try {
+      const ok = await deleteReview(reviewToDelete.id);
+      if (ok) setReviewToDelete(null);
+      return ok;
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -183,8 +200,21 @@ export const Reviews = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredReviews.map((rev) => (
-              <div key={rev.id} className="bg-white rounded-2xl p-5 sm:p-6 border border-stone-200/80 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col gap-4 h-full">
-                
+              <div key={rev.id} className="relative bg-white rounded-2xl p-5 sm:p-6 border border-stone-200/80 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col gap-4 h-full">
+
+                {/* Admin: xóa đánh giá */}
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => setReviewToDelete(rev)}
+                    title="Xóa đánh giá này"
+                    aria-label={`Xóa đánh giá của ${rev.author}`}
+                    className="absolute top-3 right-3 w-8 h-8 rounded-lg flex items-center justify-center text-stone-300 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+
                 {/* Author row */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
@@ -253,6 +283,15 @@ export const Reviews = () => {
 
       {/* ── Review Form Modal ── */}
       <ReviewFormModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+
+      {/* ── Admin Delete Confirmation ── */}
+      <ConfirmModal
+        isOpen={!!reviewToDelete}
+        onClose={() => { if (!isDeleting) setReviewToDelete(null); }}
+        onConfirm={confirmDeleteReview}
+        itemName={reviewToDelete ? `đánh giá của ${reviewToDelete.author}` : ''}
+        description="Đánh giá này sẽ bị xóa khỏi hệ thống và không thể khôi phục."
+      />
     </div>
   );
 };

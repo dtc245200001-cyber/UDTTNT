@@ -1,20 +1,66 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { CalendarDays, MapPin, Users, Plus, CheckCircle2, Clock, Sparkles, Search, ArrowRight } from 'lucide-react';
+import {
+  CalendarDays,
+  MapPin,
+  Users,
+  Plus,
+  CheckCircle2,
+  Clock,
+  Sparkles,
+  Search,
+  ArrowRight,
+  Pencil,
+  Trash2,
+  AlertCircle,
+} from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { EventRegistrationModal } from '@/components/events/EventRegistrationModal';
 import { formatDate } from '@/utils/formatters';
 import { Breadcrumb } from '@/components/common/Breadcrumb';
 
+const EMPTY_EVENT_FORM = {
+  title: '',
+  date: new Date().toISOString().split('T')[0],
+  time: '09:00 - 11:30',
+  location: 'Hội trường 1 - Bảo tàng Việt Nam',
+  speaker: '',
+  status: 'Sắp diễn ra',
+  seats: 100,
+  description: '',
+};
+
 export const Events = () => {
   const navigate = useNavigate();
-  const { events, isAuthenticated, currentUser } = useApp();
+  const {
+    events = [],
+    addEvent,
+    updateEvent,
+    deleteEvent,
+    isAuthenticated,
+    currentUser,
+  } = useApp();
 
+  const isAdmin = currentUser?.role === 'admin';
+
+  // Visitor States
   const [pendingAuthEvent, setPendingAuthEvent] = useState(null);
   const [activeRegisterEvent, setActiveRegisterEvent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllEvents, setShowAllEvents] = useState(false);
+
+  // Admin Modals State
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [formData, setFormData] = useState(EMPTY_EVENT_FORM);
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Admin Delete State
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Restore pending event registration after login
   useEffect(() => {
@@ -41,7 +87,7 @@ export const Events = () => {
     if (id === 'EV001') return '/images/events/dong-son-drum.jpg';
     if (id === 'EV002') return '/images/events/chu-dau-ceramic.jpg';
     if (id === 'EV003') return '/images/events/thang-long-night.jpg';
-    return null; 
+    return '/images/events/hero-events.jpg'; 
   };
 
   const statusStyle = (s) => {
@@ -62,6 +108,89 @@ export const Events = () => {
   const displayedEvents = (!searchQuery.trim() && events.length > 3 && !showAllEvents) 
     ? [...filteredEvents].sort((a,b) => new Date(a.date) - new Date(b.date)).slice(0, 3) 
     : filteredEvents;
+
+  // Admin Event Form Handlers
+  const handleOpenCreate = () => {
+    setEditingEvent(null);
+    setFormData({
+      ...EMPTY_EVENT_FORM,
+      date: new Date().toISOString().split('T')[0],
+    });
+    setFormErrors({});
+    setIsFormOpen(true);
+  };
+
+  const handleOpenEdit = (ev, e) => {
+    if (e) e.stopPropagation();
+    setEditingEvent(ev);
+    setFormData({
+      title: ev.title || '',
+      date: ev.date || new Date().toISOString().split('T')[0],
+      time: ev.time || '09:00 - 11:30',
+      location: ev.location || 'Hội trường 1 - Bảo tàng Việt Nam',
+      speaker: ev.speaker || '',
+      status: ev.status || 'Sắp diễn ra',
+      seats: ev.seats !== undefined ? ev.seats : 100,
+      description: ev.description || '',
+    });
+    setFormErrors({});
+    setIsFormOpen(true);
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (!formData.title.trim()) {
+      errors.title = 'Vui lòng nhập tiêu đề sự kiện.';
+    }
+
+    const seatsNum = Number(formData.seats);
+    if (isNaN(seatsNum) || seatsNum < 0) {
+      errors.seats = 'Số chỗ ngồi phải là số nguyên không âm.';
+    } else if (editingEvent && seatsNum < Number(editingEvent.registered || 0)) {
+      errors.seats = `Số chỗ không thể nhỏ hơn số người đã đăng ký (${editingEvent.registered} người).`;
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      if (editingEvent) {
+        const ok = await updateEvent(editingEvent.id, formData);
+        if (ok) {
+          setIsFormOpen(false);
+          setEditingEvent(null);
+        }
+      } else {
+        const created = await addEvent(formData);
+        if (created) {
+          setIsFormOpen(false);
+        }
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Delete Handler (Async-safe: returns ok for ConfirmModal)
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || isDeleting) return false;
+    setIsDeleting(true);
+    try {
+      const ok = await deleteEvent(deleteTarget.id);
+      if (ok) {
+        setDeleteTarget(null);
+      }
+      return ok;
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#faf6ef] font-sans pb-16 relative">
@@ -153,13 +282,25 @@ export const Events = () => {
               SỰ KIỆN NỔI BẬT
             </h2>
           </div>
-          <button 
-            onClick={() => setShowAllEvents(!showAllEvents)}
-            className="group inline-flex items-center gap-1.5 px-4 h-9 typo-btn text-xs sm:text-[13px] rounded-full bg-white border border-stone-200/80 shadow-2xs text-[#3a2213] hover:text-[#8B5A1E] hover:bg-stone-50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A1E]/40"
-          >
-            <span>{showAllEvents ? 'Thu gọn' : 'Xem tất cả'}</span>
-            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-          </button>
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleOpenCreate}
+                className="inline-flex items-center gap-1.5 px-4 h-9 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-xs rounded-full shadow-md transition-colors cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Thêm sự kiện</span>
+              </button>
+            )}
+            <button 
+              onClick={() => setShowAllEvents(!showAllEvents)}
+              className="group inline-flex items-center gap-1.5 px-4 h-9 typo-btn text-xs sm:text-[13px] rounded-full bg-white border border-stone-200/80 shadow-2xs text-[#3a2213] hover:text-[#8B5A1E] hover:bg-stone-50 transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5A1E]/40"
+            >
+              <span>{showAllEvents ? 'Thu gọn' : 'Xem tất cả'}</span>
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+            </button>
+          </div>
         </div>
 
         {/* Events Grid */}
@@ -196,6 +337,31 @@ export const Events = () => {
                         {ev.status}
                       </span>
                     </div>
+
+                    {/* Admin Action Controls (Chỉ Admin) */}
+                    {isAdmin && (
+                      <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-white/95 backdrop-blur-xs p-1 rounded-xl shadow-sm">
+                        <button
+                          type="button"
+                          onClick={(e) => handleOpenEdit(ev, e)}
+                          className="p-1.5 text-stone-600 hover:text-museum-brown hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
+                          title="Chỉnh sửa sự kiện"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteTarget(ev);
+                          }}
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          title="Xóa sự kiện"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-5 flex flex-col flex-1 justify-between gap-4">
@@ -288,6 +454,210 @@ export const Events = () => {
 
       {/* ── Event Registration Modal ── */}
       <EventRegistrationModal event={activeRegisterEvent} isOpen={!!activeRegisterEvent} onClose={() => setActiveRegisterEvent(null)} />
+
+      {/* ── Admin Create / Edit Event Modal ── */}
+      <Modal
+        isOpen={isFormOpen}
+        onClose={() => {
+          if (!isSubmitting) setIsFormOpen(false);
+        }}
+        title={editingEvent ? 'Chỉnh sửa sự kiện' : 'Thêm sự kiện mới'}
+        maxWidth="max-w-2xl"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+          {/* Tiêu đề sự kiện */}
+          <div>
+            <label className="block text-xs font-bold text-[#5B3A1F] mb-1">
+              Tiêu đề sự kiện <span className="text-rose-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => {
+                setFormData({ ...formData, title: e.target.value });
+                if (formErrors.title) setFormErrors({ ...formErrors, title: null });
+              }}
+              placeholder="Ví dụ: Tọa đàm chuyên sâu về Trống đồng Đông Sơn..."
+              className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-sm text-[#3E2712] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8860B] transition-all ${
+                formErrors.title ? 'border-rose-400 ring-rose-200' : 'border-stone-200/80'
+              }`}
+            />
+            {formErrors.title && (
+              <p className="mt-1 text-xs text-rose-600 flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {formErrors.title}
+              </p>
+            )}
+          </div>
+
+          {/* Ngày diễn ra & Khung giờ */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-[#5B3A1F] mb-1">
+                Ngày diễn ra <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-white border border-stone-200/80 rounded-xl text-sm text-[#3E2712] focus:outline-none focus:ring-2 focus:ring-[#B8860B] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#5B3A1F] mb-1">
+                Thời gian / Khung giờ
+              </label>
+              <input
+                type="text"
+                value={formData.time}
+                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                placeholder="Ví dụ: 09:00 - 11:30"
+                className="w-full px-3.5 py-2.5 bg-white border border-stone-200/80 rounded-xl text-sm text-[#3E2712] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8860B] transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Địa điểm & Diễn giả */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-[#5B3A1F] mb-1">
+                Địa điểm tổ chức
+              </label>
+              <input
+                type="text"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="Ví dụ: Hội trường 1 - Bảo tàng Việt Nam"
+                className="w-full px-3.5 py-2.5 bg-white border border-stone-200/80 rounded-xl text-sm text-[#3E2712] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8860B] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#5B3A1F] mb-1">
+                Diễn giả / Đơn vị tổ chức
+              </label>
+              <input
+                type="text"
+                value={formData.speaker}
+                onChange={(e) => setFormData({ ...formData, speaker: e.target.value })}
+                placeholder="Ví dụ: GS.TS Nguyễn Văn A"
+                className="w-full px-3.5 py-2.5 bg-white border border-stone-200/80 rounded-xl text-sm text-[#3E2712] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8860B] transition-all"
+              />
+            </div>
+          </div>
+
+          {/* Trạng thái & Số chỗ */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-[#5B3A1F] mb-1">
+                Trạng thái sự kiện
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="w-full px-3.5 py-2.5 bg-white border border-stone-200/80 rounded-xl text-sm text-[#3E2712] focus:outline-none focus:ring-2 focus:ring-[#B8860B] transition-all cursor-pointer"
+              >
+                <option value="Sắp diễn ra">Sắp diễn ra</option>
+                <option value="Đang diễn ra">Đang diễn ra</option>
+                <option value="Đã kết thúc">Đã kết thúc</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#5B3A1F] mb-1">
+                Số chỗ ngồi (Seats)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={formData.seats}
+                onChange={(e) => {
+                  setFormData({ ...formData, seats: e.target.value });
+                  if (formErrors.seats) setFormErrors({ ...formErrors, seats: null });
+                }}
+                className={`w-full px-3.5 py-2.5 bg-white border rounded-xl text-sm text-[#3E2712] focus:outline-none focus:ring-2 focus:ring-[#B8860B] transition-all ${
+                  formErrors.seats ? 'border-rose-400 ring-rose-200' : 'border-stone-200/80'
+                }`}
+              />
+              {formErrors.seats && (
+                <p className="mt-1 text-xs text-rose-600 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  {formErrors.seats}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Mô tả sự kiện */}
+          <div>
+            <label className="block text-xs font-bold text-[#5B3A1F] mb-1">
+              Mô tả chi tiết sự kiện
+            </label>
+            <textarea
+              rows={4}
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder="Nhập nội dung giới thiệu về sự kiện, chương trình tọa đàm..."
+              className="w-full px-3.5 py-2.5 bg-white border border-stone-200/80 rounded-xl text-sm text-[#3E2712] placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#B8860B] transition-all resize-y"
+            />
+          </div>
+
+          {/* Note khi edit: bảo lưu registered và id */}
+          {editingEvent && (
+            <div className="p-3 bg-[#FAF6EF] rounded-xl border border-stone-200/80 text-xs text-[#8A7D6B] flex items-center justify-between">
+              <div>
+                Mã sự kiện: <span className="font-mono font-bold text-[#3E2712]">{editingEvent.id}</span>
+              </div>
+              <div>
+                Đã đăng ký:{' '}
+                <span className="font-bold text-emerald-700">
+                  {editingEvent.registered || 0} người
+                </span>{' '}
+                <span className="text-[#8A7D6B]">(được bảo lưu nguyên vẹn)</span>
+              </div>
+            </div>
+          )}
+
+          {/* Actions Footer */}
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-stone-200/60">
+            <button
+              type="button"
+              onClick={() => setIsFormOpen(false)}
+              disabled={isSubmitting}
+              className="btn-secondary px-5 py-2.5 rounded-full text-xs cursor-pointer disabled:opacity-50"
+            >
+              Hủy bỏ
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="btn-primary px-5 py-2.5 rounded-full text-xs shadow-xs cursor-pointer disabled:opacity-60 inline-flex items-center gap-1.5"
+            >
+              {isSubmitting
+                ? 'Đang lưu...'
+                : editingEvent
+                ? 'Lưu thay đổi'
+                : 'Lưu sự kiện'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Admin Delete ConfirmModal ── */}
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        onClose={() => {
+          if (!isDeleting) setDeleteTarget(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        itemName={deleteTarget?.title || ''}
+        description={
+          deleteTarget?.registered > 0
+            ? `CẢNH BÁO NGUY HIỂM: Sự kiện này hiện có ${deleteTarget.registered} lượt đăng ký. Khi xóa sự kiện, toàn bộ dữ liệu đăng ký liên quan trong hệ thống sẽ bị xóa theo (Cascade). Hành động này không thể hoàn tác.`
+            : 'Bạn có chắc chắn muốn xóa sự kiện này? Hành động này không thể hoàn tác.'
+        }
+      />
     </div>
   );
 };

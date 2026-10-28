@@ -1,9 +1,14 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, MapPin, Calendar, Tag, Info, Landmark } from 'lucide-react';
+import { X, MapPin, Calendar, Tag, Info, Landmark, Pencil, Heart } from 'lucide-react';
+import { useApp } from '@/context/AppContext';
 
-export const ArtifactDetailModal = ({ artifact, isOpen, onClose }) => {
+export const ArtifactDetailModal = ({ artifact, isOpen, onClose, onEdit }) => {
   const navigate = useNavigate();
+  const { userFavorites = [], favoritesSummary, toggleArtifactFavorite } = useApp();
+
+  const isFav = artifact ? (userFavorites || []).includes(artifact.id) : false;
+  const itemLikes = artifact ? (favoritesSummary?.artifact_likes?.[artifact.id] || 0) : 0;
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -35,19 +40,19 @@ export const ArtifactDetailModal = ({ artifact, isOpen, onClose }) => {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-museum-cream transform transition-all duration-300 scale-100 font-sans"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-[#E8DDCC] transform transition-all duration-300 scale-100 font-sans"
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-gray-100 bg-museum-ivory shrink-0">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-[#E8DDCC] bg-[#FAF6EF] shrink-0">
           <div className="flex items-center gap-2">
-            <Landmark className="w-5 h-5 text-museum-gold" />
-            <h3 className="text-base sm:text-lg font-extrabold text-museum-brown uppercase tracking-tight">
+            <Landmark className="w-5 h-5 text-[#B8860B]" />
+            <h3 className="text-base sm:text-lg font-extrabold text-[#3E2712] uppercase tracking-tight">
               Thông Tin Chi Tiết Hiện Vật
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-museum-brown hover:bg-museum-cream rounded-xl transition-colors cursor-pointer"
+            className="p-1.5 text-stone-400 hover:text-[#3E2712] hover:bg-[#F5EFE0] rounded-xl transition-colors cursor-pointer"
             title="Đóng cửa sổ"
           >
             <X className="w-5 h-5" />
@@ -66,8 +71,24 @@ export const ArtifactDetailModal = ({ artifact, isOpen, onClose }) => {
               }}
               className="w-full h-full object-cover"
             />
-            <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-xs text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
-              Mã số: {artifact.id}
+            <div className="absolute top-3 right-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleArtifactFavorite(artifact.id);
+                }}
+                className={`px-3 py-1 rounded-full ${
+                  isFav ? 'bg-red-500 text-white shadow-sm' : 'bg-black/60 hover:bg-black/80 text-white'
+                } text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer backdrop-blur-xs`}
+                title={isFav ? `Đã lưu yêu thích (${itemLikes} lượt)` : `Bấm để lưu yêu thích (${itemLikes} lượt)`}
+              >
+                <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-white text-white' : 'text-white stroke-[2]'}`} />
+                <span>{itemLikes > 0 ? `${itemLikes} yêu thích` : 'Yêu thích'}</span>
+              </button>
+              <div className="bg-black/70 backdrop-blur-xs text-white text-xs font-semibold px-3 py-1 rounded-full shadow-sm">
+                Mã số: {artifact.id}
+              </div>
             </div>
             {artifact.culture && (
               <div className="absolute top-3 left-3 bg-museum-brown/90 text-museum-cream text-xs font-bold px-3 py-1 rounded-full shadow-sm">
@@ -90,10 +111,10 @@ export const ArtifactDetailModal = ({ artifact, isOpen, onClose }) => {
                 </div>
               )}
 
-              {artifact.period && (
+              {(artifact.period || artifact.culture) && (
                 <div className="flex items-center gap-1.5 bg-museum-ivory px-3.5 py-1.5 rounded-xl border border-museum-cream text-museum-brown">
                   <Tag className="w-4 h-4 shrink-0 text-museum-gold" />
-                  <span>Thời kỳ: <strong>{artifact.period}</strong></span>
+                  <span>Thời kỳ: <strong>{artifact.period || artifact.culture}</strong></span>
                 </div>
               )}
             </div>
@@ -143,16 +164,31 @@ export const ArtifactDetailModal = ({ artifact, isOpen, onClose }) => {
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 border-t border-gray-100 bg-gray-50 flex items-center justify-between shrink-0">
-          <button
-            onClick={() => {
-              onClose();
-              navigate(`/artifacts/${artifact.id}`);
-            }}
-            className="h-10 px-4 typo-btn text-museum-brown hover:text-museum-gold transition-colors cursor-pointer flex items-center"
-          >
-            Xem trang đầy đủ
-          </button>
+        <div className="px-6 py-3.5 border-t border-[#E8DDCC] bg-[#FAF6EF]/50 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                onClose();
+                navigate(`/artifacts/${artifact.id}`);
+              }}
+              className="h-10 px-4 typo-btn text-[#3E2712] hover:text-[#B8860B] transition-colors cursor-pointer flex items-center"
+            >
+              Xem trang đầy đủ
+            </button>
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onEdit(artifact);
+                }}
+                className="btn-secondary h-10 px-4 inline-flex items-center gap-1.5 typo-btn rounded-full cursor-pointer shadow-2xs"
+              >
+                <Pencil className="w-3.5 h-3.5 text-[#B8860B]" />
+                <span>Sửa hiện vật</span>
+              </button>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="btn-primary h-10 px-6 typo-btn rounded-full transition-colors cursor-pointer shadow-md"

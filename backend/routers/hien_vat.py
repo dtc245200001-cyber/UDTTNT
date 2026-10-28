@@ -6,6 +6,8 @@ Yêu cầu quyền admin cho các thao tác ghi (INSERT, UPDATE, DELETE).
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status, UploadFile, File
 from pydantic import BaseModel
 import uuid
+import os
+import json
 
 from core.auth import AuthenticatedUser, require_admin
 from core.supabase_client import supabase_admin
@@ -246,4 +248,123 @@ async def sync_single_artifact(payload: SyncSingleArtifactRequest, background_ta
         "name": row.get("name", ""),
         "message": "Đang đồng bộ vector vào kho tri thức AI thành công."
     }
+
+
+# ── Quản lý Lượt lưu & Yêu thích (Favorites & Likes toàn hệ thống) ──────────
+
+FAVORITES_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "favorites.json")
+
+def _load_favorites_store() -> dict:
+    if not os.path.exists(FAVORITES_FILE):
+        default_data = {
+            "artifact_likes": {
+                "AV001": 24,
+                "AV002": 19,
+                "AV003": 15,
+                "AV004": 12,
+                "AV005": 11,
+                "AV008": 8,
+                "AV010": 7,
+                "AV015": 6,
+            },
+            "user_favorites": {
+                "admin": ["AV001", "AV002", "AV003"],
+                "guest_curator": ["AV001", "AV004", "AV005", "AV008", "AV010", "AV015"]
+            }
+        }
+        try:
+            os.makedirs(os.path.dirname(FAVORITES_FILE), exist_ok=True)
+            with open(FAVORITES_FILE, "w", encoding="utf-8") as f:
+                json.dump(default_data, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"[Favorites] Error creating default favorites: {e}")
+        return default_data
+
+    try:
+        with open(FAVORITES_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"artifact_likes": {}, "user_favorites": {}}
+
+def _save_favorites_store(data: dict):
+    try:
+        os.makedirs(os.path.dirname(FAVORITES_FILE), exist_ok=True)
+        with open(FAVORITES_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[Favorites] Error saving favorites: {e}")
+
+
+class ToggleFavoriteRequest(BaseModel):
+    user_id: str | None = "guest"
+
+
+@router.get("/favorites/summary")
+def get_favorites_summary():
+    """
+    Lấy tổng số lượt lưu & yêu thích của toàn bộ người dùng và danh sách hiện vật nổi bật.
+    """
+    data = _load_favorites_store()
+    artifact_likes = data.get("artifact_likes", {})
+    total_likes = sum(artifact_likes.values())
+    featured_ids = [aid for aid, cnt in artifact_likes.items() if cnt > 0]
+    return {
+        "success": True,
+        "total_likes": total_likes,
+        "featured_count": len(featured_ids),
+        "artifact_likes": artifact_likes,
+        "featured_ids": featured_ids
+    }
+
+
+@router.post("/{hien_vat_id}/toggle-favorite")
+def toggle_artifact_favorite(hien_vat_id: str, payload: ToggleFavoriteRequest):
+    """
+    Tăng / giảm lượt lưu và yêu thích của người dùng cho hiện vật.
+    Tự động đếm và cập nhật tổng lượt lưu của toàn bộ người dùng và số hiện vật nổi bật.
+    """
+    data = _load_favorites_store()
+    artifact_likes = data.get("artifact_likes", {})
+    user_favorites = data.get("user_favorites", {})
+
+    uid = payload.user_id or "guest"
+    user_fav_list = list(user_favorites.get(uid, []))
+
+    if hien_vat_id in user_fav_list:
+        # Hủy yêu thích
+        user_fav_list.remove(hien_vat_id)
+        current_cnt = artifact_likes.get(hien_vat_id, 1)
+        if current_cnt <= 1:
+            artifact_likes.pop(hien_vat_id, None)
+            new_cnt = 0
+        else:
+            artifact_likes[hien_vat_id] = current_cnt - 1
+            new_cnt = artifact_likes[hien_vat_id]
+        is_favorited = False
+    else:
+        # Thêm yêu thích
+        user_fav_list.append(hien_vat_id)
+        artifact_likes[hien_vat_id] = artifact_likes.get(hien_vat_id, 0) + 1
+        new_cnt = artifact_likes[hien_vat_id]
+        is_favorited = True
+
+    user_favorites[uid] = user_fav_list
+    data["artifact_likes"] = artifact_likes
+    data["user_favorites"] = user_favorites
+    _save_favorites_store(data)
+
+    total_likes = sum(artifact_likes.values())
+    featured_ids = [aid for aid, cnt in artifact_likes.items() if cnt > 0]
+
+    return {
+        "success": True,
+        "artifact_id": hien_vat_id,
+        "is_favorited": is_favorited,
+        "likes_count": new_cnt,
+        "total_likes": total_likes,
+        "featured_count": len(featured_ids),
+        "artifact_likes": artifact_likes,
+        "user_favorites": user_fav_list
+    }
+
 

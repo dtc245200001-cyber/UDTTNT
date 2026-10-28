@@ -66,7 +66,7 @@ export const AppRoutes = () => {
             <Route path="/artifacts" element={<Artifacts />} />
             <Route path="/admin/artifacts" element={<Artifacts />} />
             <Route path="/artifacts/:id" element={<ArtifactDetail />} />
-            <Route path="/categories" element={<Categories />} />
+            <Route path="/categories" element={<Navigate to="/artifacts" replace />} />
             <Route path="/galleries" element={<Galleries />} />
             <Route path="/exhibitions" element={<Exhibitions />} />
             <Route path="/events" element={<Events />} />
@@ -119,7 +119,7 @@ export const AppRoutes = () => {
             <Route element={<MainLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admin/artifacts" element={<Artifacts />} />
-              <Route path="/categories" element={<Categories />} />
+              <Route path="/categories" element={<Navigate to="/artifacts" replace />} />
               <Route path="/tickets" element={<Tickets />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/articles" element={<Articles />} />

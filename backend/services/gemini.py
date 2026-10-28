@@ -197,8 +197,7 @@ class GeminiService:
         self._setup_client()
 
     def _setup_client(self):
-        # NGUON DUY NHAT: settings (doc tu .env), co ho tro GEMINI_API_KEYS don.
-        keys_str = settings.GEMINI_API_KEY or ""
+        keys_str = getattr(settings, "GEMINI_API_KEYS", "") or settings.GEMINI_API_KEY or ""
         if not keys_str:
             keys_str = os.getenv("GEMINI_API_KEYS", "") or os.getenv("GEMINI_API_KEY", "")
 
@@ -230,7 +229,10 @@ class GeminiService:
 
     def _get_thinking_config(self, model_name: str) -> types.ThinkingConfig | None:
         try:
-            if "gemini-3" in model_name:
+            # Tối ưu tốc độ phản hồi: Dùng MINIMAL để giảm độ trễ suy luận xuống thấp nhất
+            if hasattr(types, "ThinkingLevel") and hasattr(types.ThinkingLevel, "MINIMAL"):
+                return types.ThinkingConfig(thinking_level=types.ThinkingLevel.MINIMAL)
+            elif hasattr(types, "ThinkingLevel") and hasattr(types.ThinkingLevel, "LOW"):
                 return types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW)
             else:
                 return types.ThinkingConfig(thinking_budget=0)
@@ -600,6 +602,7 @@ class GeminiService:
                     system_instruction=system_instruction or SYSTEM_PROMPT,
                     temperature=temperature,
                     max_output_tokens=500,
+                    thinking_config=types.ThinkingConfig(thinking_budget=100),
                 )
             )
 
@@ -881,6 +884,7 @@ class GeminiService:
                                 system_instruction=system_instruction or SYSTEM_PROMPT,
                                 temperature=temperature,
                                 max_output_tokens=1024,
+                                thinking_config=types.ThinkingConfig(thinking_budget=100),
                             ),
                         )
                     )
@@ -1035,15 +1039,24 @@ class GeminiService:
         # 1. Trả thông tin RAG trước nếu có context hoặc câu hỏi có keyword bảo tàng
         if context and context.strip() or matches_phrase(user_message, MUSEUM_KEYWORDS + REALTIME_KEYWORDS):
             if context and context.strip():
-                first_context = context.split("\n\n### ")
-                first_document = first_context[0].strip()
-                if not first_document.startswith("### "):
-                    first_document = "### " + first_document
-                return (
-                    "Mình tìm thấy thông tin liên quan này "
-                    "trong dữ liệu của bảo tàng:\n\n"
-                    + first_document
+                # BẢO VỆ TUYỆT ĐỐI: Không bao giờ để lộ JSON, tên bảng DB hoặc cấu trúc prompt kỹ thuật
+                is_raw_technical = (
+                    "{" in context
+                    or "BẢNG " in context
+                    or "DANH SÁCH " in context
+                    or "SUPABASE" in context
+                    or "status\":" in context
                 )
+                if not is_raw_technical:
+                    first_context = context.split("\n\n### ")
+                    first_document = first_context[0].strip()
+                    if not first_document.startswith("### "):
+                        first_document = "### " + first_document
+                    return (
+                        "Mình tìm thấy thông tin liên quan này "
+                        "trong dữ liệu của bảo tàng:\n\n"
+                        + first_document
+                    )
 
         # 2. Xử lý chào hỏi (chỉ khi câu ngắn <= 4 từ và khớp toàn bộ/phrase)
         if len(words) <= 4:
