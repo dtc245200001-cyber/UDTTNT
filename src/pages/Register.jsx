@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { User, Mail, Lock, UserPlus } from 'lucide-react';
+import { User, Mail, Lock, UserPlus, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 export const Register = () => {
   const navigate = useNavigate();
@@ -15,6 +15,8 @@ export const Register = () => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Ensure state is completely empty on mount to override browser autofill
   useEffect(() => {
@@ -52,21 +54,42 @@ export const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting || successMessage) return;
     if (!validate()) return;
 
-    const result = await register({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-    });
+    setIsSubmitting(true);
+    setErrors({});
 
-    if (result && result.success) {
-      // Nhảy sang trang đăng nhập ngay lập tức để người dùng tự đăng nhập
-      navigate('/login');
-    } else {
+    try {
+      const result = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (result && result.success) {
+        setSuccessMessage('Đăng ký tài khoản thành công! Đang tự động chuyển sang trang Đăng nhập...');
+        // Cho người dùng thấy rõ thông báo thành công trong 1.2s trước khi chuyển hướng
+        setTimeout(() => {
+          navigate('/login', {
+            state: {
+              registeredEmail: formData.email.trim().toLowerCase(),
+              message: 'Tài khoản của bạn đã sẵn sàng! Vui lòng nhập mật khẩu để đăng nhập.',
+            },
+          });
+        }, 1200);
+      } else {
+        setIsSubmitting(false);
+        setErrors((prev) => ({
+          ...prev,
+          general: result?.message || 'Đăng ký tài khoản không thành công. Vui lòng thử lại!',
+        }));
+      }
+    } catch (err) {
+      setIsSubmitting(false);
       setErrors((prev) => ({
         ...prev,
-        general: result?.message || 'Đăng ký tài khoản không thành công. Vui lòng thử lại!',
+        general: err.message || 'Lỗi kết nối máy chủ, vui lòng thử lại sau ít phút.',
       }));
     }
   };
@@ -87,9 +110,22 @@ export const Register = () => {
         <input type="text" name="prevent_autofill_username" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
         <input type="password" name="prevent_autofill_password" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
 
+        {/* Thông báo thành công nổi bật */}
+        {successMessage && (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3 animate-fadeIn shadow-xs">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <div className="text-xs sm:text-sm font-bold text-emerald-800">Đăng ký thành công!</div>
+              <div className="text-xs text-emerald-700 mt-0.5">{successMessage}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Thông báo lỗi nổi bật */}
         {errors.general && (
-          <div className="p-3 bg-red-50 text-danger text-xs font-semibold rounded-xl border border-red-200 animate-fadeIn">
-            {errors.general}
+          <div className="p-3.5 bg-red-50 text-red-700 text-xs sm:text-sm font-semibold rounded-xl border border-red-200 flex items-center gap-2 animate-fadeIn shadow-xs">
+            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <span>{errors.general}</span>
           </div>
         )}
 
@@ -184,10 +220,31 @@ export const Register = () => {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full py-3 px-4 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition-colors pt-3"
+          disabled={isSubmitting || Boolean(successMessage)}
+          className={`w-full py-3 px-4 font-bold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            successMessage
+              ? 'bg-emerald-600 text-white cursor-default'
+              : isSubmitting
+              ? 'bg-stone-400 text-white cursor-not-allowed'
+              : 'bg-museum-brown hover:bg-museum-brown-dk text-white active:scale-[0.99]'
+          }`}
         >
-          <UserPlus className="w-4 h-4" />
-          <span>Đăng ký tài khoản</span>
+          {successMessage ? (
+            <>
+              <CheckCircle2 className="w-4 h-4 animate-bounce" />
+              <span>Đăng ký thành công! Đang chuyển hướng...</span>
+            </>
+          ) : isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Đang khởi tạo tài khoản...</span>
+            </>
+          ) : (
+            <>
+              <UserPlus className="w-4 h-4" />
+              <span>Đăng ký tài khoản</span>
+            </>
+          )}
         </button>
       </form>
 
