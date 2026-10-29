@@ -3,6 +3,7 @@ import { exhibitions } from './exhibitions';
 import { categories } from './categories';
 import { events } from './events';
 import { ticketTypes } from './tickets';
+import { searchArtifacts } from '../lib/searchArtifacts';
 
 /**
  * Hàm loại bỏ dấu Tiếng Việt giúp so sánh linh hoạt
@@ -57,12 +58,9 @@ export const getMockAIResponse = (question) => {
     return `📦 **BẢO TÀNG HIỆN LƯU GIỮ 270 HIỆN VẬT THEO ${categories.length} DANH MỤC:**\n\n${catList}\n\n👉 Bạn có thể xem chi tiết từng danh mục tại trang **"Khám phá hiện vật"**!`;
   }
 
-  // 5. Tìm kiếm trực tiếp hiện vật theo từ khóa trên toàn bộ 270 hiện vật
-  const keywords = normalized.split(/\s+/).filter((w) => w.length > 1);
-  const matchedArtifacts = artifacts.filter((a) => {
-    const aText = removeVietnameseTones(`${a.name} ${a.description} ${a.culture} ${a.category} ${a.period}`);
-    return keywords.some((kw) => aText.includes(kw));
-  });
+  // 5. Tìm kiếm trực tiếp hiện vật bằng searchArtifacts (dùng chung logic tìm kiếm)
+  const searchResult = searchArtifacts(raw, artifacts, categories);
+  const matchedArtifacts = searchResult.results;
 
   if (matchedArtifacts.length > 0) {
     const topMatches = matchedArtifacts.slice(0, 3);
@@ -73,9 +71,16 @@ export const getMockAIResponse = (question) => {
       )
       .join('\n\n');
 
-    return `🔎 **KẾT QUẢ TRA CỨU DI SẢN (Tìm thấy ${matchedArtifacts.length} hiện vật liên quan):**\n\n${details}\n\n👉 Bạn có thể bấm vào trang **"Khám phá hiện vật"** hoặc tìm kiếm mã \`${topMatches[0].id}\` để xem hình ảnh sắc nét và thuyết minh đầy đủ!`;
+    const filterInfo = searchResult.interpretedQuery ? ` (Đã hiểu: *${searchResult.interpretedQuery}*)` : '';
+
+    return `🔎 **KẾT QUẢ TRA CỨU DI SẢN (Tìm thấy ${matchedArtifacts.length} hiện vật liên quan${filterInfo}):**\n\n${details}\n\n👉 Bạn có thể bấm vào trang **"Khám phá hiện vật"** hoặc tìm kiếm mã \`${topMatches[0].id}\` để xem hình ảnh sắc nét và thuyết minh đầy đủ!`;
   }
 
-  // Fallback
-  return `Xin lỗi, tôi chưa tìm thấy hiện vật nào khớp chính xác với từ khóa "${raw}".\n\n💡 **Gợi ý bạn có thể hỏi:**\n• "Tìm hiện vật Đồ đồng" hoặc "Trống đồng"\n• "Các bảo vật thời Lý / thời Trần"\n• "Giá vé tham quan và giờ mở cửa"\n• "Triển lãm đang diễn ra"`;
+  // Fallback with suggestions
+  const sugText =
+    searchResult.suggestions?.length > 0
+      ? `\n\n💡 **Gợi ý từ khóa tương tự:**\n` + searchResult.suggestions.map((s) => `• "${s}"`).join('\n')
+      : `\n\n💡 **Gợi ý bạn có thể hỏi:**\n• "Tìm hiện vật Đồ đồng" hoặc "Trống đồng"\n• "Các bảo vật thời Lý / thời Trần"\n• "Giá vé tham quan và giờ mở cửa"\n• "Triển lãm đang diễn ra"`;
+
+  return `Xin lỗi, tôi chưa tìm thấy hiện vật nào khớp chính xác với từ khóa "${raw}".${sugText}`;
 };

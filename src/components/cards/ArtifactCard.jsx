@@ -3,7 +3,28 @@ import { useNavigate } from 'react-router-dom';
 import { MapPin, Heart } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
-export const ArtifactCard = ({ artifact, onClick }) => {
+function highlightMatch(text, term) {
+  if (!term || !term.trim() || !text) return text;
+  const words = term
+    .trim()
+    .split(/\s+/)
+    .filter((w) => w.length > 1)
+    .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  if (words.length === 0) return text;
+  const regex = new RegExp(`(${words.join('|')})`, 'gi');
+  const parts = String(text).split(regex);
+  return parts.map((part, i) =>
+    regex.test(part) ? (
+      <mark key={i} className="bg-[#D9A441]/35 text-[#5B3A1F] font-bold rounded-xs px-0.5">
+        {part}
+      </mark>
+    ) : (
+      part
+    )
+  );
+}
+
+export const ArtifactCard = ({ artifact, onClick, highlightTerm = '' }) => {
   const navigate = useNavigate();
   const { userFavorites = [], favoritesSummary, toggleArtifactFavorite } = useApp();
 
@@ -70,7 +91,7 @@ export const ArtifactCard = ({ artifact, onClick }) => {
 
         <div className="p-4 space-y-1.5">
           <h4 className="typo-card-title text-museum-brown group-hover:text-museum-gold transition-colors min-h-[2.7em]">
-            {artifact.name}
+            {highlightMatch(artifact.name, highlightTerm)}
           </h4>
           {artifact.date && (
             <p className="typo-meta text-xs font-semibold text-museum-gold">Niên đại: {artifact.date}</p>

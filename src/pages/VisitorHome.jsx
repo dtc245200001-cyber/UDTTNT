@@ -150,15 +150,15 @@ export const VisitorHome = () => {
               onClick={() => navigate('/artifacts')}
               className="w-full sm:w-auto h-12 px-8 bg-museum-gold hover:bg-museum-gold-lt text-white typo-btn rounded-full shadow-lg transition-all transform hover:-translate-y-0.5 cursor-pointer inline-flex items-center justify-center"
             >
-              Khám phá toàn bộ {artifacts.length} hiện vật &rarr;
+              Khám phá toàn bộ {artifacts.length} hiện vật
             </button>
-            <a
-              href="#tickets"
-              className="w-full sm:w-auto h-12 px-8 bg-white/10 hover:bg-white/20 text-white border border-white/30 typo-btn rounded-full backdrop-blur-sm transition-all transform hover:-translate-y-0.5 inline-flex items-center justify-center"
+            <button
+              onClick={() => navigate('/tickets')}
+              className="w-full sm:w-auto h-12 px-8 bg-white/10 hover:bg-white/20 text-white border border-white/30 typo-btn rounded-full backdrop-blur-sm transition-all transform hover:-translate-y-0.5 cursor-pointer inline-flex items-center justify-center"
             >
               <Ticket className="w-4 h-4 inline mr-2" />
               Đặt vé tham quan
-            </a>
+            </button>
           </div>
         </div>
       </section>

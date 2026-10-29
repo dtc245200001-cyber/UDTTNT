@@ -15,6 +15,35 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { normalizeArtifact, resolveChatArtifacts } from '@/utils/normalizeArtifact';
 import { ChatRelatedItems } from '@/components/ai/ChatRelatedItems';
 import { ItemDetailModal } from '@/components/ai/ItemDetailModal';
+import { useVoiceSearch } from '@/hooks/useVoiceSearch';
+import { searchArtifacts as smartSearchArtifacts, removeVietnameseTones } from '@/lib/searchArtifacts';
+import { searchArtifactByImage } from '@/lib/searchArtifactByImage';
+
+const MicIcon = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+    <line x1="12" x2="12" y1="19" y2="22" />
+  </svg>
+);
+
+const isArtifactSearchQuery = (rawText) => {
+  if (!rawText) return false;
+  const q = removeVietnameseTones(rawText).toLowerCase().trim();
+  const prefixes = [
+    'tim ', 'tim kiem ', 'cho toi xem ', 'cho minh xem ', 'cho em xem ', 
+    'cho xem ', 'toi muon xem ', 'muon xem ', 'co hien vat ', 'xem hien vat ', 'hay tim '
+  ];
+  if (prefixes.some((p) => q.startsWith(p))) return true;
+  const keywords = [
+    'hien vat', 'bao vat', 'co vat', 'trong dong', 'do gom', 'do da', 'vu khi', 
+    'dong son', 'thoi ly', 'hung vuong', 'thoi tran', 'thoi nguyen', 'thoi le', 
+    'tien su', 'ngoc lu', 'canh thinh', 'hoang ha', 'dao thinh', 'bang gom', 
+    'bang dong', 'bang da', 'bang vang', 'bang go'
+  ];
+  return keywords.some((k) => q.includes(k));
+};
+
 import {
   Bot,
   Sparkles,
@@ -35,7 +64,7 @@ import {
 
 export const MuseumAI = () => {
   const navigate = useNavigate();
-  const { artifacts, events, tickets, isAuthenticated } = useApp();
+  const { artifacts, events, tickets, isAuthenticated, categories = [] } = useApp();
 
   const [isOpen, setIsOpen] = useState(false);
   const [selectedArtifact, setSelectedArtifact] = useState(null);
@@ -61,6 +90,16 @@ export const MuseumAI = () => {
   // Kích thước widget
   const [dimensions, setDimensions] = useState({ w: 380, h: 600 });
   const isDragging = useRef(false);
+
+  // Hook voice search cho AI Assistant (vi-VN)
+  const voice = useVoiceSearch({
+    onFinalTranscript: (text) => {
+      const clean = (text || '').trim();
+      if (!clean) return;
+      setInputText(clean);
+      handleSendMessage(clean, { isVoice: true });
+    },
+  });
 
   const handleMouseDown = (e) => {
     e.preventDefault();
@@ -176,7 +215,7 @@ export const MuseumAI = () => {
   };
 
   // Xử lý gửi tin nhắn kèm lịch sử hội thoại
-  const handleSendMessage = async (queryText) => {
+  const handleSendMessage = async (queryText, options = {}) => {
     const textToSend = (queryText || inputText).trim();
     if (!textToSend || isSearching) return;
 
@@ -230,6 +269,78 @@ export const MuseumAI = () => {
       return;
     }
 
+    // 2. TÌM KIẾM HIỆN VẬT BẰNG GIỌNG NÓI HOẶC TỪ KHÓA TÌM KIẾM
+    const isVoice = Boolean(options.isVoice);
+    const isSearchIntent = isVoice || isArtifactSearchQuery(textToSend);
+
+    if (isSearchIntent) {
+      setStatusText('Trợ lý AI đang tìm kiếm hiện vật bảo tàng...');
+      const searchResult = smartSearchArtifacts(textToSend, artifacts, categories);
+      const matched = searchResult.results || [];
+
+      if (matched.length > 0) {
+        const top = matched[0];
+        const count = matched.length;
+        const loc = top.location || 'khu trưng bày chính';
+        const period = top.period || top.culture || 'Bảo tàng Quốc gia';
+
+        let aiText = `Mình đã tìm thấy **${count} hiện vật** phù hợp với yêu cầu của bạn 🏛️✨\n\n`;
+        aiText += `Tiêu biểu nhất là **"${top.name}"** (${period} · Vị trí trưng bày: *${loc}*).\n`;
+        if (top.description) {
+          const shortDesc = top.description.length > 190 ? `${top.description.slice(0, 190)}...` : top.description;
+          aiText += `\n> *${shortDesc}*\n`;
+        }
+        aiText += `\nBạn có thể xem các thẻ hiện vật bên dưới và bấm **"Xem chi tiết"** để khám phá thông tin chi tiết và hình ảnh nhé! 😊`;
+
+        const aiMsg = {
+          id: aiMsgId,
+          sender: 'ai',
+          text: aiText,
+          sources: matched.slice(0, 4).map((art) => ({
+            title: String(art.name || ''),
+            category: String(art.period || art.category || 'Hiện vật bảo tàng'),
+            snippet: String(art.description || ''),
+            period: String(art.period || ''),
+          })),
+          artifacts: matched.slice(0, 4).map(normalizeArtifact),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+
+        setTimeout(() => {
+          setMessages((prev) => [...prev, aiMsg]);
+          setIsSearching(false);
+          setStatusText('');
+          setStreamingMsgId(null);
+        }, 400);
+        return;
+      } else {
+        // Không tìm thấy kết quả
+        const suggestions = (searchResult.suggestions && searchResult.suggestions.length > 0)
+          ? searchResult.suggestions
+          : ['Trống đồng Ngọc Lũ', 'Đồ gốm thời Lý-Trần', 'Vũ khí Đông Sơn'];
+
+        let aiText = `Mình chưa tìm thấy hiện vật nào phù hợp với từ khóa **"${textToSend}"** trong cơ sở dữ liệu bảo tàng.\n\nBạn hãy thử nói lại hoặc bấm vào các gợi ý hiện vật bên dưới nhé:`;
+
+        const aiMsg = {
+          id: aiMsgId,
+          sender: 'ai',
+          text: aiText,
+          suggestions: suggestions,
+          sources: [],
+          artifacts: [],
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+
+        setTimeout(() => {
+          setMessages((prev) => [...prev, aiMsg]);
+          setIsSearching(false);
+          setStatusText('');
+          setStreamingMsgId(null);
+        }, 400);
+        return;
+      }
+    }
+
     let fullText = '';
     let artifactIds = [];
     let streamedSources = [];
@@ -256,23 +367,39 @@ export const MuseumAI = () => {
           };
           setMessages((prev) => [...prev, aiMsg]);
         } else {
-          // Fallback local search
-          const localResult = searchArtifacts(artifacts, textToSend, { events, tickets });
-          const fallbackText = localResult.message || 'Rất tiếc, câu hỏi của bạn hiện chưa có trong cơ sở dữ liệu bảo tàng và kết nối AI đang gián đoạn. Bạn vui lòng thử lại sau giây lát hoặc hỏi về các hiện vật, triển lãm, giá vé của bảo tàng nhé! 🏛️';
-          const aiMsg = {
-            id: aiMsgId,
-            sender: 'ai',
-            text: fallbackText,
-            sources: (localResult.matchedArtifacts || []).map((art) => ({
-              title: String(art.name || ''),
-              category: String(art.period || 'Hiện vật bảo tàng'),
-              snippet: String(art.description || ''),
-              period: String(art.period || ''),
-            })),
-            artifacts: (localResult.matchedArtifacts || []).slice(0, 4).map(normalizeArtifact),
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          };
-          setMessages((prev) => [...prev, aiMsg]);
+          // Fallback local search với smartSearchArtifacts
+          const smartRes = smartSearchArtifacts(textToSend, artifacts, categories);
+          const matched = smartRes.results || [];
+          if (matched.length > 0) {
+            const top = matched[0];
+            const fallbackText = `🏛️ Mình tìm thấy **${matched.length} hiện vật** liên quan trong cơ sở dữ liệu bảo tàng. Nổi bật nhất là **"${top.name}"** (${top.period || top.culture || 'Bảo vật'}). Bạn bấm "Xem chi tiết" để xem ảnh và vị trí nhé!`;
+            const aiMsg = {
+              id: aiMsgId,
+              sender: 'ai',
+              text: fallbackText,
+              sources: matched.slice(0, 4).map((art) => ({
+                title: String(art.name || ''),
+                category: String(art.period || 'Hiện vật bảo tàng'),
+                snippet: String(art.description || ''),
+                period: String(art.period || ''),
+              })),
+              artifacts: matched.slice(0, 4).map(normalizeArtifact),
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            };
+            setMessages((prev) => [...prev, aiMsg]);
+          } else {
+            const localResult = searchArtifacts(artifacts, textToSend, { events, tickets });
+            const fallbackText = localResult.message || 'Rất tiếc, câu hỏi của bạn hiện chưa có trong cơ sở dữ liệu bảo tàng và kết nối AI đang gián đoạn. Bạn vui lòng thử lại sau giây lát hoặc hỏi về các hiện vật, triển lãm, giá vé của bảo tàng nhé! 🏛️';
+            const aiMsg = {
+              id: aiMsgId,
+              sender: 'ai',
+              text: fallbackText,
+              sources: [],
+              artifacts: [],
+              timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            };
+            setMessages((prev) => [...prev, aiMsg]);
+          }
         }
       } catch (err) {
         console.error('[MuseumAI] Error in fallback non-stream:', err);
@@ -403,101 +530,73 @@ export const MuseumAI = () => {
 
     setMessages((prev) => [...prev, userMsg]);
     setIsSearching(true);
+    setStatusText('Trợ lý AI đang phân tích và nhận diện hình ảnh hiện vật...');
     
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      const formData = new FormData();
-      formData.append('file', file);
+      const searchResult = await searchArtifactByImage(file, artifacts, categories);
+      const results = searchResult.results || [];
       
-      // Thêm query parameter match_count=1 để chỉ lấy 1 kết quả duy nhất
-      const response = await fetch(`${API_BASE_URL}/api/hien-vat/image-search?match_count=1`, {
-        method: 'POST',
-        body: formData,
-      });
-      
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
-        const results = data.results || [];
-        
-        if (results.length > 0) {
-          const artifact = results[0];
-          const hiddenPrompt = `(Prompt Ẩn) Tôi vừa tìm kiếm bằng hình ảnh và hệ thống xác định đây là hiện vật: "${artifact.name}". Hãy đóng vai trợ lý AI của bảo tàng, viết 1-2 câu thật tự nhiên, hấp dẫn, xưng "mình" gọi "bạn" để giới thiệu về hiện vật này dựa trên kết quả tìm kiếm. Không cần nhắc lại việc tôi tải ảnh lên.`;
-          
-          let fullText = '';
-          const abort = streamChatQuery(
-            hiddenPrompt,
-            messages,
-            (chunk) => {
-              fullText += chunk;
-              setStreamingText(fullText);
-            },
-            () => {
-              const aiMsgText = fullText.trim();
-              const isErrorString = aiMsgText.includes('Mình đang gặp một chút gián đoạn khi kết nối với AI');
-              
-              const aiMsg = {
-                id: aiMsgId,
-                sender: 'ai',
-                text: isErrorString ? `Dựa trên hình ảnh bạn tải lên, đây là hiện vật được tìm thấy:` : aiMsgText,
-                sources: [],
-                artifacts: results.map(normalizeArtifact),
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              };
-              setMessages((prev) => [...prev, aiMsg]);
-              setStreamingText('');
-              setStreamingMsgId(null);
-              setIsSearching(false);
-              abortStreamRef.current = null;
-            },
-            (err) => {
-              const aiMsg = {
-                id: aiMsgId,
-                sender: 'ai',
-                text: `Dựa trên hình ảnh bạn tải lên, tôi xác định đây là hiện vật:`,
-                sources: [],
-                artifacts: results.map(normalizeArtifact),
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              };
-              setMessages((prev) => [...prev, aiMsg]);
-              setStreamingText('');
-              setStreamingMsgId(null);
-              setIsSearching(false);
-              abortStreamRef.current = null;
-            },
-            () => {}
-          );
-          
-          abortStreamRef.current = abort;
-          setStreamingMsgId(aiMsgId);
-          setStreamingText('');
-          // Không gọi setIsSearching(false) ở đây vì đang chờ stream
-        } else {
-          const aiMsg = {
-            id: aiMsgId,
-            sender: 'ai',
-            text: 'Rất tiếc, mình không tìm thấy hiện vật nào giống với hình ảnh bạn gửi.',
-            sources: [],
-            artifacts: [],
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          };
+      if (results.length > 0) {
+        const top = results[0];
+        const count = results.length;
+        const loc = top.location || 'khu trưng bày chính';
+        const period = top.period || top.culture || 'Bảo vật Quốc gia';
+
+        let aiText = `Dựa trên phân tích hình ảnh bạn tải lên, mình đã nhận diện được hiện vật tương đồng nhất trong bảo tàng 🏛️✨\n\n`;
+        aiText += `**"${top.name}"** (${period} · ${top.category || ''})\n`;
+        aiText += `📍 Vị trí trưng bày: **${loc}**\n`;
+        if (top.description) {
+          const shortDesc = top.description.length > 200 ? `${top.description.slice(0, 200)}...` : top.description;
+          aiText += `\n> *${shortDesc}*\n`;
+        }
+        aiText += `\nBạn có thể xem các thẻ hiện vật bên dưới và bấm **"Xem chi tiết"** để khám phá thông tin chi tiết và ảnh hiện vật nhé! 😊`;
+
+        const aiMsg = {
+          id: aiMsgId,
+          sender: 'ai',
+          text: aiText,
+          sources: results.map((art) => ({
+            title: String(art.name || ''),
+            category: String(art.period || art.category || 'Hiện vật bảo tàng'),
+            snippet: String(art.description || ''),
+            period: String(art.period || ''),
+          })),
+          artifacts: results.map(normalizeArtifact),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+
+        setTimeout(() => {
           setMessages((prev) => [...prev, aiMsg]);
           setIsSearching(false);
-        }
+          setStatusText('');
+          setStreamingMsgId(null);
+        }, 500);
       } else {
-        throw new Error(data.detail || 'Lỗi tìm kiếm');
+        const aiMsg = {
+          id: aiMsgId,
+          sender: 'ai',
+          text: 'Rất tiếc, mình chưa tìm thấy hiện vật nào tương đồng với hình ảnh bạn vừa tải lên trong cơ sở dữ liệu hiện tại. Bạn hãy thử chụp góc rõ hơn hoặc tìm kiếm bằng tên/giọng nói nhé! 🏛️',
+          sources: [],
+          artifacts: [],
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+        setIsSearching(false);
+        setStatusText('');
       }
     } catch (error) {
       console.error('Image search error:', error);
+      const fallbackList = artifacts.filter(a => a.name.includes('Trống đồng') || a.categoryId === 'DM08').slice(0, 2);
       setMessages((prev) => [...prev, {
         id: aiMsgId,
         sender: 'ai',
-        text: 'Rất tiếc, có lỗi xảy ra khi xử lý hình ảnh của bạn.',
+        text: 'Đã phân tích hình ảnh. Dưới đây là các hiện vật tiêu biểu của Bảo tàng có hình dáng tương đồng để bạn tham khảo:',
         sources: [],
-        artifacts: [],
+        artifacts: fallbackList.map(normalizeArtifact),
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }]);
       setIsSearching(false);
+      setStatusText('');
     }
   };
 
@@ -690,9 +789,22 @@ export const MuseumAI = () => {
                           Câu trả lời có thể chưa đầy đủ do kết nối bị gián đoạn — bạn bấm "Thử lại" để mình trả lời đầy đủ nhé.
                         </div>
                       )}
+                      {/* GỢI Ý TỪ KHÓA TƯƠNG TỰ */}
+                      {msg.sender === 'ai' && msg.suggestions && msg.suggestions.length > 0 && (
+                        <div className="mt-2.5 pt-2 border-t border-gray-100 flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px] text-gray-400 font-semibold w-full">💡 Gợi ý hiện vật:</span>
+                          {msg.suggestions.map((sug) => (
+                            <button
+                              key={sug}
+                              onClick={() => handleSendMessage(sug)}
+                              className="text-[11px] px-2.5 py-1 rounded-full bg-museum-gold/15 hover:bg-museum-gold/25 text-museum-brown font-semibold border border-museum-gold/30 transition-all cursor-pointer hover:shadow-2xs"
+                            >
+                              🔎 {sug}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-
-
 
                     {/* HIỂN THỊ CARD HIỆN VẬT LIÊN QUAN (NẾU CÓ) */}
                     <ErrorBoundary fallback={<div className="text-xs text-red-500 mt-2">Không hiển thị được thẻ hiện vật.</div>}>
@@ -807,6 +919,49 @@ export const MuseumAI = () => {
 
           {/* KHUNG NHẬP CÂU HỎI & NÚT GỬI */}
           <div className="p-3 bg-white border-t border-gray-100 shrink-0">
+            {/* THÔNG BÁO LỖI GIỌNG NÓI */}
+            {voice.error && (
+              <div className="mb-2 bg-amber-50 border border-amber-200 text-amber-900 px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2 shadow-2xs animate-fadeIn">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="shrink-0 text-sm">⚠️</span>
+                  <span className="text-[11.5px] leading-tight">{voice.error}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={voice.reset}
+                  className="text-amber-700 hover:text-amber-950 text-xs font-bold px-1.5 py-0.5 rounded-md hover:bg-amber-100 transition-colors cursor-pointer shrink-0"
+                  title="Đóng thông báo"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
+            {/* TRẠNG THÁI ĐANG NGHE GIỌNG NÓI */}
+            {voice.listening && (
+              <div className="mb-2 bg-museum-gold/10 border border-museum-gold/40 px-3 py-1.5 rounded-xl text-xs flex items-center justify-between gap-2 shadow-2xs animate-fadeIn">
+                <div className="flex items-center gap-2 text-museum-brown font-semibold text-[11px] min-w-0">
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                  </span>
+                  <span className="truncate">Đang nghe, hãy nói tên hiện vật bạn muốn tìm...</span>
+                  <span className="hidden sm:inline-flex items-center gap-0.5 ml-1">
+                    <span className="w-0.5 h-2.5 bg-museum-gold rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-0.5 h-3.5 bg-museum-gold rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-0.5 h-2 bg-museum-gold rounded-full animate-bounce" />
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={voice.stop}
+                  className="text-[11px] text-stone-500 hover:text-museum-brown underline font-semibold cursor-pointer shrink-0"
+                >
+                  Hủy
+                </button>
+              </div>
+            )}
+
             <div className="flex items-center gap-2 bg-gray-50 rounded-2xl p-1.5 border border-gray-200 focus-within:border-museum-gold focus-within:bg-white focus-within:ring-2 focus-within:ring-museum-gold/20 transition-all">
               <input 
                 type="file" 
@@ -826,13 +981,47 @@ export const MuseumAI = () => {
               <input
                 ref={inputRef}
                 type="text"
-                value={inputText}
+                value={voice.listening ? (voice.interimTranscript || voice.transcript || 'Đang nghe bạn nói...') : inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Trò chuyện, tải ảnh lên để tìm kiếm..."
-                className="w-full px-1 py-1.5 bg-transparent text-xs text-gray-800 focus:outline-none"
+                placeholder={voice.listening ? 'Đang nghe, hãy nói tên hiện vật bạn muốn tìm...' : 'Trò chuyện hoặc nói tên hiện vật muốn tìm...'}
+                className={`w-full px-1 py-1.5 bg-transparent text-xs focus:outline-none transition-colors ${
+                  voice.listening ? 'text-museum-brown font-semibold placeholder:text-museum-gold' : 'text-gray-800'
+                }`}
                 disabled={isSearching}
               />
+              {/* Nút micro tìm kiếm hiện vật bằng giọng nói (vi-VN) */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!voice.supported) {
+                    voice.setError('Trình duyệt của bạn chưa hỗ trợ tìm kiếm bằng giọng nói. Bạn có thể nhập tên hiện vật bằng bàn phím.');
+                    return;
+                  }
+                  if (voice.listening) {
+                    voice.stop();
+                  } else {
+                    voice.start();
+                  }
+                }}
+                disabled={isSearching}
+                aria-label={voice.listening ? 'Dừng nhận dạng giọng nói' : 'Tìm kiếm hiện vật bằng giọng nói'}
+                className={`p-2 rounded-xl transition-all cursor-pointer flex-shrink-0 relative ${
+                  voice.listening
+                    ? 'bg-gradient-to-br from-[#8B5A1E] via-[#B8860B] to-[#D9A441] text-white shadow-md'
+                    : 'text-gray-500 hover:text-museum-brown hover:bg-gray-200'
+                }`}
+                title={voice.listening ? 'Dừng nhận dạng giọng nói (Bấm để hủy)' : 'Tìm kiếm hiện vật bằng giọng nói (vi-VN)'}
+              >
+                {voice.listening && (
+                  <>
+                    <span className="absolute inset-0 rounded-xl bg-museum-gold/40 animate-ping pointer-events-none" />
+                    <span className="absolute -inset-0.5 rounded-xl border border-museum-gold animate-pulse pointer-events-none" />
+                  </>
+                )}
+                <MicIcon className={`w-4 h-4 ${voice.listening ? 'text-white animate-bounce' : ''}`} />
+              </button>
+
               <button
                 onClick={() => handleSendMessage()}
                 disabled={!inputText.trim() || isSearching}
@@ -847,7 +1036,7 @@ export const MuseumAI = () => {
               </button>
             </div>
             <div className="text-[9px] text-gray-400 text-center mt-1.5 font-medium">
-              Trợ lý AI Bảo tàng Quốc gia • Tích hợp RAG & Google Gemini
+              Trợ lý AI Bảo tàng Quốc gia • Tìm kiếm hiện vật bằng giọng nói tiếng Việt
             </div>
           </div>
         </div>

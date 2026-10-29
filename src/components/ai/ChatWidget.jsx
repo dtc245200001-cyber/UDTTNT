@@ -1,6 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, Send, User } from 'lucide-react';
 import { getMockAIResponse } from '@/data/aiResponses';
+import { useVoiceSearch } from '@/hooks/useVoiceSearch';
+
+const MicIcon = ({ className = 'w-4 h-4' }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+    <line x1="12" x2="12" y1="19" y2="22" />
+  </svg>
+);
 
 export const ChatWidget = () => {
   const [messages, setMessages] = useState([
@@ -13,21 +22,6 @@ export const ChatWidget = () => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef(null);
-
-  const quickPrompts = [
-    'Hiện vật thời Lý',
-    'Triển lãm đang diễn ra',
-    'Giờ mở cửa bảo tàng',
-    'Giới thiệu về bảo tàng',
-  ];
-
-  const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
 
   const handleSend = (textToSend) => {
     const query = textToSend || input;
@@ -54,6 +48,29 @@ export const ChatWidget = () => {
       setIsTyping(false);
     }, 750);
   };
+
+  const voice = useVoiceSearch({
+    onFinalTranscript: (text) => {
+      if (!text.trim()) return;
+      setInput(text);
+      handleSend(text);
+    },
+  });
+
+  const quickPrompts = [
+    'Hiện vật thời Lý',
+    'Triển lãm đang diễn ra',
+    'Giờ mở cửa bảo tàng',
+    'Giới thiệu về bảo tàng',
+  ];
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
 
   return (
     <div className="bg-white rounded-2xl p-5 shadow-xs border border-gray-100 flex flex-col h-full">
@@ -133,14 +150,39 @@ export const ChatWidget = () => {
       >
         <input
           type="text"
-          value={input}
+          value={voice.listening ? (voice.interimTranscript || 'Đang nghe bạn nói...') : input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Nhập câu hỏi của bạn..."
-          className="flex-1 px-4 py-2.5 bg-gray-50 text-xs rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold focus:bg-white"
+          placeholder={voice.listening ? 'Đang nghe bạn nói...' : 'Nhập câu hỏi của bạn...'}
+          className={`flex-1 px-4 py-2.5 text-xs rounded-full border transition-all ${
+            voice.listening
+              ? 'border-museum-gold bg-amber-50/50 text-museum-brown font-medium'
+              : 'bg-gray-50 border-gray-200 focus:outline-none focus:ring-2 focus:ring-museum-gold focus:bg-white'
+          }`}
         />
+
+        {/* Voice mic button */}
+        {voice.supported && (
+          <button
+            type="button"
+            onClick={voice.listening ? voice.stop : voice.start}
+            aria-label={voice.listening ? 'Dừng nhận giọng nói' : 'Nhập câu hỏi bằng giọng nói'}
+            title={voice.listening ? 'Dừng nghe' : 'Nói câu hỏi (vi-VN)'}
+            className={`min-w-[36px] min-h-[36px] w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer relative ${
+              voice.listening
+                ? 'bg-museum-gold text-white shadow-md animate-pulse'
+                : 'bg-gray-100 hover:bg-museum-cream text-museum-brown'
+            }`}
+          >
+            {voice.listening && (
+              <span className="absolute inset-0 rounded-full bg-museum-gold/40 animate-ping pointer-events-none" />
+            )}
+            <MicIcon className={`w-4 h-4 ${voice.listening ? 'text-white' : 'text-museum-brown'}`} />
+          </button>
+        )}
+
         <button
           type="submit"
-          className="w-9 h-9 bg-museum-brown hover:bg-museum-brown-dk text-white rounded-full flex items-center justify-center transition-colors shadow-sm"
+          className="w-9 h-9 bg-museum-brown hover:bg-museum-brown-dk text-white rounded-full flex items-center justify-center transition-colors shadow-sm cursor-pointer"
         >
           <Send className="w-4 h-4" />
         </button>
