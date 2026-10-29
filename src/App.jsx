@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AppProvider } from '@/context/AppContext';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { NavigationProgress } from '@/components/common/NavigationProgress';
 
 const AppFallback = ({ error, reset }) => (
   <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
@@ -30,6 +31,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AppProvider>
+        <NavigationProgress />
         <ErrorBoundary fallback={AppFallback}>
           <AppRoutes />
         </ErrorBoundary>

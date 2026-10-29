@@ -40,11 +40,10 @@ app = FastAPI(
 )
 
 # Cấu hình CORS — chỉ cho phép domain frontend cụ thể thay vì wildcard
-allowed_origins = [
-    settings.FRONTEND_URL,
-]
+allowed_origins = [origin for origin in [settings.FRONTEND_URL] if origin]
+
 # Cho phép cả localhost variants phổ biến khi dev
-if "localhost" in settings.FRONTEND_URL:
+if not settings.FRONTEND_URL or "localhost" in settings.FRONTEND_URL:
     allowed_origins.extend([
         "http://localhost:5173",
         "http://127.0.0.1:5173",
@@ -55,6 +54,7 @@ if "localhost" in settings.FRONTEND_URL:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.onrender\.com",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -78,7 +78,14 @@ app.include_router(webhooks_router)
 from routers.tts import router as tts_router
 app.include_router(tts_router)
 
+# ── Health check endpoint (dùng để đánh thức Render Free Plan khỏi cold start) ─
+@app.get("/health", tags=["System"])
+async def health_check():
+    """Endpoint nhẹ để frontend ping và đánh thức backend sau khi Render sleep."""
+    return {"status": "ok"}
+
 # ── Schema dữ liệu ─────────────────────────────────────────────────────────
+
 
 class ChatRequest(BaseModel):
     message: str = Field(..., description="Nội dung câu hỏi của du khách")

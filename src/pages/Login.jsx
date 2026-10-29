@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { Mail, Lock, LogIn } from 'lucide-react';
+import { Mail, Lock, LogIn, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 export const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const redirectTarget = searchParams.get('redirect');
   const { login, registerForEvent } = useApp();
@@ -13,11 +14,19 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  const [successNotice, setSuccessNotice] = useState('');
 
+  // Prefill email nếu vừa chuyển hướng từ trang Đăng ký sang
   useEffect(() => {
-    setEmail('');
-    setPassword('');
-  }, []);
+    if (location.state?.registeredEmail) {
+      setEmail(location.state.registeredEmail);
+    }
+    if (location.state?.message) {
+      setSuccessNotice(location.state.message);
+    }
+  }, [location.state]);
 
   const validate = () => {
     const newErrors = {};
@@ -33,51 +42,70 @@ export const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting || loginSuccess) return;
     if (!validate()) return;
 
-    const result = await login(email, password);
-    if (result && result.success) {
-      // Check pending ticket booking
-      const pendingTicket = localStorage.getItem('pending_ticket_booking');
-      if (pendingTicket) {
-        localStorage.removeItem('pending_ticket_booking');
-        navigate('/#tickets');
-        return;
-      }
+    setIsSubmitting(true);
+    setErrors({});
+    setSuccessNotice('');
 
-      // Check pending event registration
-      const pendingReg = localStorage.getItem('pending_event_registration');
-      if (pendingReg) {
-        try {
-          const { eventId } = JSON.parse(pendingReg);
-          localStorage.removeItem('pending_event_registration');
-          registerForEvent(eventId);
-          navigate('/events');
-          return;
-        } catch (err) {
-          console.error('Failed to parse pending event registration', err);
-        }
-      }
+    try {
+      const result = await login(email, password);
+      if (result && result.success) {
+        setLoginSuccess(true);
 
-      const isAdminUser =
-        result.user?.role === 'admin' ||
-        result.user?.roleLabel?.toLowerCase()?.includes('quản trị') ||
-        email.trim().toLowerCase() === 'admin@gmail.com' ||
-        email.trim().toLowerCase().includes('admin');
+        // Chờ 0.5s để người dùng nhìn thấy trạng thái "Đăng nhập thành công" trước khi chuyển hướng
+        setTimeout(() => {
+          // Check pending ticket booking
+          const pendingTicket = localStorage.getItem('pending_ticket_booking');
+          if (pendingTicket) {
+            localStorage.removeItem('pending_ticket_booking');
+            navigate('/#tickets');
+            return;
+          }
 
-      if (redirectTarget && !isAdminUser) {
-        navigate(redirectTarget);
-      } else if (isAdminUser) {
-        navigate('/dashboard');
-      } else if (result.user?.role === 'staff') {
-        navigate('/staff/checkin');
+          // Check pending event registration
+          const pendingReg = localStorage.getItem('pending_event_registration');
+          if (pendingReg) {
+            try {
+              const { eventId } = JSON.parse(pendingReg);
+              localStorage.removeItem('pending_event_registration');
+              registerForEvent(eventId);
+              navigate('/events');
+              return;
+            } catch (err) {
+              console.error('Failed to parse pending event registration', err);
+            }
+          }
+
+          const isAdminUser =
+            result.user?.role === 'admin' ||
+            result.user?.roleLabel?.toLowerCase()?.includes('quản trị') ||
+            email.trim().toLowerCase() === 'admin@gmail.com' ||
+            email.trim().toLowerCase().includes('admin');
+
+          if (redirectTarget && !isAdminUser) {
+            navigate(redirectTarget);
+          } else if (isAdminUser) {
+            navigate('/dashboard');
+          } else if (result.user?.role === 'staff') {
+            navigate('/staff/checkin');
+          } else {
+            navigate('/');
+          }
+        }, 500);
       } else {
-        navigate('/');
+        setIsSubmitting(false);
+        setErrors((prev) => ({
+          ...prev,
+          general: result?.message || 'Email hoặc mật khẩu không chính xác. Vui lòng kiểm tra lại!',
+        }));
       }
-    } else {
+    } catch (err) {
+      setIsSubmitting(false);
       setErrors((prev) => ({
         ...prev,
-        general: result?.message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại!',
+        general: err.message || 'Lỗi kết nối máy chủ, vui lòng thử lại sau ít phút.',
       }));
     }
   };
@@ -97,9 +125,19 @@ export const Login = () => {
         <input type="text" name="fake_email_prevent_autofill" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
         <input type="password" name="fake_password_prevent_autofill" style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
 
+        {/* Thông báo thành công (chuyển từ đăng ký hoặc đăng nhập xong) */}
+        {(successNotice || loginSuccess) && (
+          <div className="p-3.5 bg-emerald-50 text-emerald-800 text-xs sm:text-sm font-semibold rounded-xl border border-emerald-200 flex items-center gap-2 animate-fadeIn shadow-xs">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span>{loginSuccess ? 'Đăng nhập thành công! Đang chuyển hướng...' : successNotice}</span>
+          </div>
+        )}
+
+        {/* Thông báo lỗi đăng nhập thất bại rõ ràng */}
         {errors.general && (
-          <div className="p-3 bg-red-50 text-danger text-xs font-semibold rounded-xl border border-red-200 animate-fadeIn">
-            {errors.general}
+          <div className="p-3.5 bg-red-50 text-red-700 text-xs sm:text-sm font-semibold rounded-xl border border-red-200 flex items-center gap-2 animate-fadeIn shadow-xs">
+            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <span>{errors.general}</span>
           </div>
         )}
 
@@ -175,10 +213,31 @@ export const Login = () => {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full py-3 px-4 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          disabled={isSubmitting || loginSuccess}
+          className={`w-full py-3 px-4 font-bold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            loginSuccess
+              ? 'bg-emerald-600 text-white cursor-default'
+              : isSubmitting
+              ? 'bg-stone-400 text-white cursor-not-allowed'
+              : 'bg-museum-brown hover:bg-museum-brown-dk text-white active:scale-[0.99]'
+          }`}
         >
-          <LogIn className="w-4 h-4" />
-          <span>Đăng nhập</span>
+          {loginSuccess ? (
+            <>
+              <CheckCircle2 className="w-4 h-4 animate-bounce" />
+              <span>Đăng nhập thành công!</span>
+            </>
+          ) : isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Đang xác thực thông tin...</span>
+            </>
+          ) : (
+            <>
+              <LogIn className="w-4 h-4" />
+              <span>Đăng nhập</span>
+            </>
+          )}
         </button>
       </form>
 

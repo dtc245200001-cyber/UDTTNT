@@ -11,7 +11,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700&display=swap" rel="stylesheet">
   </head>
   <body class="bg-museum-ivory text-gray-800 antialiased font-sans">
-    <div id="root"></div>
+    <div id="root">
+      <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #FBF7F0; font-family: 'Be Vietnam Pro', sans-serif;">
+        <div style="width: 52px; height: 52px; border-radius: 50%; background-color: #8B5A1E; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(139,90,30,0.22); animation: museumPulse 1.6s infinite ease-in-out;">
+          <svg style="width: 26px; height: 26px; color: #F5E6B3;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="21" x2="21" y2="21"></line>
+            <line x1="6" y1="21" x2="6" y2="7"></line>
+            <line x1="18" y1="21" x2="18" y2="7"></line>
+            <polygon points="12 2 3 7 21 7 12 2"></polygon>
+          </svg>
+        </div>
+        <div style="margin-top: 14px; font-weight: 800; font-size: 13px; letter-spacing: 0.08em; color: #3E2712; text-transform: uppercase;">
+          Bảo Tàng Quốc Gia Việt Nam
+        </div>
+        <div style="margin-top: 10px; width: 140px; height: 3px; background: #E8DDCC; border-radius: 9999px; overflow: hidden; position: relative;">
+          <div style="width: 45%; height: 100%; background: #8B5A1E; border-radius: 9999px; position: absolute; animation: museumLoading 1.2s infinite ease-in-out;"></div>
+        </div>
+        <style>
+          @keyframes museumPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: 0.9; } }
+          @keyframes museumLoading { 0% { left: -45%; } 100% { left: 100%; } }
+        </style>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

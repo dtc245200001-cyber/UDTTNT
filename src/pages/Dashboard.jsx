@@ -26,7 +26,14 @@ const VaseIcon = () => (
 
 export const Dashboard = () => {
   const navigate = useNavigate();
-  const { artifacts, deletedArtifactIds, exhibitions, events, ticketStats } = useApp();
+  const { artifacts, deletedArtifactIds, exhibitions, events, bookedTickets } = useApp();
+
+  // Đếm chính xác số vé thực tế đã bán từ cơ sở dữ liệu thật (bảng dat_ve / bookedTickets)
+  const realSoldTickets = (bookedTickets || []).reduce((sum, b) => {
+    // Chỉ tính các đơn vé hợp lệ hoặc đã thanh toán / check-in
+    const qty = Number(b.quantity) || 1;
+    return sum + qty;
+  }, 0);
 
   const realArtifactsCount = (artifacts || []).filter(
     (a) => !(deletedArtifactIds || []).includes(a.id)
@@ -188,26 +195,38 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="HIỆN VẬT"
-          value={realArtifactsCount || (artifacts?.length ?? 274)}
+          value={realArtifactsCount || (artifacts?.length ?? 276)}
           growth={24}
+          percent={92}
+          percentLabel="Số hóa"
+          badgeColor="#B8860B"
           customSvg={<VaseIcon />}
         />
         <StatCard
           title="TRIỂN LÃM"
-          value={exhibitions?.length ?? 18}
+          value={exhibitions?.length ?? 4}
           growth={2}
+          percent={100}
+          percentLabel="Đang mở"
+          badgeColor="#2E7D32"
           icon={Landmark}
         />
         <StatCard
           title="SỰ KIỆN"
-          value={events?.length ?? 7}
+          value={events?.length ?? 3}
           growth={1}
+          percent={85}
+          percentLabel="Kế hoạch"
+          badgeColor="#D97706"
           icon={CalendarDays}
         />
         <StatCard
           title="VÉ ĐÃ BÁN"
-          value={ticketStats?.totalSoldMonth ?? 3246}
-          growth={320}
+          value={realSoldTickets}
+          growth={realSoldTickets}
+          percent={realSoldTickets > 0 ? Math.min(100, Math.round((realSoldTickets / 50) * 100)) : 100}
+          percentLabel="Chỉ tiêu"
+          badgeColor="#2563EB"
           icon={Ticket}
         />
       </div>

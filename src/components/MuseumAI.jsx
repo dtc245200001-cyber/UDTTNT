@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useApp } from '@/context/AppContext';
 import { searchArtifacts } from '@/utils/artifactSearch';
-import { sendChatQuery, streamChatQuery } from '@/services/aiChatService';
+import { sendChatQuery, streamChatQuery, wakeUpBackend } from '@/services/aiChatService';
 import { MarkdownMessage } from '@/components/ai/MarkdownMessage';
 import { getFollowUps } from '@/utils/followUpSuggestions';
 import { ChatArtifactCards } from '@/components/ai/ChatArtifactCards';
@@ -37,22 +37,7 @@ const MicIcon = ({ className = 'w-4 h-4' }) => (
   </svg>
 );
 
-const isArtifactSearchQuery = (rawText) => {
-  if (!rawText) return false;
-  const q = removeVietnameseTones(rawText).toLowerCase().trim();
-  const prefixes = [
-    'tim ', 'tim kiem ', 'cho toi xem ', 'cho minh xem ', 'cho em xem ', 
-    'cho xem ', 'toi muon xem ', 'muon xem ', 'co hien vat ', 'xem hien vat ', 'hay tim '
-  ];
-  if (prefixes.some((p) => q.startsWith(p))) return true;
-  const keywords = [
-    'hien vat', 'bao vat', 'co vat', 'trong dong', 'do gom', 'do da', 'vu khi', 
-    'dong son', 'thoi ly', 'hung vuong', 'thoi tran', 'thoi nguyen', 'thoi le', 
-    'tien su', 'ngoc lu', 'canh thinh', 'hoang ha', 'dao thinh', 'bang gom', 
-    'bang dong', 'bang da', 'bang vang', 'bang go'
-  ];
-  return keywords.some((k) => q.includes(k));
-};
+
 
 import {
   Bot,
@@ -211,9 +196,15 @@ export const MuseumAI = () => {
     }
   }, [messages, isOpen, isSearching]);
 
-  // Focus ô nhập khi mở widget
-  useEffect(() => {
+  // Wake-up backend khi component mount (đánh thức Render Free Plan khỏi sleep)
+  React.useEffect(() => {
+    wakeUpBackend();
+  }, []);
+
+  // Focus ô nhập khi mở widget + wake-up lần nữa (phòng ngủ lại)
+  React.useEffect(() => {
     if (isOpen) {
+      wakeUpBackend(); // Ping lại khi user mở chat
       setTimeout(() => {
         inputRef.current?.focus();
       }, 200);
@@ -292,13 +283,13 @@ export const MuseumAI = () => {
       return;
     }
 
-    // 2. TÌM KIẾM HIỆN VẬT BẰNG GIỌNG NÓI HOẶC TỪ KHÓA TÌM KIẾM
-    const isVoice = Boolean(options.isVoice);
-    const isSearchIntent = isVoice || isArtifactSearchQuery(textToSend);
+    // 2. CHỈ TÌM KIẾM THỦ CÔNG KHI CÓ LỆNH RÕ RÀNG (ví dụ: "/tim " hoặc "tra cứu:")
+    const isExplicitSearch = textToSend.startsWith('/tim ') || textToSend.toLowerCase().startsWith('tra cứu:');
 
-    if (isSearchIntent) {
-      setStatusText('Trợ lý AI đang tìm kiếm hiện vật bảo tàng...');
-      const searchResult = smartSearchArtifacts(textToSend, artifacts, categories);
+    if (isExplicitSearch) {
+      const cleanSearchQuery = textToSend.replace(/^(\/tim |tra cứu:\s*)/i, '').trim();
+      setStatusText('Đang tra cứu hiện vật...');
+      const searchResult = smartSearchArtifacts(cleanSearchQuery, artifacts, categories);
       const matched = searchResult.results || [];
 
       if (matched.length > 0) {
@@ -337,12 +328,11 @@ export const MuseumAI = () => {
         }, 400);
         return;
       } else {
-        // Không tìm thấy kết quả
         const suggestions = (searchResult.suggestions && searchResult.suggestions.length > 0)
           ? searchResult.suggestions
           : ['Trống đồng Ngọc Lũ', 'Đồ gốm thời Lý-Trần', 'Vũ khí Đông Sơn'];
 
-        let aiText = `Mình chưa tìm thấy hiện vật nào phù hợp với từ khóa **"${textToSend}"** trong cơ sở dữ liệu bảo tàng.\n\nBạn hãy thử nói lại hoặc bấm vào các gợi ý hiện vật bên dưới nhé:`;
+        let aiText = `Mình chưa tìm thấy hiện vật nào phù hợp với từ khóa **"${cleanSearchQuery}"** trong cơ sở dữ liệu bảo tàng.\n\nBạn hãy thử bấm vào các gợi ý hiện vật bên dưới nhé:`;
 
         const aiMsg = {
           id: aiMsgId,
