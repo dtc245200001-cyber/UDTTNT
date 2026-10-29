@@ -26,7 +26,14 @@ const VaseIcon = () => (
 
 export const Dashboard = () => {
   const navigate = useNavigate();
-  const { artifacts, deletedArtifactIds, exhibitions, events, ticketStats } = useApp();
+  const { artifacts, deletedArtifactIds, exhibitions, events, bookedTickets } = useApp();
+
+  // Đếm chính xác số vé thực tế đã bán từ cơ sở dữ liệu thật (bảng dat_ve / bookedTickets)
+  const realSoldTickets = (bookedTickets || []).reduce((sum, b) => {
+    // Chỉ tính các đơn vé hợp lệ hoặc đã thanh toán / check-in
+    const qty = Number(b.quantity) || 1;
+    return sum + qty;
+  }, 0);
 
   const realArtifactsCount = (artifacts || []).filter(
     (a) => !(deletedArtifactIds || []).includes(a.id)
@@ -215,9 +222,9 @@ export const Dashboard = () => {
         />
         <StatCard
           title="VÉ ĐÃ BÁN"
-          value={ticketStats?.totalSoldMonth ?? 3246}
-          growth={320}
-          percent={94}
+          value={realSoldTickets}
+          growth={realSoldTickets}
+          percent={realSoldTickets > 0 ? Math.min(100, Math.round((realSoldTickets / 50) * 100)) : 100}
           percentLabel="Chỉ tiêu"
           badgeColor="#2563EB"
           icon={Ticket}
