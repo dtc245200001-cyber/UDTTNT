@@ -28,6 +28,7 @@ from core.config import settings
 from services.dynamic_keywords import dynamic_keyword_service, strip_accents
 from services.live_data_tools import (
     get_trien_lam_dang_dien_ra,
+    get_trien_lam_sap_dien_ra,
     get_trien_lam_da_ket_thuc,
     get_thong_ke_tong_quan,
     get_ve_gia_va_con_cho,
@@ -82,6 +83,12 @@ STRUCTURED_INTENTS = {
         r"\b(da dien ra|da ket thuc|tung to chuc|truoc day).*trien lam\b",
         r"\btrien lam da ket thuc\b", r"\bcac trien lam da ket thuc\b",
         r"\btrien lam da dien ra\b", r"\bcac trien lam da dien ra\b"
+    ],
+    "trien_lam_sap_dien_ra": [
+        r"\btrien lam.*(sap dien ra|sap toi|tuong lai|chuan bi)\b",
+        r"\b(sap dien ra|sap toi|chuan bi).*trien lam\b",
+        r"\btrien lam sap dien ra\b", r"\bcac trien lam sap dien ra\b",
+        r"\btrien lam sap toi\b"
     ],
     "trien_lam": [
         r"\bcac trien lam\b", r"\bnhung trien lam\b", r"\bdanh sach trien lam\b",
@@ -330,6 +337,8 @@ class RAGRouter:
                 direct_data = await asyncio.to_thread(get_ve_gia_va_con_cho)
             elif intent in ("trien_lam_da_ket_thuc", "trien_lam_da_dien_ra"):
                 direct_data = await asyncio.to_thread(get_trien_lam_da_ket_thuc)
+            elif intent in ("trien_lam_sap_dien_ra",):
+                direct_data = await asyncio.to_thread(get_trien_lam_sap_dien_ra)
             elif intent in ("trien_lam", "trien_lam_dang_dien_ra"):
                 direct_data = await asyncio.to_thread(get_trien_lam_dang_dien_ra)
             elif intent in ("su_kien_da_dien_ra",):

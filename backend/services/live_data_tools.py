@@ -408,6 +408,50 @@ def get_trien_lam_da_ket_thuc() -> dict:
         return {"status": "error", "message": str(e), "exhibitions": []}
 
 
+def get_trien_lam_sap_dien_ra() -> dict:
+    """
+    Tra cứu các triển lãm sắp diễn ra từ bảng trien_lam.
+    """
+    hit = _live_cache.get("trien_lam_sap_dien_ra")
+    if hit:
+        return hit
+    try:
+        result = supabase_admin.table("trien_lam").select("*").execute()
+        items = result.data or []
+        upcoming_items = [
+            ex for ex in items
+            if any(k in (ex.get("status") or "").lower() for k in ("sắp diễn ra", "sap dien ra", "chuẩn bị", "chuan bi"))
+        ]
+        if not upcoming_items:
+            return {
+                "status": "no_data",
+                "message": "Hiện chưa có triển lãm mới nào trong danh sách sắp diễn ra.",
+                "exhibitions": []
+            }
+        res = {
+            "status": "ok",
+            "exhibitions": [
+                {
+                    "id": ex.get("id"),
+                    "name": ex.get("name", ""),
+                    "status": ex.get("status", "Sắp diễn ra"),
+                    "start_date": ex.get("start_date", ""),
+                    "end_date": ex.get("end_date", ""),
+                    "location": ex.get("location", ""),
+                    "artifacts_count": ex.get("artifacts_count", 0),
+                    "image": ex.get("image", ""),
+                    "description": (ex.get("description") or "")[:200],
+                }
+                for ex in upcoming_items
+            ],
+            "summary": f"Có {len(upcoming_items)} triển lãm sắp diễn ra."
+        }
+        _live_cache["trien_lam_sap_dien_ra"] = res
+        return res
+    except Exception as e:
+        return {"status": "error", "message": str(e), "exhibitions": []}
+
+
 def get_su_kien_da_dien_ra() -> dict:
     """
     Tra cứu các sự kiện đã diễn ra từ bảng su_kien.
@@ -501,6 +545,7 @@ FUNCTION_MAP = {
     "get_su_kien_sap_dien_ra": get_su_kien_sap_dien_ra,
     "get_su_kien_da_dien_ra": get_su_kien_da_dien_ra,
     "get_trien_lam_dang_dien_ra": get_trien_lam_dang_dien_ra,
+    "get_trien_lam_sap_dien_ra": get_trien_lam_sap_dien_ra,
     "get_trien_lam_da_ket_thuc": get_trien_lam_da_ket_thuc,
     "get_chuyen_de_trung_bay": get_chuyen_de_trung_bay,
     "get_chuyen_de_da_dien_ra": get_chuyen_de_da_dien_ra,

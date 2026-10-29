@@ -131,13 +131,50 @@ class EntityLinkingService:
             return ["AV221", "AV019", "AV020", "AV003", "AV002", "AV001"]
 
         # Trường hợp 2: Trích xuất trực tiếp từ câu trả lời của Bot
-        linked_ids = self.link_artifacts_from_text(answer_text, max_items=4)
+        linked_ids = self.link_artifacts_from_text(answer_text, max_items=5)
         if linked_ids:
             return linked_ids
 
         # Trường hợp 3: Câu nối tiếp có ID hiện vật từ lượt trước
         if context_id and context_id in self._artifacts_by_id:
             return [context_id]
+
+        # Trường hợp 4: Lấy từ retrieved_ids từ context RAG nếu có
+        if retrieved_ids:
+            valid_retrieved = [rid for rid in retrieved_ids if rid in self._artifacts_by_id]
+            if valid_retrieved:
+                return valid_retrieved[:4]
+
+        # Trường hợp 5: Tra cứu theo từ khóa chủ đề/thời kỳ trong câu trả lời
+        norm_ans = strip_accents(answer_text)
+        topic_matches: List[str] = []
+        TOPIC_KEYWORDS = {
+            "dong son": ["AV002", "AV001", "AV003"],
+            "trong dong": ["AV002", "AV001", "AV003"],
+            "thoi ly": ["AV175", "AV250", "AV012"],
+            "thoi tran": ["AV175", "AV012"],
+            "trieu nguyen": ["AV019", "AV020", "AV221"],
+            "nha nguyen": ["AV019", "AV020", "AV221"],
+            "dien bien": ["AV006", "AV089", "AV151"],
+            "bat trang": ["AV004", "AV243"],
+            "do gom": ["AV004", "AV243", "AV175"],
+            "gom": ["AV004", "AV243", "AV175"],
+            "phat giao": ["AV250", "AV175", "AV012"],
+            "bao vat quoc gia": ["AV001", "AV002", "AV003", "AV019", "AV020"],
+            "khang chien": ["AV006", "AV089", "AV151"],
+            "thi dua": ["AV006", "AV151"],
+            "rong": ["AV012", "AV019", "AV175"]
+        }
+        for kw, aids in TOPIC_KEYWORDS.items():
+            if kw in norm_ans:
+                for aid in aids:
+                    if aid not in topic_matches and aid in self._artifacts_by_id:
+                        topic_matches.append(aid)
+                if len(topic_matches) >= 4:
+                    break
+
+        if topic_matches:
+            return topic_matches[:4]
 
         return []
 
