@@ -40,11 +40,10 @@ app = FastAPI(
 )
 
 # Cấu hình CORS — chỉ cho phép domain frontend cụ thể thay vì wildcard
-allowed_origins = [
-    settings.FRONTEND_URL,
-]
+allowed_origins = [origin for origin in [settings.FRONTEND_URL] if origin]
+
 # Cho phép cả localhost variants phổ biến khi dev
-if "localhost" in settings.FRONTEND_URL:
+if not settings.FRONTEND_URL or "localhost" in settings.FRONTEND_URL:
     allowed_origins.extend([
         "http://localhost:5173",
         "http://127.0.0.1:5173",
@@ -55,6 +54,7 @@ if "localhost" in settings.FRONTEND_URL:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.onrender\.com",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

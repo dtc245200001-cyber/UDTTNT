@@ -6,6 +6,7 @@ services:
     name: museum-backend
     env: python
     region: singapore
+    plan: free
     buildCommand: "cd backend && pip install --no-cache-dir -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu"
     startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
@@ -20,10 +21,7 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: FRONTEND_URL
-        fromService:
-          name: museum-frontend
-          type: web
-          property: url
+        sync: false
 
   # ----------------------------------------------------
   # 2. Frontend React/Vite (Static Site)
@@ -31,7 +29,6 @@ services:
   - type: web
     name: museum-frontend
     env: static
-    region: singapore
     buildCommand: "npm install && npm run build"
     staticPublishPath: "./dist"
     routes:
@@ -40,10 +37,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          name: museum-backend
-          type: web
-          property: url
+        sync: false
       - key: VITE_SUPABASE_URL
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
