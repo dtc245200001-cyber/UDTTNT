@@ -80,8 +80,9 @@ app.include_router(tts_router)
 
 # ── Health check endpoint (dùng để đánh thức Render Free Plan khỏi cold start) ─
 @app.get("/health", tags=["System"])
+@app.head("/health", tags=["System"])
 async def health_check():
-    """Endpoint nhẹ để frontend ping và đánh thức backend sau khi Render sleep."""
+    """Endpoint nhẹ để frontend & UptimeRobot ping đánh thức backend sau khi Render sleep."""
     return {"status": "ok"}
 
 # ── Schema dữ liệu ─────────────────────────────────────────────────────────
