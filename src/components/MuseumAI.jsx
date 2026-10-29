@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { useApp } from '@/context/AppContext';
 import { searchArtifacts } from '@/utils/artifactSearch';
-import { sendChatQuery, streamChatQuery } from '@/services/aiChatService';
+import { sendChatQuery, streamChatQuery, wakeUpBackend } from '@/services/aiChatService';
 import { MarkdownMessage } from '@/components/ai/MarkdownMessage';
 import { getFollowUps } from '@/utils/followUpSuggestions';
 import { ChatArtifactCards } from '@/components/ai/ChatArtifactCards';
@@ -173,9 +173,15 @@ export const MuseumAI = () => {
     }
   }, [messages, isOpen, isSearching]);
 
-  // Focus ô nhập khi mở widget
-  useEffect(() => {
+  // Wake-up backend khi component mount (đánh thức Render Free Plan khỏi sleep)
+  React.useEffect(() => {
+    wakeUpBackend();
+  }, []);
+
+  // Focus ô nhập khi mở widget + wake-up lần nữa (phòng ngủ lại)
+  React.useEffect(() => {
     if (isOpen) {
+      wakeUpBackend(); // Ping lại khi user mở chat
       setTimeout(() => {
         inputRef.current?.focus();
       }, 200);

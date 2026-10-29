@@ -3,9 +3,38 @@
  * Hỗ trợ cả 2 chế độ:
  *  - sendChatQuery()   : Non-streaming (dự phòng, tương thích ngược)
  *  - streamChatQuery() : Streaming SSE (trải nghiệm typing realtime)
+ *
+ * Fix cold start Render Free Plan:
+ *  - wakeUpBackend() : Ping server để đánh thức trước khi chat
+ *  - Timeout tăng lên 90s (đủ cho Render cold start ~50-90s)
  */
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+
+// Biến để tránh ping nhiều lần liên tiếp
+let _wakeUpPromise = null;
+let _lastWakeUp = 0;
+
+/**
+ * Ping backend để đánh thức khỏi trạng thái sleep (Render Free Plan).
+ * Gọi khi app khởi động và khi user mở chat widget.
+ * Debounce 60 giây để không spam.
+ */
+export const wakeUpBackend = () => {
+  const now = Date.now();
+  // Nếu đã ping trong vòng 60s thì bỏ qua
+  if (now - _lastWakeUp < 60_000 && _wakeUpPromise) return _wakeUpPromise;
+
+  _lastWakeUp = now;
+  _wakeUpPromise = fetch(`${API_BASE_URL}/health`, {
+    method: 'GET',
+    signal: AbortSignal.timeout(10_000), // 10s timeout cho ping
+  })
+    .then(() => console.info('[AI Wake-up] Backend đã sẵn sàng ✅'))
+    .catch(() => console.info('[AI Wake-up] Backend đang khởi động, vui lòng chờ... ⏳'));
+
+  return _wakeUpPromise;
+};
 
 /**
  * Chuyển đổi messages sang định dạng history cho Backend.
@@ -80,10 +109,10 @@ export const streamChatQuery = (message, history = [], onChunk, onDone, onError,
   const controller = new AbortController();
   let isManualAbort = false;
 
-  // Timeout 45s (đủ cho Render cold start nhưng không để treo vô tận)
+  // Timeout 90s (đủ cho Render Free Plan cold start ~50-90s)
   const timeoutId = setTimeout(() => {
     controller.abort('TIMEOUT');
-  }, 45000);
+  }, 90000);
 
   const run = async () => {
     try {

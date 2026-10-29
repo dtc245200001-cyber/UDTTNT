@@ -75,7 +75,14 @@ app.include_router(trien_lam_router)
 from routers.webhooks import router as webhooks_router
 app.include_router(webhooks_router)
 
+# ── Health check endpoint (dùng để đánh thức Render Free Plan khỏi cold start) ─
+@app.get("/health", tags=["System"])
+async def health_check():
+    """Endpoint nhẹ để frontend ping và đánh thức backend sau khi Render sleep."""
+    return {"status": "ok"}
+
 # ── Schema dữ liệu ─────────────────────────────────────────────────────────
+
 
 class ChatRequest(BaseModel):
     message: str = Field(..., description="Nội dung câu hỏi của du khách")
