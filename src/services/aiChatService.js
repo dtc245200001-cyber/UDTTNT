@@ -72,6 +72,12 @@ export const sendChatQuery = async (message, history = []) => {
  */
 export const streamChatQuery = (message, history = [], onChunk, onDone, onError, onArtifacts, onStatus, onSources, onRelatedItems) => {
   const controller = new AbortController();
+  let isManualAbort = false;
+
+  // Timeout 45s (đủ cho Render cold start nhưng không để treo vô tận)
+  const timeoutId = setTimeout(() => {
+    controller.abort('TIMEOUT');
+  }, 45000);
 
   const run = async () => {
     try {
@@ -84,6 +90,8 @@ export const streamChatQuery = (message, history = [], onChunk, onDone, onError,
         }),
         signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
@@ -165,12 +173,18 @@ export const streamChatQuery = (message, history = [], onChunk, onDone, onError,
 
       onDone?.();
     } catch (error) {
-      if (error.name === 'AbortError') return; // Người dùng hủy chủ động
-      console.warn('[AI Stream Service] Lỗi streaming:', error.message);
-      onError?.(error.message);
+      clearTimeout(timeoutId);
+      if (isManualAbort) return; // Người dùng chủ động hủy
+      const errorMsg = controller.signal.aborted ? 'Kết nối máy chủ bị quá thời gian (timeout)' : (error.message || 'Lỗi kết nối API');
+      console.warn('[AI Stream Service] Lỗi streaming:', errorMsg);
+      onError?.(errorMsg);
     }
   };
 
   run();
-  return () => controller.abort();
+  return () => {
+    isManualAbort = true;
+    clearTimeout(timeoutId);
+    controller.abort();
+  };
 };
