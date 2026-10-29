@@ -22,6 +22,9 @@ function formatHistory(messages) {
  * Giữ nguyên để làm dự phòng khi streaming không khả dụng.
  */
 export const sendChatQuery = async (message, history = []) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort('TIMEOUT'), 15000);
+
   try {
     const response = await fetch(`${API_BASE_URL}/api/chat`, {
       method: 'POST',
@@ -30,7 +33,9 @@ export const sendChatQuery = async (message, history = []) => {
         message,
         history: formatHistory(history),
       }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
@@ -45,6 +50,7 @@ export const sendChatQuery = async (message, history = []) => {
       artifactIds: data.artifact_ids || [],
     };
   } catch (error) {
+    clearTimeout(timeoutId);
     console.warn('[AI Chat Service] Lỗi kết nối backend:', error.message);
     return {
       success: false,
