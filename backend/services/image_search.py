@@ -1,9 +1,14 @@
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-import torch
-import torchvision.transforms as transforms
-import torchvision.models as models
+try:
+    import torch
+    import torchvision.transforms as transforms
+    import torchvision.models as models
+except ImportError:
+    torch = None
+    transforms = None
+    models = None
 from PIL import Image
 import numpy as np
 import logging

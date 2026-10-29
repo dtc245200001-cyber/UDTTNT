@@ -18,6 +18,16 @@ import { ItemDetailModal } from '@/components/ai/ItemDetailModal';
 import { useVoiceSearch } from '@/hooks/useVoiceSearch';
 import { searchArtifacts as smartSearchArtifacts, removeVietnameseTones } from '@/lib/searchArtifacts';
 import { searchArtifactByImage } from '@/lib/searchArtifactByImage';
+import {
+  narrator,
+  useNarrator,
+  NarrationMessageButton,
+  NarrationHeaderControls,
+  NoVoiceBanner,
+  getAutoNarrateSetting,
+  setAutoNarrateSetting,
+} from '@/components/ai/NarrationControls';
+import { toGuideNarration } from '@/lib/narrationScript';
 
 const MicIcon = ({ className = 'w-4 h-4' }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -71,6 +81,19 @@ export const MuseumAI = () => {
   // nên đọc ref để biết chính xác có bị interrupted khi stream kết thúc.
   const interruptedRef = useRef(false);
   const abortStreamRef = useRef(null);
+
+  // Thuyết minh AI bằng giọng nói (TTS)
+  const [autoNarrate, setAutoNarrate] = useState(getAutoNarrateSetting);
+  const { status: narrationStatus, currentId: narratingId, noVietnameseVoice, stop: stopNarration } = useNarrator();
+  const [showNoVoiceBanner, setShowNoVoiceBanner] = useState(true);
+
+  const handleToggleAutoNarrate = (val) => {
+    setAutoNarrate(val);
+    setAutoNarrateSetting(val);
+    if (!val) {
+      stopNarration();
+    }
+  };
 
   // Kích thước widget
   const [dimensions, setDimensions] = useState({ w: 380, h: 600 });

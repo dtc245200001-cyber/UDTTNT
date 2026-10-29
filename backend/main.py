@@ -75,6 +75,9 @@ app.include_router(trien_lam_router)
 from routers.webhooks import router as webhooks_router
 app.include_router(webhooks_router)
 
+from routers.tts import router as tts_router
+app.include_router(tts_router)
+
 # ── Health check endpoint (dùng để đánh thức Render Free Plan khỏi cold start) ─
 @app.get("/health", tags=["System"])
 async def health_check():

@@ -10,6 +10,16 @@ import { ArtifactDetailModal } from '@/components/artifacts/ArtifactDetailModal'
 import { searchArtifacts } from '@/utils/artifactSearch';
 import { getFollowUps } from '@/utils/followUpSuggestions';
 import { resolveChatArtifacts } from '@/utils/normalizeArtifact';
+import {
+  narrator,
+  useNarrator,
+  NarrationMessageButton,
+  NarrationHeaderControls,
+  NoVoiceBanner,
+  getAutoNarrateSetting,
+  setAutoNarrateSetting,
+} from '@/components/ai/NarrationControls';
+import { toGuideNarration } from '@/lib/narrationScript';
 import { useApp } from '@/context/AppContext';
 
 export const AiAssistant = () => {
