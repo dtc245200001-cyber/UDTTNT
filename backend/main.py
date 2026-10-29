@@ -75,6 +75,9 @@ app.include_router(trien_lam_router)
 from routers.webhooks import router as webhooks_router
 app.include_router(webhooks_router)
 
+from routers.tts import router as tts_router
+app.include_router(tts_router)
+
 # ── Schema dữ liệu ─────────────────────────────────────────────────────────
 
 class ChatRequest(BaseModel):

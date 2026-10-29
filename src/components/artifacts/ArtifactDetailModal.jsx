@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, MapPin, Calendar, Tag, Info, Landmark, Pencil, Heart } from 'lucide-react';
+import { X, MapPin, Calendar, Tag, Info, Landmark, Pencil, Heart, Volume2, Square } from 'lucide-react';
+import { useNarrator } from '@/components/ai/NarrationControls';
+import { toGuideNarration } from '@/lib/narrationScript';
 import { useApp } from '@/context/AppContext';
 
 export const ArtifactDetailModal = ({ artifact, isOpen, onClose, onEdit }) => {
@@ -9,6 +11,29 @@ export const ArtifactDetailModal = ({ artifact, isOpen, onClose, onEdit }) => {
 
   const isFav = artifact ? (userFavorites || []).includes(artifact.id) : false;
   const itemLikes = artifact ? (favoritesSummary?.artifact_likes?.[artifact.id] || 0) : 0;
+  const { status, currentId, speak, stop } = useNarrator();
+  const narrationId = artifact ? `modal-${artifact.id}` : '';
+  const isNarrating = currentId === narrationId && (status === 'speaking' || status === 'loading');
+
+  const locationText =
+    artifact?.location ||
+    (artifact?.displayLocation
+      ? `${artifact.displayLocation.floor} · ${artifact.displayLocation.room} · ${artifact.displayLocation.shelf}`
+      : 'Tầng 1 · Phòng A · Kệ 01');
+
+  const handleNarrate = () => {
+    if (!artifact) return;
+    if (isNarrating) {
+      stop();
+    } else {
+      const description = artifact.description || `${artifact.name}, thời kỳ ${artifact.period || artifact.culture || 'cổ vật'}, vị trí trưng bày ${locationText}.`;
+      const guided = toGuideNarration(description, {
+        artifactName: artifact.name,
+        hasArtifacts: true,
+      });
+      speak(guided, { id: narrationId });
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -21,17 +46,15 @@ export const ArtifactDetailModal = ({ artifact, isOpen, onClose, onEdit }) => {
     return () => {
       document.body.style.overflow = 'unset';
       window.removeEventListener('keydown', handleKeyDown);
+      stop();
     };
   }, [isOpen, onClose]);
 
   if (!isOpen || !artifact) return null;
 
-  // Helper for displaying virtual location text
-  const locationText =
-    artifact?.location ||
-    (artifact?.displayLocation
-      ? `${artifact.displayLocation.floor} · ${artifact.displayLocation.room} · ${artifact.displayLocation.shelf}`
-      : 'Tầng 1 · Phòng A · Kệ 01');
+
+
+
 
   return (
     <div
@@ -129,10 +152,41 @@ export const ArtifactDetailModal = ({ artifact, isOpen, onClose, onEdit }) => {
 
           {/* Detailed Description */}
           <div className="space-y-2">
-            <h4 className="font-extrabold text-xs uppercase tracking-wider text-museum-brown/80 flex items-center gap-1.5">
+            <div className="flex items-center justify-between">
+              <h4 className="font-extrabold text-xs uppercase tracking-wider text-museum-brown/80 flex items-center gap-1.5">
               <Info className="w-4 h-4 text-museum-gold" />
               <span>MÔ TẢ CHI TIẾT</span>
-            </h4>
+              </h4>
+              <button
+                type="button"
+                onClick={handleNarrate}
+                aria-label={isNarrating ? "Dừng thuyết minh hiện vật" : "Nghe thuyết minh hiện vật"}
+                className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                  isNarrating
+                    ? 'bg-museum-gold text-white border-museum-gold shadow-xs'
+                    : 'bg-museum-cream/80 hover:bg-museum-gold hover:text-white text-museum-brown border-museum-gold/30'
+                }`}
+              >
+                {isNarrating ? (
+                  status === 'loading' ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Đang chuẩn bị...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Square className="w-3 h-3 fill-current" />
+                      <span>Dừng thuyết minh</span>
+                    </>
+                  )
+                ) : (
+                  <>
+                    <Volume2 className="w-3.5 h-3.5 text-museum-gold" />
+                    <span>Nghe thuyết minh</span>
+                  </>
+                )}
+              </button>
+            </div>
             <div className="p-4 sm:p-5 bg-gray-50 rounded-2xl border border-gray-100 text-xs sm:text-sm text-gray-700 leading-relaxed font-normal whitespace-pre-line shadow-inner">
               {artifact.description || 'Chưa có thông tin mô tả chi tiết cho hiện vật này.'}
             </div>

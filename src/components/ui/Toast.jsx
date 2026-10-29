@@ -1,9 +1,24 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 export const ToastContainer = () => {
-  const { toasts, removeToast } = useApp();
+  const { toasts, removeToast, addToast } = useApp();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.__ttsCustomToast = true;
+    const handleTtsError = (e) => {
+      const msg = e?.detail?.message;
+      if (msg && addToast) {
+        addToast(msg, 'error');
+      }
+    };
+    window.addEventListener('tts-error', handleTtsError);
+    return () => {
+      window.removeEventListener('tts-error', handleTtsError);
+    };
+  }, [addToast]);
 
   if (!toasts.length) return null;
 
