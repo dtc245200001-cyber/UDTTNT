@@ -188,26 +188,38 @@ export const Dashboard = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="HIỆN VẬT"
-          value={realArtifactsCount || (artifacts?.length ?? 274)}
+          value={realArtifactsCount || (artifacts?.length ?? 276)}
           growth={24}
+          percent={92}
+          percentLabel="Số hóa"
+          badgeColor="#B8860B"
           customSvg={<VaseIcon />}
         />
         <StatCard
           title="TRIỂN LÃM"
-          value={exhibitions?.length ?? 18}
+          value={exhibitions?.length ?? 4}
           growth={2}
+          percent={100}
+          percentLabel="Đang mở"
+          badgeColor="#2E7D32"
           icon={Landmark}
         />
         <StatCard
           title="SỰ KIỆN"
-          value={events?.length ?? 7}
+          value={events?.length ?? 3}
           growth={1}
+          percent={85}
+          percentLabel="Kế hoạch"
+          badgeColor="#D97706"
           icon={CalendarDays}
         />
         <StatCard
           title="VÉ ĐÃ BÁN"
           value={ticketStats?.totalSoldMonth ?? 3246}
           growth={320}
+          percent={94}
+          percentLabel="Chỉ tiêu"
+          badgeColor="#2563EB"
           icon={Ticket}
         />
       </div>
