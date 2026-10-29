@@ -28,10 +28,13 @@ from core.config import settings
 from services.dynamic_keywords import dynamic_keyword_service, strip_accents
 from services.live_data_tools import (
     get_trien_lam_dang_dien_ra,
+    get_trien_lam_da_ket_thuc,
     get_thong_ke_tong_quan,
     get_ve_gia_va_con_cho,
     get_su_kien_sap_dien_ra,
+    get_su_kien_da_dien_ra,
     get_chuyen_de_trung_bay,
+    get_chuyen_de_da_dien_ra,
     get_danh_gia_tong_quan,
 )
 
@@ -74,20 +77,48 @@ STRUCTURED_INTENTS = {
         r"\bve nguoi lon\b", r"\bve tre em\b", r"\bmien phi ve\b",
         r"\bbang ban nhung loai ve\b", r"\bco ban nhung loai ve\b"
     ],
+    "trien_lam_da_ket_thuc": [
+        r"\btrien lam.*(da dien ra|da ket thuc|tung to chuc|truoc day|trong qua khu)\b",
+        r"\b(da dien ra|da ket thuc|tung to chuc|truoc day).*trien lam\b",
+        r"\btrien lam da ket thuc\b", r"\bcac trien lam da ket thuc\b",
+        r"\btrien lam da dien ra\b", r"\bcac trien lam da dien ra\b"
+    ],
     "trien_lam": [
         r"\bcac trien lam\b", r"\bnhung trien lam\b", r"\bdanh sach trien lam\b",
         r"\btrien lam nao dang\b", r"\btrien lam hien tai\b", r"\bco trien lam gi\b",
-        r"\btrien lam dang mo\b", r"\btrien lam dang dien ra\b"
+        r"\btrien lam dang mo\b", r"\btrien lam dang dien ra\b",
+        r"\btrien lam cua bao tang\b", r"\bcac trien lam cua bao tang\b"
+    ],
+    "su_kien_da_dien_ra": [
+        r"\bsu kien.*(da dien ra|da ket thuc|tung to chuc|truoc day|trong qua khu)\b",
+        r"\b(da dien ra|da ket thuc|tung to chuc|truoc day).*su kien\b",
+        r"\bsu kien da dien ra\b", r"\bcac su kien da dien ra\b",
+        r"\bsu kien da ket thuc\b"
     ],
     "su_kien": [
         r"\bcac su kien\b", r"\bnhung su kien\b", r"\bdanh sach su kien\b",
         r"\bsu kien sap toi\b", r"\bsu kien sap dien ra\b", r"\blich su kien\b",
-        r"\bco su kien gi\b", r"\btuan nay co su kien gi\b", r"\bsap co su kien gi\b"
+        r"\bco su kien gi\b", r"\btuan nay co su kien gi\b", r"\bsap co su kien gi\b",
+        r"\bsu kien cua bao tang\b"
+    ],
+    "chuyen_de_da_dien_ra": [
+        r"\bchuyen de.*(da dien ra|da ket thuc|tung to chuc|truoc day|trong qua khu)\b",
+        r"\b(da dien ra|da ket thuc|tung to chuc|truoc day).*chuyen de\b",
+        r"\bphong trung bay.*(da dien ra|da ket thuc|tung to chuc)\b",
+        r"\b(da dien ra|da ket thuc).*phong trung bay\b",
+        r"\bchuyen de da dien ra\b", r"\bcac chuyen de da dien ra\b",
+        r"\bnhung chuyen de da dien ra\b", r"\bdanh sach chuyen de da dien ra\b",
+        r"\bchuyen de da ket thuc\b", r"\bcac chuyen de da ket thuc\b",
+        r"\bchuyen de da qua\b"
     ],
     "chuyen_de": [
+        r"\bchuyen de.*(dang dien ra|hien tai|dang mo|moi nhat)\b",
+        r"\b(dang dien ra|hien tai).*chuyen de\b",
         r"\bcac chuyen de\b", r"\bnhung chuyen de\b", r"\bdanh sach chuyen de\b",
         r"\bchuyen de trung bay nao\b", r"\bchuyen de noi bat\b",
-        r"\bcac phong trung bay\b", r"\bco nhung chuyen de nao\b"
+        r"\bchuyen de cua bao tang\b", r"\bcac chuyen de cua bao tang\b",
+        r"\bcac phong trung bay\b", r"\bco nhung chuyen de nao\b",
+        r"\bphong trung bay chuyen de\b"
     ],
     "danh_gia": [
         r"\bdanh gia\b", r"\bnhan xet\b", r"\bfeedback\b", r"\breview\b",
@@ -297,11 +328,17 @@ class RAGRouter:
             direct_data = None
             if intent in ("gia_ve", "ve_tham_quan"):
                 direct_data = await asyncio.to_thread(get_ve_gia_va_con_cho)
+            elif intent in ("trien_lam_da_ket_thuc", "trien_lam_da_dien_ra"):
+                direct_data = await asyncio.to_thread(get_trien_lam_da_ket_thuc)
             elif intent in ("trien_lam", "trien_lam_dang_dien_ra"):
                 direct_data = await asyncio.to_thread(get_trien_lam_dang_dien_ra)
+            elif intent in ("su_kien_da_dien_ra",):
+                direct_data = await asyncio.to_thread(get_su_kien_da_dien_ra)
             elif intent in ("su_kien", "su_kien_sap_dien_ra"):
                 direct_data = await asyncio.to_thread(get_su_kien_sap_dien_ra)
-            elif intent in ("chuyen_de", "chuyen_de_trung_bay"):
+            elif intent in ("chuyen_de_da_dien_ra", "chuyen_de_da_ket_thuc"):
+                direct_data = await asyncio.to_thread(get_chuyen_de_da_dien_ra)
+            elif intent in ("chuyen_de", "chuyen_de_trung_bay", "chuyen_de_dang_dien_ra"):
                 direct_data = await asyncio.to_thread(get_chuyen_de_trung_bay)
             elif intent in ("danh_gia", "review"):
                 direct_data = await asyncio.to_thread(get_danh_gia_tong_quan)

@@ -45,15 +45,15 @@ def _extract_related_items(intent: str, direct_data: dict) -> list:
     """
     Trích xuất danh sách thẻ liên quan từ dữ liệu DB thật theo intent.
     Mỗi item có dạng: {"type": "gallery"|"exhibition"|"event"|"ticket", "name", ...}
-    - Chuyên đề: chỉ lấy đang diễn ra (loại bỏ "Đã diễn ra" / "Đã kết thúc")
-    - Triển lãm: chỉ lấy đang diễn ra
-    - Sự kiện: lấy sắp / đang diễn ra (đã lọc từ DB theo ngày)
-    - Tối đa 5 item.
+    - Chuyên đề đã diễn ra: lấy các chuyên đề có trạng thái "Đã diễn ra" / "Đã kết thúc"
+    - Chuyên đề đang diễn ra: lấy các chuyên đề đang hoạt động
+    - Triển lãm đã kết thúc: lấy các triển lãm đã kết thúc
+    - Triển lãm đang diễn ra: lấy các triển lãm đang mở
+    - Sự kiện: lấy sắp diễn ra hoặc đã diễn ra tùy intent
     """
     if not isinstance(direct_data, dict) or direct_data.get("status") not in ("ok", "no_data"):
         return []
 
-    # Các từ khóa trạng thái đã kết thúc cần loại bỏ
     ENDED_KEYWORDS = ("đã diễn ra", "đã kết thúc", "kết thúc", "da dien ra", "da ket thuc")
 
     def is_ended(status_str: str) -> bool:
@@ -61,7 +61,28 @@ def _extract_related_items(intent: str, direct_data: dict) -> list:
 
     items = []
 
-    if intent in ("chuyen_de",):
+    if intent in ("chuyen_de_da_dien_ra", "chuyen_de_da_ket_thuc"):
+        for g in (direct_data.get("galleries") or []):
+            if not g.get("name"):
+                continue
+            items.append({
+                "type": "gallery",
+                "id": g.get("id"),
+                "name": g.get("name", ""),
+                "location": g.get("location", ""),
+                "status": g.get("status", "Đã diễn ra"),
+                "image": g.get("image", ""),
+                "description": g.get("description", "") or g.get("detailed_content", ""),
+                "start_date": g.get("start_date", ""),
+                "end_date": g.get("end_date", ""),
+                "detailed_content": g.get("detailed_content", ""),
+                "gallery_images": g.get("gallery_images", []),
+                "highlight_artifacts": g.get("highlight_artifacts", []),
+            })
+            if len(items) >= 6:
+                break
+
+    elif intent in ("chuyen_de", "chuyen_de_trung_bay", "chuyen_de_dang_dien_ra"):
         for g in (direct_data.get("galleries") or []):
             if not g.get("name"):
                 continue
@@ -85,6 +106,25 @@ def _extract_related_items(intent: str, direct_data: dict) -> list:
             if len(items) >= 5:
                 break
 
+    elif intent in ("trien_lam_da_ket_thuc", "trien_lam_da_dien_ra"):
+        for ex in (direct_data.get("exhibitions") or []):
+            if not ex.get("name"):
+                continue
+            items.append({
+                "type": "exhibition",
+                "id": ex.get("id"),
+                "name": ex.get("name", ""),
+                "location": ex.get("location", ""),
+                "start_date": ex.get("start_date", ""),
+                "end_date": ex.get("end_date", ""),
+                "status": ex.get("status", "Đã kết thúc"),
+                "artifacts_count": ex.get("artifacts_count", 0),
+                "image": ex.get("image", ""),
+                "description": ex.get("description", ""),
+            })
+            if len(items) >= 5:
+                break
+
     elif intent in ("trien_lam", "trien_lam_dang_dien_ra"):
         for ex in (direct_data.get("exhibitions") or []):
             if not ex.get("name"):
@@ -99,7 +139,7 @@ def _extract_related_items(intent: str, direct_data: dict) -> list:
                 "location": ex.get("location", ""),
                 "start_date": ex.get("start_date", ""),
                 "end_date": ex.get("end_date", ""),
-                "status": ex.get("status", ""),
+                "status": ex.get("status", "Đang diễn ra"),
                 "artifacts_count": ex.get("artifacts_count", 0),
                 "image": ex.get("image", ""),
                 "description": ex.get("description", ""),
@@ -107,8 +147,7 @@ def _extract_related_items(intent: str, direct_data: dict) -> list:
             if len(items) >= 5:
                 break
 
-    elif intent in ("su_kien",):
-        # Sự kiện đã được lọc từ DB theo ngày >= hôm nay nên giữ nguyên
+    elif intent in ("su_kien_da_dien_ra",):
         for ev in (direct_data.get("events") or [])[:5]:
             if ev.get("title"):
                 items.append({
@@ -118,12 +157,28 @@ def _extract_related_items(intent: str, direct_data: dict) -> list:
                     "date": ev.get("date", ""),
                     "time": ev.get("time", ""),
                     "location": ev.get("location", ""),
+                    "status": "Đã diễn ra",
+                    "image": ev.get("image", ""),
+                    "description": ev.get("description", ""),
+                })
+
+    elif intent in ("su_kien", "su_kien_sap_dien_ra"):
+        for ev in (direct_data.get("events") or [])[:5]:
+            if ev.get("title"):
+                items.append({
+                    "type": "event",
+                    "id": ev.get("id"),
+                    "name": ev.get("title", ""),
+                    "date": ev.get("date", ""),
+                    "time": ev.get("time", ""),
+                    "location": ev.get("location", ""),
+                    "status": "Sắp diễn ra",
                     "seats_remaining": ev.get("seats_remaining", 0),
                     "image": ev.get("image", ""),
                     "description": ev.get("description", ""),
                 })
 
-    elif intent in ("gia_ve",):
+    elif intent in ("gia_ve", "ve_tham_quan"):
         for t in (direct_data.get("tickets") or [])[:5]:
             if t.get("name"):
                 items.append({
@@ -136,6 +191,95 @@ def _extract_related_items(intent: str, direct_data: dict) -> list:
                 })
 
     return items
+
+
+def _extract_artifacts_for_chuyen_de(galleries: list) -> list[str]:
+    """Tìm ID hiện vật từ bảng hien_vat liên quan đến các chuyên đề trưng bày."""
+    matched_ids = []
+    if not galleries:
+        return matched_ids
+    try:
+        from core.supabase_client import supabase_admin
+        keywords = []
+        for g in galleries:
+            gname = g.get("name", "")
+            if "Điện Biên" in gname:
+                keywords.append("Điện Biên")
+            if "Bát Tràng" in gname or "Gốm" in gname:
+                keywords.append("Bát Tràng")
+            if "Rồng" in gname:
+                keywords.append("Rồng")
+            if "Lý" in gname:
+                keywords.append("Lý")
+            if "Thi đua" in gname:
+                keywords.append("Thi đua")
+            if "Bình dân" in gname:
+                keywords.append("Bình dân")
+            if "Non sông" in gname:
+                keywords.append("Giải phóng")
+
+        for kw in keywords:
+            res = supabase_admin.table("hien_vat").select("id").ilike("name", f"%{kw}%").limit(2).execute()
+            for row in (res.data or []):
+                aid = str(row.get("id"))
+                if aid and aid not in matched_ids:
+                    matched_ids.append(aid)
+                if len(matched_ids) >= 6:
+                    break
+            if len(matched_ids) >= 6:
+                break
+    except Exception as e:
+        logger.warning(f"Error extracting artifacts for galleries: {e}")
+    return matched_ids
+
+
+def _match_galleries_and_exhibitions_from_text(text: str) -> list:
+    """Tự động trích xuất các thẻ chuyên đề nếu trong văn bản có nhắc đến tên chuyên đề."""
+    try:
+        from services.live_data_tools import get_chuyen_de_trung_bay
+        cd_data = get_chuyen_de_trung_bay()
+        galleries = cd_data.get("galleries") or []
+        norm_text = text.lower()
+        matched = []
+        for g in galleries:
+            gname = (g.get("name") or "").lower()
+            short_names = [gname]
+            if "điện biên phủ" in gname:
+                short_names.append("điện biên phủ")
+            if "bát tràng" in gname:
+                short_names.append("bát tràng")
+            if "rồng trên cổ vật" in gname:
+                short_names.append("rồng trên cổ vật")
+            if "thiền môn" in gname:
+                short_names.append("vũ khúc thiền môn")
+            if "non sông" in gname:
+                short_names.append("non sông liền một dải")
+            if "hà nội 12 ngày đêm" in gname:
+                short_names.append("hà nội 12 ngày đêm")
+            if "bình dân học vụ" in gname:
+                short_names.append("bình dân học vụ")
+            if "thi đua ái quốc" in gname:
+                short_names.append("thi đua ái quốc")
+
+            if any(sn in norm_text for sn in short_names):
+                matched.append({
+                    "type": "gallery",
+                    "id": g.get("id"),
+                    "name": g.get("name", ""),
+                    "location": g.get("location", ""),
+                    "status": g.get("status", "Đang diễn ra"),
+                    "image": g.get("image", ""),
+                    "description": g.get("description", "") or g.get("detailed_content", ""),
+                    "start_date": g.get("start_date", ""),
+                    "end_date": g.get("end_date", ""),
+                    "detailed_content": g.get("detailed_content", ""),
+                    "gallery_images": g.get("gallery_images", []),
+                    "highlight_artifacts": g.get("highlight_artifacts", []),
+                })
+        return matched[:5]
+    except Exception as e:
+        logger.warning(f"Error matching galleries from text: {e}")
+        return []
 
 _answer_cache = TTLCache(maxsize=200, ttl=600)
 
@@ -190,7 +334,7 @@ def _format_su_kien_answer(direct_data: dict) -> str | None:
 
 
 def _format_chuyen_de_answer(direct_data: dict) -> str | None:
-    """Trả lời thông tin chuyên đề trưng bày trực tiếp từ DB."""
+    """Trả lời thông tin chuyên đề trưng bày đang diễn ra trực tiếp từ DB."""
     if not isinstance(direct_data, dict):
         return None
     galleries = direct_data.get("galleries") or []
@@ -212,8 +356,31 @@ def _format_chuyen_de_answer(direct_data: dict) -> str | None:
     return "\n".join(lines)
 
 
+def _format_chuyen_de_da_dien_ra_answer(direct_data: dict) -> str | None:
+    """Trả lời thông tin các chuyên đề trưng bày đã diễn ra (đã kết thúc) trực tiếp từ DB."""
+    if not isinstance(direct_data, dict):
+        return None
+    galleries = direct_data.get("galleries") or []
+    if not galleries:
+        return "Bảo tàng hiện chưa có ghi nhận thông tin chuyên đề trưng bày đã kết thúc trước đây."
+
+    lines = ["Bảo tàng Lịch sử Quốc gia đã từng tổ chức các chuyên đề trưng bày đặc sắc sau (hiện đã kết thúc):"]
+    for i, g in enumerate(galleries[:5], 1):
+        name = g.get("name") or ""
+        start = g.get("start_date") or ""
+        end = g.get("end_date") or ""
+        time_part = f" (từ {start} đến {end})" if (start and end) else (f" (năm {start[:4]})" if start else "")
+        desc = g.get("description") or g.get("detailed_content") or ""
+        short_desc = (desc[:140] + "...") if len(desc) > 140 else desc
+        desc_part = f": {short_desc}" if short_desc else ""
+        lines.append(f"{i}. **{name}**{time_part}{desc_part}")
+
+    lines.append("\nBạn có thể xem các thẻ hiện vật và chuyên đề liên quan bên dưới để tìm hiểu chi tiết tư liệu quý của từng chuyên đề nhé!")
+    return "\n".join(lines)
+
+
 def _format_trien_lam_answer(direct_data: dict) -> str | None:
-    """Trả lời thông tin triển lãm trực tiếp từ DB."""
+    """Trả lời thông tin triển lãm đang diễn ra trực tiếp từ DB."""
     if not isinstance(direct_data, dict):
         return None
     exhibitions = direct_data.get("exhibitions") or []
@@ -232,6 +399,48 @@ def _format_trien_lam_answer(direct_data: dict) -> str | None:
         loc_part = f" tại {loc}" if loc else ""
         lines.append(f"- **{name}**{loc_part}")
     lines.append("\nBạn có thể bấm vào các thẻ bên dưới để xem chi tiết triển lãm nhé!")
+    return "\n".join(lines)
+
+
+def _format_trien_lam_da_ket_thuc_answer(direct_data: dict) -> str | None:
+    """Trả lời thông tin các triển lãm đã kết thúc từ DB."""
+    if not isinstance(direct_data, dict):
+        return None
+    exhibitions = direct_data.get("exhibitions") or []
+    if not exhibitions:
+        return "Bảo tàng hiện chưa có thông tin triển lãm đã kết thúc."
+
+    lines = ["Bảo tàng Lịch sử Quốc gia đã từng tổ chức các triển lãm sau (hiện đã kết thúc):"]
+    for i, ex in enumerate(exhibitions[:4], 1):
+        name = ex.get("name") or ""
+        start = ex.get("start_date") or ""
+        end = ex.get("end_date") or ""
+        time_part = f" (từ {start} đến {end})" if (start and end) else ""
+        desc = ex.get("description") or ""
+        short_desc = (desc[:140] + "...") if len(desc) > 140 else desc
+        desc_part = f": {short_desc}" if short_desc else ""
+        lines.append(f"{i}. **{name}**{time_part}{desc_part}")
+
+    lines.append("\nBạn có thể bấm vào các thẻ bên dưới để xem lại thông tin triển lãm nhé!")
+    return "\n".join(lines)
+
+
+def _format_su_kien_da_dien_ra_answer(direct_data: dict) -> str | None:
+    """Trả lời thông tin sự kiện đã diễn ra từ DB."""
+    if not isinstance(direct_data, dict):
+        return None
+    events = direct_data.get("events") or []
+    if not events:
+        return "Bảo tàng hiện chưa có thông tin sự kiện đã diễn ra trong danh mục."
+
+    lines = ["Các sự kiện đã từng diễn ra tại Bảo tàng Lịch sử Quốc gia:"]
+    for i, ev in enumerate(events[:4], 1):
+        title = ev.get("title") or ev.get("name") or ""
+        date_str = ev.get("date", "")
+        time_part = f" (ngày {date_str})" if date_str else ""
+        lines.append(f"{i}. **{title}**{time_part}")
+
+    lines.append("\nBạn theo dõi thêm website để cập nhật lịch các sự kiện mới sắp diễn ra nhé!")
     return "\n".join(lines)
 
 
@@ -557,10 +766,15 @@ class RAGPipeline:
 
         LIVE_INTENT_LABELS = {
             "gia_ve": "BẢNG GIÁ VÀ CÁC LOẠI VÉ THAM QUAN ĐANG BÁN THẬT TỪ SUPABASE (BẢNG ve_tham_quan)",
-            "trien_lam": "DANH SÁCH TRIỂN LÃM THẬT TỪ SUPABASE (BẢNG trien_lam)",
-            "trien_lam_dang_dien_ra": "DANH SÁCH TRIỂN LÃM THẬT TỪ SUPABASE (BẢNG trien_lam)",
+            "trien_lam": "DANH SÁCH TRIỂN LÃM ĐANG DIỄN RA THẬT TỪ SUPABASE (BẢNG trien_lam)",
+            "trien_lam_dang_dien_ra": "DANH SÁCH TRIỂN LÃM ĐANG DIỄN RA THẬT TỪ SUPABASE (BẢNG trien_lam)",
+            "trien_lam_da_ket_thuc": "DANH SÁCH TRIỂN LÃM ĐÃ KẾT THÚC THẬT TỪ SUPABASE (BẢNG trien_lam)",
             "su_kien": "DANH SÁCH SỰ KIỆN SẮP DIỄN RA THẬT TỪ SUPABASE (BẢNG su_kien)",
+            "su_kien_sap_dien_ra": "DANH SÁCH SỰ KIỆN SẮP DIỄN RA THẬT TỪ SUPABASE (BẢNG su_kien)",
+            "su_kien_da_dien_ra": "DANH SÁCH SỰ KIỆN ĐÃ TỪNG DIỄN RA THẬT TỪ SUPABASE (BẢNG su_kien)",
             "chuyen_de": "DANH SÁCH CÁC CHUYÊN ĐỀ TRƯNG BÀY THẬT TỪ SUPABASE (BẢNG phong_trung_bay)",
+            "chuyen_de_dang_dien_ra": "DANH SÁCH CÁC CHUYÊN ĐỀ TRƯNG BÀY ĐANG DIỄN RA THẬT TỪ SUPABASE (BẢNG phong_trung_bay)",
+            "chuyen_de_da_dien_ra": "DANH SÁCH CÁC CHUYÊN ĐỀ TRƯNG BÀY ĐÃ DIỄN RA (ĐÃ KẾT THÚC) THẬT TỪ SUPABASE (BẢNG phong_trung_bay)",
             "danh_gia": "ĐÁNH GIÁ VÀ NHẬN XÉT THỰC TẾ CỦA DU KHÁCH TỪ SUPABASE (BẢNG danh_gia)",
             "thong_ke_bao_tang": "DỮ LIỆU THỐNG KÊ TỔNG QUAN THẬT TỪ SUPABASE",
         }
@@ -569,21 +783,32 @@ class RAGPipeline:
             direct_ans = None
             if decision.intent == "thong_ke_bao_tang":
                 direct_ans = _format_thong_ke_answer(decision.direct_data)
+            elif decision.intent in ("su_kien_da_dien_ra",):
+                direct_ans = _format_su_kien_da_dien_ra_answer(decision.direct_data)
             elif decision.intent in ("su_kien", "su_kien_sap_dien_ra"):
                 direct_ans = _format_su_kien_answer(decision.direct_data)
-            elif decision.intent in ("chuyen_de", "chuyen_de_trung_bay"):
+            elif decision.intent in ("chuyen_de_da_dien_ra", "chuyen_de_da_ket_thuc"):
+                direct_ans = _format_chuyen_de_da_dien_ra_answer(decision.direct_data)
+            elif decision.intent in ("chuyen_de", "chuyen_de_trung_bay", "chuyen_de_dang_dien_ra"):
                 direct_ans = _format_chuyen_de_answer(decision.direct_data)
+            elif decision.intent in ("trien_lam_da_ket_thuc", "trien_lam_da_dien_ra"):
+                direct_ans = _format_trien_lam_da_ket_thuc_answer(decision.direct_data)
             elif decision.intent in ("trien_lam", "trien_lam_dang_dien_ra"):
                 direct_ans = _format_trien_lam_answer(decision.direct_data)
             elif decision.intent in ("gia_ve", "ve_tham_quan"):
                 direct_ans = _format_gia_ve_answer(decision.direct_data)
 
+            related_items = _extract_related_items(decision.intent, decision.direct_data)
+            artifact_ids = []
+            if decision.intent in ("chuyen_de_da_dien_ra", "chuyen_de", "chuyen_de_trung_bay"):
+                artifact_ids = _extract_artifacts_for_chuyen_de(decision.direct_data.get("galleries") or [])
+
             if direct_ans:
                 return {
                     "answer": direct_ans,
                     "sources": [],
-                    "artifact_ids": [],
-                    "related_items": _extract_related_items(decision.intent, decision.direct_data)
+                    "artifact_ids": artifact_ids,
+                    "related_items": related_items
                 }
             label = LIVE_INTENT_LABELS[decision.intent]
             prompt_context = _build_live_prompt_context(
@@ -596,8 +821,7 @@ class RAGPipeline:
                 system_instruction=MUSEUM_GROUNDED_PROMPT,
                 temperature=0.2
             )
-            related_items = _extract_related_items(decision.intent, decision.direct_data)
-            return {"answer": answer, "sources": [], "artifact_ids": [], "related_items": related_items}
+            return {"answer": answer, "sources": [], "artifact_ids": artifact_ids, "related_items": related_items}
 
         # ── 4. Chế độ General (Zone 3 hoặc Vùng xám không liên quan bảo tàng) ─
         if decision.final_mode == "general":
@@ -703,10 +927,15 @@ class RAGPipeline:
 
         LIVE_INTENT_LABELS = {
             "gia_ve": "BẢNG GIÁ VÀ CÁC LOẠI VÉ THAM QUAN ĐANG BÁN THẬT TỪ SUPABASE (BẢNG ve_tham_quan)",
-            "trien_lam": "DANH SÁCH TRIỂN LÃM THẬT TỪ SUPABASE (BẢNG trien_lam)",
-            "trien_lam_dang_dien_ra": "DANH SÁCH TRIỂN LÃM THẬT TỪ SUPABASE (BẢNG trien_lam)",
+            "trien_lam": "DANH SÁCH TRIỂN LÃM ĐANG DIỄN RA THẬT TỪ SUPABASE (BẢNG trien_lam)",
+            "trien_lam_dang_dien_ra": "DANH SÁCH TRIỂN LÃM ĐANG DIỄN RA THẬT TỪ SUPABASE (BẢNG trien_lam)",
+            "trien_lam_da_ket_thuc": "DANH SÁCH TRIỂN LÃM ĐÃ KẾT THÚC THẬT TỪ SUPABASE (BẢNG trien_lam)",
             "su_kien": "DANH SÁCH SỰ KIỆN SẮP DIỄN RA THẬT TỪ SUPABASE (BẢNG su_kien)",
+            "su_kien_sap_dien_ra": "DANH SÁCH SỰ KIỆN SẮP DIỄN RA THẬT TỪ SUPABASE (BẢNG su_kien)",
+            "su_kien_da_dien_ra": "DANH SÁCH SỰ KIỆN ĐÃ TỪNG DIỄN RA THẬT TỪ SUPABASE (BẢNG su_kien)",
             "chuyen_de": "DANH SÁCH CÁC CHUYÊN ĐỀ TRƯNG BÀY THẬT TỪ SUPABASE (BẢNG phong_trung_bay)",
+            "chuyen_de_dang_dien_ra": "DANH SÁCH CÁC CHUYÊN ĐỀ TRƯNG BÀY ĐANG DIỄN RA THẬT TỪ SUPABASE (BẢNG phong_trung_bay)",
+            "chuyen_de_da_dien_ra": "DANH SÁCH CÁC CHUYÊN ĐỀ TRƯNG BÀY ĐÃ DIỄN RA (ĐÃ KẾT THÚC) THẬT TỪ SUPABASE (BẢNG phong_trung_bay)",
             "danh_gia": "ĐÁNH GIÁ VÀ NHẬN XÉT THỰC TẾ CỦA DU KHÁCH TỪ SUPABASE (BẢNG danh_gia)",
             "thong_ke_bao_tang": "DỮ LIỆU THỐNG KÊ TỔNG QUAN THẬT TỪ SUPABASE",
         }
@@ -715,18 +944,30 @@ class RAGPipeline:
             direct_ans = None
             if decision.intent == "thong_ke_bao_tang":
                 direct_ans = _format_thong_ke_answer(decision.direct_data)
+            elif decision.intent in ("su_kien_da_dien_ra",):
+                direct_ans = _format_su_kien_da_dien_ra_answer(decision.direct_data)
             elif decision.intent in ("su_kien", "su_kien_sap_dien_ra"):
                 direct_ans = _format_su_kien_answer(decision.direct_data)
-            elif decision.intent in ("chuyen_de", "chuyen_de_trung_bay"):
+            elif decision.intent in ("chuyen_de_da_dien_ra", "chuyen_de_da_ket_thuc"):
+                direct_ans = _format_chuyen_de_da_dien_ra_answer(decision.direct_data)
+            elif decision.intent in ("chuyen_de", "chuyen_de_trung_bay", "chuyen_de_dang_dien_ra"):
                 direct_ans = _format_chuyen_de_answer(decision.direct_data)
+            elif decision.intent in ("trien_lam_da_ket_thuc", "trien_lam_da_dien_ra"):
+                direct_ans = _format_trien_lam_da_ket_thuc_answer(decision.direct_data)
             elif decision.intent in ("trien_lam", "trien_lam_dang_dien_ra"):
                 direct_ans = _format_trien_lam_answer(decision.direct_data)
             elif decision.intent in ("gia_ve", "ve_tham_quan"):
                 direct_ans = _format_gia_ve_answer(decision.direct_data)
 
+            related_items = _extract_related_items(decision.intent, decision.direct_data)
+            artifact_ids = []
+            if decision.intent in ("chuyen_de_da_dien_ra", "chuyen_de", "chuyen_de_trung_bay"):
+                artifact_ids = _extract_artifacts_for_chuyen_de(decision.direct_data.get("galleries") or [])
+
             if direct_ans:
                 yield direct_ans
-                related_items = _extract_related_items(decision.intent, decision.direct_data)
+                if artifact_ids:
+                    yield {"artifact_ids": artifact_ids}
                 if related_items:
                     yield {"related_items": related_items}
                 return
@@ -742,8 +983,9 @@ class RAGPipeline:
                 temperature=0.2
             ):
                 yield chunk
-            # Yield related items for this intent so frontend shows relevant cards
-            related_items = _extract_related_items(decision.intent, decision.direct_data)
+            # Yield related items và artifact cards cho intent này
+            if artifact_ids:
+                yield {"artifact_ids": artifact_ids}
             if related_items:
                 yield {"related_items": related_items}
             return
@@ -793,7 +1035,7 @@ class RAGPipeline:
                 full_answer.append(chunk)
             yield chunk
 
-        # Yield artifact cards at end of stream
+        # Yield artifact cards và related items ở cuối stream
         complete_text = "".join(full_answer)
         low_ans = complete_text.lower()
         if not ("chua co thong tin" in low_ans or "khong co thong tin" in low_ans or "chua tim thay" in low_ans):
@@ -805,8 +1047,19 @@ class RAGPipeline:
                 retrieved_ids=retrieved_ids,
                 context_id=prev_aid if decision.is_followup else None
             )
+
+            # Bổ sung artifact IDs nếu câu trả lời nhắc đến các chuyên đề
+            matched_galleries = _match_galleries_and_exhibitions_from_text(complete_text + " " + user_message)
+            matched_g_artifacts = _extract_artifacts_for_chuyen_de(matched_galleries)
+            for aid in matched_g_artifacts:
+                if aid not in artifact_ids:
+                    artifact_ids.append(aid)
+
             if artifact_ids:
-                yield {"artifact_ids": artifact_ids}
+                yield {"artifact_ids": artifact_ids[:6]}
+
+            if matched_galleries:
+                yield {"related_items": matched_galleries[:5]}
 
 
 # Khởi tạo singleton instance
