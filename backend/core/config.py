@@ -53,9 +53,9 @@ class Settings(BaseSettings):
     STREAM_STATUS_DELAY_S: float = Field(default=1.0, description="Chờ bao lâu thì báo trạng thái đang xử lý khi stream")
 
     # ── RAG (Nhóm B/D) ──
-    RAG_COLLECTION_NAME: str = Field(default="museum_rag_knowledge", description="Ten collection Chroma (doi sang _v2 khi duyet)")
-    RAG_DISTANCE_THRESHOLD: float = Field(default=0.85, description="Ngưỡng distance ChromaDB (D: chờ duyệt 0.33 moi doi)")
-    RAG_ZONE_MUSEUM_MAX: float = Field(default=0.30, description="Ngưỡng trên của Vùng 1 - chắc chắn Museum")
+    RAG_COLLECTION_NAME: str = Field(default="museum_rag_knowledge_v2", description="Ten collection Chroma (V2 cosine metric)")
+    RAG_DISTANCE_THRESHOLD: float = Field(default=0.85, description="Ngưỡng distance ChromaDB")
+    RAG_ZONE_MUSEUM_MAX: float = Field(default=0.28, description="Ngưỡng trên của Vùng 1 - chắc chắn Museum")
     RAG_ZONE_GENERAL_MIN: float = Field(default=0.42, description="Ngưỡng dưới của Vùng 3 - chắc chắn General")
     RAG_ZONE_LOG: bool = Field(default=True, description="Ghi log chi tiết quyết định định tuyến RAG")
     RAG_MAX_CONTEXT_CHARS: int = Field(default=4000, description="Trần độ dài context RAG nạp vào prompt")

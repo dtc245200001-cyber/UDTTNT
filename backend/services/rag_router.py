@@ -75,16 +75,19 @@ STRUCTURED_INTENTS = {
         r"\bbang ban nhung loai ve\b", r"\bco ban nhung loai ve\b"
     ],
     "trien_lam": [
-        r"\btrien lam\b", r"\bcac trien lam\b", r"\bnhung trien lam\b",
-        r"\bexhibition\b", r"\btrien lam nao\b"
+        r"\bcac trien lam\b", r"\bnhung trien lam\b", r"\bdanh sach trien lam\b",
+        r"\btrien lam nao dang\b", r"\btrien lam hien tai\b", r"\bco trien lam gi\b",
+        r"\btrien lam dang mo\b", r"\btrien lam dang dien ra\b"
     ],
     "su_kien": [
-        r"\bsu kien\b", r"\bcac su kien\b", r"\bnhung su kien\b",
-        r"\btoa dam\b", r"\bworkshop\b", r"\bevent\b", r"\blich su kien\b"
+        r"\bcac su kien\b", r"\bnhung su kien\b", r"\bdanh sach su kien\b",
+        r"\bsu kien sap toi\b", r"\bsu kien sap dien ra\b", r"\blich su kien\b",
+        r"\bco su kien gi\b", r"\btuan nay co su kien gi\b", r"\bsap co su kien gi\b"
     ],
     "chuyen_de": [
-        r"\bchuyen de\b", r"\bcac chuyen de\b", r"\bchuyen de trung bay\b",
-        r"\btrung bay chuyen de\b", r"\bphong trung bay\b", r"\bkhong gian trung bay\b"
+        r"\bcac chuyen de\b", r"\bnhung chuyen de\b", r"\bdanh sach chuyen de\b",
+        r"\bchuyen de trung bay nao\b", r"\bchuyen de noi bat\b",
+        r"\bcac phong trung bay\b", r"\bco nhung chuyen de nao\b"
     ],
     "danh_gia": [
         r"\bdanh gia\b", r"\bnhan xet\b", r"\bfeedback\b", r"\breview\b",
@@ -271,7 +274,24 @@ class RAGRouter:
             log_zone_decision(query, decision)
             return decision
 
-        # ── 2. Kiểm tra Intent có cấu trúc đi thẳng DB ──
+        # ── 2. Khớp thực thể DB cụ thể trước (hiện vật, chuyên đề, sự kiện cụ thể) ──
+        # Tránh trường hợp người dùng hỏi về 1 chuyên đề/sự kiện cụ thể (kể cả đã kết thúc)
+        # mà bị gom nhầm thành intent liệt kê các sự kiện/chuyên đề đang diễn ra.
+        entity_match = dynamic_keyword_service.match(query)
+        if entity_match and entity_match.get("matched"):
+            matched_ent = entity_match["entity"]
+            decision = RouterDecision(
+                final_mode="museum",
+                zone="zone_dynamic_keyword",
+                top1_dist=0.18,
+                top1_doc=f"DB Entity: {matched_ent['name']}",
+                matched_entity=matched_ent,
+                reason=f"Khớp thực thể DB '{matched_ent['name']}' (bảng {matched_ent['table']})"
+            )
+            log_zone_decision(query, decision)
+            return decision
+
+        # ── 3. Kiểm tra Intent có cấu trúc đi thẳng DB (liệt kê danh sách chung) ──
         intent = self.detect_structured_intent(norm_query)
         if intent:
             direct_data = None
@@ -288,10 +308,6 @@ class RAGRouter:
             elif intent == "thong_ke_bao_tang":
                 direct_data = await asyncio.to_thread(get_thong_ke_tong_quan)
 
-            # Các intent không có direct_data (gio_mo_cua, noi_quy, goi_y_tham_quan):
-            # KHÔNG đi thẳng DB mà đi qua nhánh museum RAG chuẩn bên dưới
-            # (dữ liệu đã có trong ChromaDB: museum_info.json + guide docs).
-            # Ghi zone/reason đúng để log không gây hiểu nhầm.
             uses_rag_fallback = direct_data is None
             decision = RouterDecision(
                 final_mode="museum",
@@ -305,21 +321,6 @@ class RAGRouter:
                     if uses_rag_fallback else
                     f"Khớp Intent có cấu trúc '{intent}' đi thẳng DB"
                 )
-            )
-            log_zone_decision(query, decision)
-            return decision
-
-        # ── 3. Khớp từ khóa DB động ──
-        entity_match = dynamic_keyword_service.match(query)
-        if entity_match and entity_match.get("matched"):
-            matched_ent = entity_match["entity"]
-            decision = RouterDecision(
-                final_mode="museum",
-                zone="zone_dynamic_keyword",
-                top1_dist=0.18,
-                top1_doc=f"DB Entity: {matched_ent['name']}",
-                matched_entity=matched_ent,
-                reason=f"Khớp thực thể DB '{matched_ent['name']}' (bảng {matched_ent['table']})"
             )
             log_zone_decision(query, decision)
             return decision
