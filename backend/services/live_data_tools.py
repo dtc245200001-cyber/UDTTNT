@@ -124,24 +124,32 @@ def get_ve_gia_va_con_cho() -> dict:
 
 def get_su_kien_sap_dien_ra() -> dict:
     """
-    Tra cứu danh sách sự kiện sắp diễn ra (từ hôm nay trở đi), sắp xếp gần nhất.
+    Tra cứu danh sách sự kiện sắp diễn ra và đang tổ chức tại bảo tàng.
     Bảng su_kien: id, title, date, time, location, speaker, status, seats, registered, description, image.
     """
-    hit = _live_cache.get("su_kien")
-    if hit:
-        return hit
     try:
         today = date.today().isoformat()
 
+        # Lấy các sự kiện có status 'Sắp diễn ra', 'Đang diễn ra' hoặc ngày >= hôm nay
         result = supabase_admin.table("su_kien").select(
             "*"
-        ).gte("date", today).order("date").limit(5).execute()
+        ).or_(
+            f"status.eq.Sắp diễn ra,status.eq.Đang diễn ra,date.gte.{today}"
+        ).order("date").limit(10).execute()
 
         events = result.data or []
+        # Nếu chưa có, fallback lấy tất cả sự kiện chưa kết thúc
+        if not events:
+            all_res = supabase_admin.table("su_kien").select("*").order("date").execute()
+            events = [
+                e for e in (all_res.data or [])
+                if not any(k in (e.get("status") or "").lower() for k in ("đã kết thúc", "đã diễn ra", "da ket thuc", "da dien ra"))
+            ] or (all_res.data or [])
+
         if not events:
             return {
                 "status": "no_data",
-                "message": f"Không có sự kiện nào sắp diễn ra từ ngày {today}.",
+                "message": "Hiện chưa có sự kiện mới nào trong danh sách.",
                 "events": []
             }
 
@@ -155,7 +163,7 @@ def get_su_kien_sap_dien_ra() -> dict:
                 "time": e.get("time", ""),
                 "location": e.get("location", ""),
                 "speaker": e.get("speaker", ""),
-                "status": e.get("status", ""),
+                "status": e.get("status", "Sắp diễn ra"),
                 "seats_remaining": max(0, remaining),
                 "image": e.get("image", ""),
                 "description": (e.get("description") or "")[:200],
