@@ -1,0 +1,8 @@
+backend/
+dist/
+node_modules/
+docs/
+*.config.js
+scripts/
+scratch*
+payload.json
