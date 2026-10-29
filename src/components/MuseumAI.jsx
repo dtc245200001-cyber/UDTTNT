@@ -30,18 +30,33 @@ const MicIcon = ({ className = 'w-4 h-4' }) => (
 const isArtifactSearchQuery = (rawText) => {
   if (!rawText) return false;
   const q = removeVietnameseTones(rawText).toLowerCase().trim();
+
+  // 1. Nếu là câu hỏi thông tin, số lượng, hỏi đáp kiến thức thì KHÔNG chặn để chuyển qua AI RAG Backend
+  const questionIndicators = [
+    'bao nhieu', 'co may', 'tong so', 'so luong', 'la gi', 'la ai', 'o dau', 
+    'khi nao', 'the nao', 'nhu the nao', 'tai sao', 'vi sao', 'ke ve', 'ke cho', 
+    'gioi thieu', 'thong tin', 'lich su', 'y nghia', 'co duoc', 'duoc khong', 
+    'giup toi', 'huong dan', 'tu van', 'co nhung', 'gom nhung'
+  ];
+  if (questionIndicators.some((w) => q.includes(w))) return false;
+
+  // 2. Tiền tố tìm kiếm tường minh
   const prefixes = [
     'tim ', 'tim kiem ', 'cho toi xem ', 'cho minh xem ', 'cho em xem ', 
     'cho xem ', 'toi muon xem ', 'muon xem ', 'co hien vat ', 'xem hien vat ', 'hay tim '
   ];
   if (prefixes.some((p) => q.startsWith(p))) return true;
-  const keywords = [
-    'hien vat', 'bao vat', 'co vat', 'trong dong', 'do gom', 'do da', 'vu khi', 
+
+  // 3. Từ khóa cụ thể hiện vật (không dùng từ chung chung như 'hien vat', 'bao vat' để tránh nuốt nhầm câu hỏi thông thường)
+  const specificKeywords = [
+    'trong dong', 'do gom', 'do da', 'vu khi', 
     'dong son', 'thoi ly', 'hung vuong', 'thoi tran', 'thoi nguyen', 'thoi le', 
     'tien su', 'ngoc lu', 'canh thinh', 'hoang ha', 'dao thinh', 'bang gom', 
     'bang dong', 'bang da', 'bang vang', 'bang go'
   ];
-  return keywords.some((k) => q.includes(k));
+  if (q.length < 50 && specificKeywords.some((k) => q.includes(k))) return true;
+
+  return false;
 };
 
 import {

@@ -5,7 +5,7 @@
  *  - streamChatQuery() : Streaming SSE (trải nghiệm typing realtime)
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
 
 /**
  * Chuyển đổi messages sang định dạng history cho Backend.
