@@ -1111,20 +1111,7 @@ export const PanoramaCubeViewer = ({
         onWheel={onWheel}
       />
 
-      {/* 2. Tooltip tên phòng đích khi Hover vào nút sàn */}
-      {hoveredHotspot && transitionOpacity === 0 && (
-        <div
-          style={{
-            left: `${tooltipPos.x}px`,
-            top: `${tooltipPos.y}px`,
-            transform: 'translate(-50%, -100%)',
-          }}
-          className="absolute z-30 pointer-events-none px-3.5 py-1.5 rounded-xl bg-[#2B170B]/95 backdrop-blur-md text-[#FBF8F1] border border-[#D9A441]/70 text-xs font-semibold shadow-2xl flex items-center gap-2 animate-fade-in whitespace-nowrap"
-        >
-          <span className="w-2 h-2 rounded-full bg-[#D9A441] animate-ping" />
-          <span>{hoveredHotspot.label || 'Di chuyển đến điểm tiếp theo'}</span>
-        </div>
-      )}
+      {/* 2. Đã loại bỏ ô chữ thông báo khi hover theo yêu cầu */}
 
       {/* 3. Lớp chuyển cảnh fade-out / fade-in liền mạch (Dissolve mượt mà, không giật) */}
       <div
