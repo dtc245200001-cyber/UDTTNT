@@ -105,28 +105,75 @@ async def search_by_image(
     if not contents:
         raise HTTPException(status_code=400, detail="File ảnh rỗng.")
 
-    # Trích xuất vector đặc trưng
+    # ── Bước 0: Gemini Vision kiểm tra ảnh có phải hiện vật/cổ vật không ────────
+    # Mục đích: Ngăn hệ thống nhận diện sai khi người dùng tải ảnh vật thể đời thường
+    # (điện thoại, xe cộ, đồ ăn, thú cưng, selfie, phong cảnh...).
+    try:
+        from google.genai import types as _gtypes
+        from services.gemini import gemini_service
+
+        _content_type = file.content_type or "image/jpeg"
+        _screening_prompt = (
+            "Bạn là chuyên gia thẩm định hiện vật bảo tàng. Hãy quan sát kỹ hình ảnh này và cho biết:\n"
+            "Hình ảnh này có phải là một CỔ VẬT, HIỆN VẬT LỊCH SỬ, TƯ LIỆU/TÀI LIỆU CHIẾN TRANH, "
+            "HOẶC ĐỒ TRƯNG BÀY TRONG BẢO TÀNG LỊCH SỬ hay không?\n"
+            "- Nếu là đồ vật hiện đại, đồ gia dụng, thiết bị công nghệ (điện thoại, máy tính, ô tô, xe máy...), "
+            "thú cưng, phong cảnh, selfie người, đồ ăn: BẮT BUỘC trả lời 'NO'.\n"
+            "- Nếu thực sự là cổ vật, đồ gốm cổ, trống đồng, vũ khí cổ, văn bản lịch sử: BẮT BUỘC trả lời 'YES'.\n"
+            "Chỉ trả lời đúng duy nhất 1 từ: YES hoặc NO."
+        )
+
+        _resp = await gemini_service._execute_with_fallback(
+            contents=[
+                _gtypes.Part.from_bytes(data=contents, mime_type=_content_type),
+                _screening_prompt,
+            ]
+        )
+        _verdict = (_resp.text or "").strip().upper()
+        print(f"[ImageSearch] Gemini Vision screening result: {_verdict[:30]!r}")
+
+        if not _verdict.startswith("YES"):
+            return {
+                "success": False,
+                "message": "Hình ảnh này là thiết bị hiện đại hoặc đồ vật thông thường, không phải cổ vật hay hiện vật trong bộ sưu tập bảo tàng.",
+                "results": [],
+                "verdict": "not_artifact",
+            }
+    except Exception as _vision_err:
+        print(f"[ImageSearch] Gemini Vision screening warning: {_vision_err}")
+
+    # Trích xuất vector đặc trưng bằng ResNet50
     query_vector = image_feature_extractor.extract_feature(contents)
     if not query_vector:
         raise HTTPException(status_code=500, detail="Không thể trích xuất đặc trưng từ ảnh này.")
 
-    # Gọi hàm RPC của Supabase
-    # Cần tạo hàm RPC match_artifacts_image tương tự như match_artifacts nhưng dùng image_vector
+    # Gọi hàm RPC của Supabase để tìm kiếm vector tương đồng
+    # Nâng ngưỡng mặc định lên 0.78 để tránh trùng lặp ngẫu nhiên
+    effective_threshold = max(match_threshold, 0.78)
     try:
         response = supabase_admin.rpc(
             "match_artifacts_image",
             {
                 "query_embedding": query_vector,
-                "match_threshold": match_threshold,
+                "match_threshold": effective_threshold,
                 "match_count": match_count,
             },
         ).execute()
-        
+
         results = response.data if response.data else []
+        if not results:
+            return {
+                "success": False,
+                "message": "Không tìm thấy hiện vật nào trong bảo tàng có đặc điểm tương đồng.",
+                "results": [],
+                "verdict": "no_match",
+            }
+
         return {
             "success": True,
-            "message": f"Tìm thấy {len(results)} hiện vật",
-            "results": results
+            "message": f"Tìm thấy {len(results)} hiện vật tương đồng.",
+            "results": results,
+            "verdict": "matched",
         }
     except Exception as e:
         print(f"[ImageSearch] Lỗi gọi Supabase RPC: {e}")

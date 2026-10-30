@@ -85,27 +85,25 @@ export async function extractImageVisualProfile(file) {
         const avgB = totalB / count;
         const hsv = rgbToHsv(avgR, avgG, avgB);
 
-        // Detect material hint based on dominant color palette
+        // Detect material hint based on dominant color palette.
+        // Ngưỡng được nâng cao để tránh nhận diện sai ảnh hiện đại (điện thoại, xe cộ...).
+        // Tất cả điều kiện đều yêu cầu saturation cao (>0.5) để chỉ khớp màu cổ vật thật sự đặc trưng.
         let materialHint = 'general';
-        if (hsv.s < 0.18) {
-          // Grey / Dark / Neutral -> Cổ vật đá / Tư liệu lịch sử
-          materialHint = 'do_da';
-        } else if (hsv.h >= 10 && hsv.h <= 45 && hsv.s > 0.45 && hsv.v > 0.5) {
-          // Warm bronze / copper / gold
+        if (hsv.h >= 10 && hsv.h <= 45 && hsv.s > 0.55 && hsv.v > 0.3 && hsv.v < 0.75) {
+          // Warm bronze / copper tone - rất đặc trưng, không lẫn với màu cam/vàng hiện đại
           materialHint = 'co_vat_dong';
-        } else if (hsv.h >= 45 && hsv.h <= 70 && hsv.s > 0.5) {
-          // Gold / Yellow
+        } else if (hsv.h >= 45 && hsv.h <= 65 && hsv.s > 0.6 && hsv.v > 0.4 && hsv.v < 0.8) {
+          // Pure gold / amber - vàng kim loại thật sự
           materialHint = 'vang_bac';
-        } else if ((hsv.h >= 25 && hsv.h <= 55 && hsv.s < 0.45) || hsv.v > 0.7) {
-          // Cream / Celadon / Pale clay / Earthen
-          materialHint = 'gom';
-        } else if (hsv.h >= 100 && hsv.h <= 170 && hsv.s > 0.25) {
-          // Green patina on bronze
+        } else if (hsv.h >= 100 && hsv.h <= 170 && hsv.s > 0.4 && hsv.v < 0.65) {
+          // Green patina on bronze - xanh patina đặc trưng
           materialHint = 'co_vat_dong';
-        } else if (hsv.h >= 15 && hsv.h <= 35 && hsv.v < 0.45) {
-          // Deep brown / wood
+        } else if (hsv.h >= 15 && hsv.h <= 35 && hsv.s > 0.35 && hsv.v < 0.4) {
+          // Deep brown / wood - nâu đất, gỗ cổ
           materialHint = 'do_go';
         }
+        // Bỏ phân loại 'do_da' và 'gom' bằng màu trung tính/xám vì quá mơ hồ:
+        // Điện thoại, xe, nhiều vật dụng hiện đại cũng có màu xám/kem → gây nhận diện sai.
 
         resolve({ ...hsv, materialHint });
       } catch (err) {
@@ -137,7 +135,7 @@ export async function searchArtifactByImage(file, artifacts = [], categories = [
     return { success: false, results: [], message: 'Vui lòng chọn hình ảnh cần tìm kiếm.' };
   }
 
-  // 1. Thử gọi backend FastAPI (nếu đang chạy) với timeout 2 giây để tránh treo UI
+  // 1. Gọi backend FastAPI (Gemini Vision screening + ResNet50 similarity)
   try {
     const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
       ? (import.meta.env?.VITE_API_URL || 'http://localhost:8000')
@@ -145,7 +143,7 @@ export async function searchArtifactByImage(file, artifacts = [], categories = [
 
     if (API_BASE_URL) {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 giây cho Gemini Vision
 
       const formData = new FormData();
       formData.append('file', file);
@@ -160,35 +158,44 @@ export async function searchArtifactByImage(file, artifacts = [], categories = [
 
       if (response && response.ok) {
         const data = await response.json();
+        
+        // Backend đã xử lý và xác nhận kết quả (kể cả từ chối ảnh không phải hiện vật)
         if (data.success && data.results && data.results.length > 0) {
           return {
             success: true,
             results: data.results.map(normalizeArtifact),
-            message: `Tìm thấy ${data.results.length} hiện vật qua trí tuệ nhân tạo nhận diện hình ảnh.`,
+            message: data.message || `Tìm thấy ${data.results.length} hiện vật qua trí tuệ nhân tạo nhận diện hình ảnh.`,
           };
         }
+
+        // Backend báo ảnh không phải hiện vật hoặc không có hiện vật tương đồng
+        return {
+          success: false,
+          results: [],
+          verdict: data.verdict || 'not_artifact',
+          message: data.message || 'Không tìm thấy hiện vật nào trong bảo tàng tương đồng với hình ảnh này.',
+        };
       }
     }
   } catch (err) {
-    console.warn('[searchArtifactByImage] Backend image search unavailable, switching to smart local visual matching.');
+    console.warn('[searchArtifactByImage] Backend image search unavailable:', err);
   }
 
-  // 2. Client-Side Smart Recognition (Tự động nhận diện khi backend offline)
+  // 2. Client-Side Fallback (CHỈ chạy khi backend hoàn toàn mất mạng / offline)
   const fileName = file.name || '';
   const cleanName = fileName
     .replace(/\.[a-zA-Z0-9]+$/, '') // Bỏ extension .jpg, .png...
     .replace(/[_\-+.]/g, ' ')
     .trim();
 
-  // 2a. Kiểm tra nếu tên file khớp trực tiếp với tên hoặc URL hiện vật
   let matchedArtifacts = [];
 
-  // Khớp theo tên file hoặc link ảnh trong CSDL
+  // Khớp chính xác theo URL hoặc tên file nếu tên file phản ánh hiện vật
   if (fileName) {
     const exactUrlMatch = artifacts.find((art) => {
       const artImg = String(art.image || '').toLowerCase();
       const fn = fileName.toLowerCase();
-      return artImg.includes(fn) || (cleanName.length >= 4 && artImg.includes(cleanName.toLowerCase()));
+      return artImg.includes(fn) || (cleanName.length >= 5 && artImg.includes(cleanName.toLowerCase()));
     });
 
     if (exactUrlMatch) {
@@ -196,8 +203,8 @@ export async function searchArtifactByImage(file, artifacts = [], categories = [
     }
   }
 
-  // Khớp từ khóa từ tên file nếu tên file có ý nghĩa
-  if (cleanName && cleanName.length >= 3 && !/^image|img|photo|picture|capture|screenshot|download|test/i.test(cleanName)) {
+  // Khớp từ khóa rõ ràng từ tên file nếu tên file mang tính miêu tả (không phải tên chung chung)
+  if (cleanName && cleanName.length >= 4 && !/^image|img|photo|picture|capture|screenshot|download|test|unnamed/i.test(cleanName)) {
     const nameSearch = searchArtifacts(cleanName, artifacts, categories);
     if (nameSearch.results && nameSearch.results.length > 0) {
       for (const art of nameSearch.results) {
@@ -208,57 +215,21 @@ export async function searchArtifactByImage(file, artifacts = [], categories = [
     }
   }
 
-  // 2b. Trích xuất đặc trưng thị giác (màu sắc, chất liệu) từ Canvas
-  const visualProfile = await extractImageVisualProfile(file);
-
-  // Lọc hiện vật theo nhóm chất liệu được nhận diện
-  if (visualProfile.materialHint !== 'general') {
-    let candidateCategoryIds = [];
-    if (visualProfile.materialHint === 'co_vat_dong') {
-      candidateCategoryIds = ['DM08', 'DM01']; // Cổ vật đồng, vũ khí
-    } else if (visualProfile.materialHint === 'gom') {
-      candidateCategoryIds = ['DM10']; // Cổ vật gốm
-    } else if (visualProfile.materialHint === 'do_da') {
-      candidateCategoryIds = ['DM09']; // Cổ vật đá
-    } else if (visualProfile.materialHint === 'vang_bac') {
-      candidateCategoryIds = ['DM12', 'DM13']; // Vàng bạc, đá quý
-    } else if (visualProfile.materialHint === 'do_go') {
-      candidateCategoryIds = ['DM11']; // Đồ gỗ
-    }
-
-    const materialCandidates = artifacts.filter((a) =>
-      candidateCategoryIds.includes(a.categoryId) ||
-      (a.category && candidateCategoryIds.some((cid) => a.categoryId === cid))
-    );
-
-    // Bổ sung các hiện vật tiêu biểu của chất liệu này
-    for (const art of materialCandidates) {
-      if (!matchedArtifacts.some((m) => m.id === art.id)) {
-        matchedArtifacts.push(art);
-      }
-      if (matchedArtifacts.length >= 4) break;
-    }
-  }
-
-  // 2c. Nếu vẫn chưa có kết quả (ảnh bất kỳ không có tên mô tả), chọn các Bảo vật Quốc gia nổi tiếng
+  // TUYỆT ĐỐI KHÔNG đoán mò hiện vật dựa trên màu sắc canvas
+  // Vì ảnh đời thường (điện thoại, xe, vật dụng...) có màu ngẫu nhiên sẽ bị gán sai thành bảo vật.
   if (matchedArtifacts.length === 0) {
-    const highlights = artifacts.filter((a) =>
-      a.name.includes('Trống đồng') ||
-      a.name.includes('Gốm') ||
-      a.name.includes('Bia') ||
-      a.categoryId === 'DM08' ||
-      a.categoryId === 'DM10'
-    );
-    matchedArtifacts = highlights.slice(0, 3);
+    return {
+      success: false,
+      results: [],
+      message: 'Không tìm thấy hiện vật tương đồng trong bảo tàng.',
+    };
   }
 
   const finalResults = matchedArtifacts.slice(0, 3).map(normalizeArtifact);
-
   return {
     success: true,
     results: finalResults,
-    visualProfile,
-    message: `Đã phân tích và tìm thấy ${finalResults.length} hiện vật tương đồng.`,
+    message: `Đã tìm thấy ${finalResults.length} hiện vật tương đồng theo thông tin tệp.`,
   };
 }
 

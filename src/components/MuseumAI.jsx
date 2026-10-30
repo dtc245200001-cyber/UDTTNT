@@ -548,21 +548,20 @@ export const MuseumAI = () => {
     try {
       const searchResult = await searchArtifactByImage(file, artifacts, categories);
       const results = searchResult.results || [];
-      
-      if (results.length > 0) {
-        const top = results[0];
-        const count = results.length;
-        const loc = top.location || 'khu trưng bày chính';
-        const period = top.period || top.culture || 'Bảo vật Quốc gia';
 
-        let aiText = `Dựa trên phân tích hình ảnh bạn tải lên, mình đã nhận diện được hiện vật tương đồng nhất trong bảo tàng 🏛️✨\n\n`;
+      if (searchResult.success && results.length > 0) {
+        const top = results[0];
+        const period = top.period || top.culture || 'Hiện vật bảo tàng';
+        const loc = top.location || 'khu trưng bày chính';
+
+        let aiText = `Mình đã tìm kiếm trong cơ sở dữ liệu và phát hiện hiện vật có đặc điểm tương đồng với hình ảnh bạn gửi 🔍\n\n`;
         aiText += `**"${top.name}"** (${period} · ${top.category || ''})\n`;
         aiText += `📍 Vị trí trưng bày: **${loc}**\n`;
         if (top.description) {
           const shortDesc = top.description.length > 200 ? `${top.description.slice(0, 200)}...` : top.description;
           aiText += `\n> *${shortDesc}*\n`;
         }
-        aiText += `\nBạn có thể xem các thẻ hiện vật bên dưới và bấm **"Xem chi tiết"** để khám phá thông tin chi tiết và ảnh hiện vật nhé! 😊`;
+        aiText += `\nBạn có thể xem thẻ hiện vật bên dưới và bấm **"Xem chi tiết"** để khám phá thêm nhé! 😊`;
 
         const aiMsg = {
           id: aiMsgId,
@@ -585,10 +584,14 @@ export const MuseumAI = () => {
           setStreamingMsgId(null);
         }, 500);
       } else {
+        // Không tìm thấy hiện vật tương đồng hoặc ảnh không phải hiện vật — trả lời trung thực
+        const defaultMsg = 'Rất tiếc, mình không tìm thấy hiện vật nào trong bảo tàng có đặc điểm tương đồng với hình ảnh bạn tải lên. Hình ảnh này có vẻ không phải hiện vật trong bộ sưu tập của chúng tôi.\n\nBạn có thể thử:\n• Gõ tên hiện vật vào ô chat để tìm kiếm\n• Chụp lại ảnh hiện vật với góc rõ hơn\n• Hỏi trực tiếp về một chủ đề hiện vật cụ thể 🏛️';
+        const displayMsg = searchResult.message ? `${searchResult.message}\n\n💡 *Gợi ý:* Chức năng tìm kiếm hình ảnh chỉ dành cho cổ vật, tài liệu và hiện vật trưng bày của bảo tàng.` : defaultMsg;
+
         const aiMsg = {
           id: aiMsgId,
           sender: 'ai',
-          text: 'Rất tiếc, mình chưa tìm thấy hiện vật nào tương đồng với hình ảnh bạn vừa tải lên trong cơ sở dữ liệu hiện tại. Bạn hãy thử chụp góc rõ hơn hoặc tìm kiếm bằng tên/giọng nói nhé! 🏛️',
+          text: displayMsg,
           sources: [],
           artifacts: [],
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -599,13 +602,13 @@ export const MuseumAI = () => {
       }
     } catch (error) {
       console.error('Image search error:', error);
-      const fallbackList = artifacts.filter(a => a.name.includes('Trống đồng') || a.categoryId === 'DM08').slice(0, 2);
+      // Không fallback sang hiện vật giả — thông báo lỗi kỹ thuật trung thực
       setMessages((prev) => [...prev, {
         id: aiMsgId,
         sender: 'ai',
-        text: 'Đã phân tích hình ảnh. Dưới đây là các hiện vật tiêu biểu của Bảo tàng có hình dáng tương đồng để bạn tham khảo:',
+        text: 'Có lỗi xảy ra khi phân tích hình ảnh. Vui lòng thử lại hoặc tìm kiếm bằng cách nhập tên hiện vật vào ô chat.',
         sources: [],
-        artifacts: fallbackList.map(normalizeArtifact),
+        artifacts: [],
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }]);
       setIsSearching(false);
