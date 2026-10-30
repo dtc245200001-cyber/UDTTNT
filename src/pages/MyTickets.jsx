@@ -47,11 +47,10 @@ export const MyTickets = () => {
   // Filter tickets belonging to logged-in user
   const userTickets = (bookedTickets || []).filter(
     (b) =>
-      !currentUser ||
-      !b.email ||
-      (b.userEmail && b.userEmail.toLowerCase() === currentUser.email?.toLowerCase()) ||
-      (b.email && b.email.toLowerCase() === currentUser.email?.toLowerCase()) ||
-      b.userId === currentUser.id
+      currentUser &&
+      ((b.userEmail && b.userEmail.toLowerCase() === currentUser.email?.toLowerCase()) ||
+        (b.email && b.email.toLowerCase() === currentUser.email?.toLowerCase()) ||
+        (b.userId && b.userId === currentUser.id))
   );
 
   const handlePrintTicket = (ticket) => {

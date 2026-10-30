@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { User, Mail, Lock, UserPlus, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
 export const Register = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
   const { register } = useApp();
 
   const [formData, setFormData] = useState({
@@ -71,7 +73,7 @@ export const Register = () => {
         setSuccessMessage('Đăng ký tài khoản thành công! Đang tự động chuyển sang trang Đăng nhập...');
         // Cho người dùng thấy rõ thông báo thành công trong 1.2s trước khi chuyển hướng
         setTimeout(() => {
-          navigate('/login', {
+          navigate(redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login', {
             state: {
               registeredEmail: formData.email.trim().toLowerCase(),
               message: 'Tài khoản của bạn đã sẵn sàng! Vui lòng nhập mật khẩu để đăng nhập.',
@@ -251,7 +253,10 @@ export const Register = () => {
       {/* Switch to Login */}
       <div className="text-center text-xs text-gray-500 pt-2 border-t border-gray-100">
         Bạn đã có tài khoản?{' '}
-        <Link to="/login" className="font-bold text-museum-gold hover:text-museum-brown transition-colors">
+        <Link
+          to={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login'}
+          className="font-bold text-museum-gold hover:text-museum-brown transition-colors"
+        >
           Đăng nhập tại đây &rarr;
         </Link>
       </div>

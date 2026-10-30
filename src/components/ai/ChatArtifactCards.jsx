@@ -44,30 +44,28 @@ export const ChatArtifactCards = ({ artifacts, onViewDetail }) => {
                   onViewDetail(art);
                 }
               }}
-              className={`flex-shrink-0 w-68 bg-white rounded-xl p-2.5 border transition-all cursor-pointer snap-center text-left ${
+              className={`flex-shrink-0 w-[270px] sm:w-[280px] bg-white rounded-xl p-2.5 border transition-all cursor-pointer snap-center text-left flex flex-col justify-between min-h-[142px] ${
                 isNarrating
                   ? 'border-museum-gold ring-2 ring-museum-gold/30 shadow-md bg-amber-50/20'
                   : 'border-museum-gold/30 shadow-2xs hover:shadow-md hover:border-museum-gold'
               }`}
             >
-              <div className="flex gap-2.5">
+              <div className="flex gap-2.5 items-start">
                 <img
-                  src={art.image || './images/museum-hero.jpg'}
+                  src={art.image || '/images/museum-hero.jpg'}
                   alt={art.name}
                   onError={(e) => {
-                    e.target.src = './images/museum-hero.jpg';
+                    e.target.src = '/images/museum-hero.jpg';
                   }}
-                  className="w-16 h-16 object-cover rounded-lg flex-shrink-0 bg-museum-cream/50"
+                  className="w-16 h-16 object-cover rounded-lg flex-shrink-0 bg-museum-cream/50 border border-stone-100"
                 />
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <h4 className="font-bold text-[13px] text-museum-brown line-clamp-2 leading-snug mb-1">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-[12.5px] text-museum-brown line-clamp-2 leading-tight min-h-[32px] mb-1">
                     {art.name}
                   </h4>
-                  {art.period && (
-                    <div className="text-[10px] text-museum-gold font-semibold truncate mb-0.5">
-                      {art.period}
-                    </div>
-                  )}
+                  <div className="text-[10px] text-museum-gold font-semibold truncate mb-0.5">
+                    {art.period || 'Hiện vật bảo tàng'}
+                  </div>
                   <div className="text-[10px] text-gray-500 truncate flex items-center gap-1">
                     <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
                     <span className="truncate">
@@ -78,14 +76,14 @@ export const ChatArtifactCards = ({ artifacts, onViewDetail }) => {
               </div>
 
               {/* Action Buttons: Xem chi tiết + Nghe thuyết minh */}
-              <div className="mt-2.5 flex items-center gap-1.5">
+              <div className="mt-2.5 flex items-center gap-1.5 pt-2 border-t border-stone-100">
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onViewDetail(art);
                   }}
-                  className="flex-1 min-h-[36px] py-1.5 px-2 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-[11px] rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="flex-1 h-8 px-2 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-[11px] rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Eye className="w-3.5 h-3.5 text-museum-gold-lt" />
                   <span>Chi tiết</span>
@@ -94,7 +92,7 @@ export const ChatArtifactCards = ({ artifacts, onViewDetail }) => {
                   type="button"
                   onClick={(e) => handleNarrate(e, art)}
                   aria-label={`Nghe thuyết minh hiện vật ${art.name}`}
-                  className={`min-h-[36px] py-1.5 px-2.5 font-bold text-[11px] rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer border ${
+                  className={`h-8 px-2.5 font-bold text-[11px] rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer border ${
                     isNarrating
                       ? 'bg-museum-gold text-white border-museum-gold'
                       : 'bg-museum-cream hover:bg-museum-gold hover:text-white text-museum-brown border-museum-gold/30'

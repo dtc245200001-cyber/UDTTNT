@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import {
@@ -358,6 +359,17 @@ export const Galleries = () => {
     return `Đến ${formatDate(end)}`;
   };
 
+  useEffect(() => {
+    if (selectedGallery) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedGallery]);
+
   const handleShare = (gallery, e) => {
     if (e) e.stopPropagation();
     if (navigator.clipboard) {
@@ -656,11 +668,11 @@ export const Galleries = () => {
         const currentDetails = getImageDetails(currentImgObj, selectedGallery, activeImageIndex);
         const artifacts = selectedGallery.highlightArtifacts || [];
 
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-xs animate-fadeIn">
-            <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[92vh]">
+        return createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh]">
               {/* Modal Top Image Carousel / Banner */}
-              <div className="relative h-64 sm:h-80 md:h-96 bg-stone-900 shrink-0 group select-none overflow-hidden">
+              <div className="relative h-56 sm:h-72 md:h-80 bg-stone-900 shrink-0 group select-none overflow-hidden">
                 <img
                   src={currentImgObj.url}
                   alt={currentDetails.title}
@@ -953,13 +965,14 @@ export const Galleries = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         );
       })()}
 
       {/* 5. Form Modal (Thêm / Sửa Trưng bày chuyên đề) */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-xs animate-fadeIn">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-xs animate-fadeIn">
           <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col max-h-[92vh]">
             {/* Modal Header */}
             <div className="p-5 sm:p-6 bg-museum-ivory border-b border-gray-200 flex items-center justify-between">

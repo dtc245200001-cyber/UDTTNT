@@ -14,7 +14,7 @@ export const ReviewFormModal = ({ isOpen, onClose, artifactName = 'Bảo tàng L
   const [errorMsg, setErrorMsg] = useState('');
   const [selectedArtifact, setSelectedArtifact] = useState(artifactName);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -30,18 +30,18 @@ export const ReviewFormModal = ({ isOpen, onClose, artifactName = 'Bảo tàng L
       return;
     }
 
-    const res = addReview({
+    const res = await addReview({
       rating,
       comment: comment.trim(),
       artifactName: selectedArtifact,
     });
 
-    if (res.success) {
+    if (res?.success) {
       setComment('');
       setRating(5);
       onClose();
     } else {
-      setErrorMsg(res.message);
+      setErrorMsg(res?.message || 'Có lỗi xảy ra khi gửi đánh giá.');
     }
   };
 

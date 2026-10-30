@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { formatCurrency } from '@/utils/formatters';
 import { TicketBookingModal } from '@/components/tickets/TicketBookingModal';
@@ -57,9 +57,38 @@ const BENEFITS = [
 ];
 
 export const VisitorTickets = () => {
-  const { tickets } = useApp();
+  const [searchParams] = useSearchParams();
+  const { tickets, isAuthenticated, currentUser, addToast } = useApp();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [restoredFormData, setRestoredFormData] = useState(null);
+
+  // Restore pending ticket checkout after login
+  useEffect(() => {
+    if (isAuthenticated) {
+      const pendingDataStr = localStorage.getItem('pending_ticket_checkout');
+      const shouldResume = searchParams.get('resume_booking') === '1' || !!pendingDataStr;
+      if (pendingDataStr && shouldResume) {
+        try {
+          const parsed = JSON.parse(pendingDataStr);
+          localStorage.removeItem('pending_ticket_checkout');
+          if (parsed.selectedTicket) setSelectedTicket(parsed.selectedTicket);
+          if (parsed.formData) {
+            setRestoredFormData({
+              ...parsed.formData,
+              name: currentUser?.name || parsed.formData.name,
+              email: currentUser?.email || parsed.formData.email,
+              phone: currentUser?.phone || parsed.formData.phone,
+            });
+          }
+          setIsModalOpen(true);
+          addToast('Đã khôi phục đơn đặt vé của bạn. Vui lòng xác nhận để hoàn tất đặt vé!', 'success');
+        } catch (err) {
+          console.error('Failed to parse pending ticket checkout', err);
+        }
+      }
+    }
+  }, [isAuthenticated, currentUser, searchParams]);
 
   // Chỉ hiện vé đang bán (active)
   const activeTickets = (tickets || []).filter((t) => t.active !== false);
@@ -289,8 +318,13 @@ export const VisitorTickets = () => {
       {/* Booking Modal */}
       <TicketBookingModal
         isOpen={isModalOpen}
-        onClose={() => { setIsModalOpen(false); setSelectedTicket(null); }}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSelectedTicket(null);
+          setRestoredFormData(null);
+        }}
         selectedTicket={selectedTicket}
+        initialFormData={restoredFormData}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import {
@@ -41,6 +41,8 @@ export const Events = () => {
     addEvent,
     updateEvent,
     deleteEvent,
+    cancelEventRegistration,
+    eventRegistrations = [],
     isAuthenticated,
     currentUser,
   } = useApp();
@@ -63,6 +65,26 @@ export const Events = () => {
   // Admin Delete State
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Admin Attendee Modal State
+  const [selectedEventForAttendees, setSelectedEventForAttendees] = useState(null);
+  const [attendeeSearchQuery, setAttendeeSearchQuery] = useState('');
+
+  const currentEventAttendees = useMemo(() => {
+    if (!selectedEventForAttendees) return [];
+    return (eventRegistrations || []).filter((r) => r.eventId === selectedEventForAttendees.id);
+  }, [eventRegistrations, selectedEventForAttendees]);
+
+  const filteredAttendees = useMemo(() => {
+    if (!attendeeSearchQuery.trim()) return currentEventAttendees;
+    const q = attendeeSearchQuery.trim().toLowerCase();
+    return currentEventAttendees.filter(
+      (a) =>
+        (a.name && a.name.toLowerCase().includes(q)) ||
+        (a.phone && a.phone.includes(q)) ||
+        (a.email && a.email.toLowerCase().includes(q))
+    );
+  }, [currentEventAttendees, attendeeSearchQuery]);
 
   // Restore pending event registration after login
   useEffect(() => {
@@ -318,7 +340,13 @@ export const Events = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayedEvents.map((ev) => {
-              const isUserRegistered = currentUser?.registeredEvents?.includes(ev.id);
+              const isUserRegistered =
+                (eventRegistrations || []).some(
+                  (r) =>
+                    r.eventId === ev.id &&
+                    ((currentUser?.email && r.email?.toLowerCase() === currentUser?.email?.toLowerCase()) ||
+                      (currentUser?.phone && r.phone === currentUser?.phone))
+                ) || currentUser?.registeredEvents?.includes(ev.id);
               const ss = statusStyle(ev.status);
               const pct = ev.seats ? Math.round((ev.registered / ev.seats) * 100) : 0;
               const imageUrl = getEventImage(ev.id) || ev.image;
@@ -347,6 +375,17 @@ export const Events = () => {
                     {/* Admin Action Controls (Chỉ Admin) */}
                     {isAdmin && (
                       <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-white/95 backdrop-blur-xs p-1 rounded-xl shadow-sm">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedEventForAttendees(ev);
+                          }}
+                          className="p-1.5 text-[#B8860B] hover:text-museum-brown hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                          title="Xem danh sách khách đăng ký tham dự"
+                        >
+                          <Users className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           type="button"
                           onClick={(e) => handleOpenEdit(ev, e)}
@@ -402,7 +441,21 @@ export const Events = () => {
                           <span className="flex items-center gap-1.5 text-stone-500 font-medium">
                             <Users className="w-3.5 h-3.5 text-emerald-600" />Đăng ký
                           </span>
-                          <span className="font-bold text-[#3a2213]">{ev.registered}/{ev.seats}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-[#3a2213]">{ev.registered}/{ev.seats}</span>
+                            {isAdmin && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedEventForAttendees(ev);
+                                }}
+                                className="text-[11px] text-[#B8860B] hover:underline font-semibold cursor-pointer"
+                              >
+                                (Xem DS)
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <div className="w-full h-1.5 bg-stone-100 rounded-full overflow-hidden">
                           <div className={`h-full rounded-full transition-all ${pct >= 100 ? 'bg-red-500' : 'bg-[#c8952e]'}`} style={{ width: `${Math.min(pct, 100)}%` }} />
@@ -679,6 +732,114 @@ export const Events = () => {
             : 'Bạn có chắc chắn muốn xóa sự kiện này? Hành động này không thể hoàn tác.'
         }
       />
+
+      {/* ── Modal Danh Sách Khách Đăng Ký Tham Dự (Admin) ── */}
+      {selectedEventForAttendees && (
+        <Modal
+          isOpen={!!selectedEventForAttendees}
+          onClose={() => {
+            setSelectedEventForAttendees(null);
+            setAttendeeSearchQuery('');
+          }}
+          title="👥 DANH SÁCH KHÁCH ĐĂNG KÝ THAM DỰ SỰ KIỆN"
+          maxWidth="max-w-3xl"
+        >
+          <div className="space-y-4 font-sans text-xs">
+            {/* Header info */}
+            <div className="p-3.5 bg-museum-cream/60 rounded-xl border border-museum-gold/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <span className="text-[10px] font-bold text-museum-gold uppercase tracking-wider block">Sự kiện</span>
+                <h4 className="font-extrabold text-sm sm:text-base text-museum-brown">{selectedEventForAttendees.title}</h4>
+                <div className="flex flex-wrap items-center gap-3 text-stone-500 text-[11px] mt-1">
+                  <span>📅 {formatDate(selectedEventForAttendees.date)}</span>
+                  <span>⏰ {selectedEventForAttendees.time}</span>
+                  <span>📍 {selectedEventForAttendees.location}</span>
+                </div>
+              </div>
+              <div className="text-left sm:text-right sm:border-l sm:pl-4 border-stone-200">
+                <span className="text-[11px] text-stone-500">Đã đăng ký</span>
+                <div className="text-base font-extrabold text-[#3a2213]">
+                  {selectedEventForAttendees.registered} / {selectedEventForAttendees.seats || 'Không giới hạn'}
+                </div>
+              </div>
+            </div>
+
+            {/* Search Box */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo họ tên, SĐT hoặc email người đăng ký..."
+                value={attendeeSearchQuery}
+                onChange={(e) => setAttendeeSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3.5 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-museum-gold"
+              />
+            </div>
+
+            {/* Attendees Table */}
+            <div className="overflow-x-auto border border-stone-200 rounded-xl max-h-[360px] overflow-y-auto">
+              {filteredAttendees.length === 0 ? (
+                <div className="text-center py-8 text-stone-400">
+                  <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p>Chưa có lượt đăng ký nào cho sự kiện này.</p>
+                </div>
+              ) : (
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-stone-50 sticky top-0 border-b border-stone-200 text-stone-600 font-bold">
+                    <tr>
+                      <th className="p-2.5 text-center w-12">#</th>
+                      <th className="p-2.5">Họ và tên</th>
+                      <th className="p-2.5">Số điện thoại</th>
+                      <th className="p-2.5">Email</th>
+                      <th className="p-2.5">Ngày đăng ký</th>
+                      <th className="p-2.5 text-center">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-stone-100">
+                    {filteredAttendees.map((att, idx) => (
+                      <tr key={att.id || idx} className="hover:bg-amber-50/40 transition-colors">
+                        <td className="p-2.5 text-center text-stone-400 font-mono">{idx + 1}</td>
+                        <td className="p-2.5 font-bold text-museum-brown">{att.name}</td>
+                        <td className="p-2.5 font-mono text-stone-600">{att.phone}</td>
+                        <td className="p-2.5 text-stone-600">{att.email}</td>
+                        <td className="p-2.5 text-stone-500 text-[11px]">{att.createdAt || att.visitDate}</td>
+                        <td className="p-2.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`Xác nhận hủy đăng ký của khách hàng "${att.name}"?`)) {
+                                cancelEventRegistration(att.id);
+                              }
+                            }}
+                            className="p-1 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                            title="Hủy đăng ký này"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Footer close */}
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedEventForAttendees(null);
+                  setAttendeeSearchQuery('');
+                }}
+                className="px-5 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

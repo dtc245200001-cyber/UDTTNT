@@ -430,6 +430,9 @@ export function searchArtifacts(
 
 
   // 4. Scoring Artifacts
+  const rawQueryLower = rawQuery.toLowerCase().trim();
+  const queryHasAccents = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđĐ]/.test(rawQuery);
+
   const allTokens = effectiveQuery.split(/\s+/).filter((w) => w.length > 1);
   const meaningfulTokens = allTokens.filter((w) => !STOP_WORDS.has(w));
   const queryTokens = meaningfulTokens.length > 0 ? meaningfulTokens : allTokens;
@@ -437,12 +440,39 @@ export function searchArtifacts(
 
   for (const art of artifactsList) {
     let score = 0;
+    const nameRaw = (art.name || '').toLowerCase();
+    const descRaw = (art.description || '').toLowerCase();
+    const catRaw = (art.category || '').toLowerCase();
+
     const nameNorm = removeVietnameseTones(art.name);
     const descNorm = removeVietnameseTones(art.description);
     const cultureNorm = removeVietnameseTones(art.culture || '');
     const periodNorm = removeVietnameseTones(art.period || '');
     const catNorm = removeVietnameseTones(art.category || '');
     const locNorm = removeVietnameseTones(art.location || '');
+
+    // 4a. Khớp CHÍNH XÁC CÓ DẤU (Khi người dùng gõ có dấu như "Trống", "Súng", "Rìu đá", "Gốm")
+    if (queryHasAccents) {
+      const rawTokens = rawQueryLower.split(/\s+/).filter(Boolean);
+      const fullMatch = nameRaw.includes(rawQueryLower);
+      const tokenMatchCount = rawTokens.filter((t) => nameRaw.includes(t) || descRaw.includes(t) || catRaw.includes(t)).length;
+      const categoryHit = usedFilters.categoryId && (art.categoryId === usedFilters.categoryId || art.category === usedFilters.categoryName);
+      const synonymHit = matchedSynonyms.some((syn) => syn.categoryId === art.categoryId || syn.variants.some((v) => nameNorm.includes(v)));
+
+      if (fullMatch) {
+        score += 250;
+        if (nameRaw.startsWith(rawQueryLower)) score += 50; // Ưu tiên đứng đầu tên
+      } else if (tokenMatchCount > 0) {
+        score += tokenMatchCount * 60;
+        if (rawTokens.some((t) => nameRaw.includes(t))) score += 40;
+      } else if (categoryHit || synonymHit) {
+        score += 30;
+      } else {
+        // Người dùng gõ từ có dấu (ví dụ "Trống") nhưng hiện vật chỉ trùng ngẫu nhiên giới từ không dấu (như "trong chiến dịch")
+        // -> Loại bỏ hoàn toàn để tránh hiện tượng gán nhầm sang 100+ hiện vật khác
+        continue;
+      }
+    }
 
     // Category match
     if (usedFilters.categoryId) {
@@ -503,7 +533,10 @@ export function searchArtifacts(
 
     // Exact full query match in Name (highest weight)
     if (effectiveQuery && nameNorm.includes(effectiveQuery)) {
-      score += 120;
+      // Nếu query là 1 từ dừng đơn lẻ (như 'trong') thì chỉ cộng điểm khi là từ đầu tên hoặc có dấu
+      if (!STOP_WORDS.has(effectiveQuery) || queryHasAccents || nameNorm.startsWith(effectiveQuery)) {
+        score += 120;
+      }
     }
 
     // Compound boost for "trống đồng Đông Sơn"
@@ -523,8 +556,8 @@ export function searchArtifacts(
       }
     }
 
-    // Query in category / culture / period
-    if (effectiveQuery) {
+    // Query in category / culture / period / description (chỉ áp dụng khi không phải stopword)
+    if (effectiveQuery && !STOP_WORDS.has(effectiveQuery)) {
       if (catNorm.includes(effectiveQuery)) score += 30;
       if (cultureNorm.includes(effectiveQuery)) score += 25;
       if (periodNorm.includes(effectiveQuery)) score += 25;
@@ -553,15 +586,15 @@ export function searchArtifacts(
       }
 
       // In Category / Culture / Period
-      if (!wordMatched) {
+      if (!wordMatched && !STOP_WORDS.has(qToken)) {
         if (catNorm.includes(qToken) || cultureNorm.includes(qToken) || periodNorm.includes(qToken)) {
           score += 12;
           wordMatched = true;
         }
       }
 
-      // In Description
-      if (!wordMatched) {
+      // In Description (chỉ khi qToken KHÔNG phải stopword để tránh khớp nhầm giới từ 'trong', 'cua'...)
+      if (!wordMatched && !STOP_WORDS.has(qToken)) {
         for (const dToken of artDescTokens.slice(0, 80)) {
           if (qToken === dToken) {
             score += 6;

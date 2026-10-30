@@ -584,6 +584,27 @@ export const AppProvider = ({ children }) => {
         setBookedTicketsList(mappedBooks);
       }
 
+      // 7.1 Fetch Đăng ký sự kiện (dang_ky_su_kien)
+      const { data: regData, error: regError } = await supabase
+        .from('dang_ky_su_kien')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (!regError && regData) {
+        const mappedRegs = regData.map((r) => ({
+          id: r.id,
+          eventId: r.event_id,
+          eventTitle: r.event_title,
+          userId: r.user_id,
+          name: r.name,
+          phone: r.phone,
+          email: r.email,
+          visitDate: r.visit_date,
+          createdAt: r.created_at ? r.created_at.split('T')[0] : '',
+        }));
+        setEventRegistrationsList(mappedRegs);
+        localStorage.setItem('museum_event_registrations', JSON.stringify(mappedRegs));
+      }
+
       // 8. Fetch Người dùng hệ thống (chỉ lấy được khi user có quyền hoặc RLS cho phép)
       const { data: userData, error: userError } = await supabase
         .from('nguoi_dung')
@@ -1032,8 +1053,8 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // 13. Event Registrations
-  const registerForEvent = (registrationData) => {
+  // 13. Event Registrations (Đồng bộ trực tiếp với Supabase PostgreSQL)
+  const registerForEvent = async (registrationData) => {
     const targetId = typeof registrationData === 'object' ? registrationData.eventId : registrationData;
     const ev = eventsList.find((e) => e.id === targetId) || {
       id: targetId,
@@ -1049,26 +1070,89 @@ export const AppProvider = ({ children }) => {
       email: registrationData?.email ? registrationData.email.trim() : (currentUser?.email || 'N/A'),
       visitDate: registrationData?.visitDate || new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString().split('T')[0],
+      userId: currentUser?.id || null,
     };
 
     const updatedRegistrations = [newRecord, ...eventRegistrationsList];
     setEventRegistrationsList(updatedRegistrations);
+    localStorage.setItem('museum_event_registrations', JSON.stringify(updatedRegistrations));
+
+    const currentCount = Number(ev.registered || 0);
+    const maxSeats = Number(ev.seats || 100);
+    const newCount = Math.min(maxSeats, currentCount + 1);
 
     setEventsList((prev) =>
       prev.map((e) => {
         if (e.id === targetId) {
-          const currentCount = e.registered || 0;
-          const maxSeats = e.seats || 100;
-          return { ...e, registered: Math.min(maxSeats, currentCount + 1) };
+          return { ...e, registered: newCount };
         }
         return e;
       })
     );
 
+    // Đồng bộ trực tiếp vào Supabase PostgreSQL
+    try {
+      await supabase.from('dang_ky_su_kien').insert({
+        id: newRecord.id,
+        event_id: targetId,
+        event_title: newRecord.eventTitle,
+        user_id: newRecord.userId,
+        name: newRecord.name,
+        phone: newRecord.phone,
+        email: newRecord.email,
+        visit_date: newRecord.visitDate,
+      });
+
+      await supabase
+        .from('su_kien')
+        .update({ registered: newCount })
+        .eq('id', targetId);
+    } catch (err) {
+      console.warn('Lỗi đồng bộ đăng ký sự kiện lên Supabase:', err);
+    }
+
     const safeTitle = (registrationData?.eventTitle || ev.title || '').replace(/"/g, '”');
     addToast(`✓ Đăng ký thành công sự kiện "${safeTitle}"!`, 'success');
     logAudit('EVENT_REGISTER', `Khách hàng ${newRecord.email} đăng ký sự kiện: ${ev.title}`);
     return { success: true, event: ev, registration: newRecord };
+  };
+
+  const cancelEventRegistration = async (registrationId) => {
+    const reg = eventRegistrationsList.find((r) => r.id === registrationId);
+    if (!reg) return { success: false, message: 'Không tìm thấy lượt đăng ký' };
+
+    const updatedRegistrations = eventRegistrationsList.filter((r) => r.id !== registrationId);
+    setEventRegistrationsList(updatedRegistrations);
+    localStorage.setItem('museum_event_registrations', JSON.stringify(updatedRegistrations));
+
+    const targetEv = eventsList.find((e) => e.id === reg.eventId);
+    const newCount = Math.max(0, Number(targetEv?.registered || 1) - 1);
+
+    setEventsList((prev) =>
+      prev.map((e) => {
+        if (e.id === reg.eventId) {
+          return { ...e, registered: newCount };
+        }
+        return e;
+      })
+    );
+
+    // Đồng bộ xóa trên Supabase
+    try {
+      await supabase.from('dang_ky_su_kien').delete().eq('id', registrationId);
+      if (reg.eventId) {
+        await supabase
+          .from('su_kien')
+          .update({ registered: newCount })
+          .eq('id', reg.eventId);
+      }
+    } catch (err) {
+      console.warn('Lỗi xóa đăng ký sự kiện trên Supabase:', err);
+    }
+
+    addToast('Đã hủy đăng ký sự kiện thành công.', 'success');
+    logAudit('EVENT_REG_CANCEL', `Hủy lượt đăng ký ${reg.id} của ${reg.email} cho sự kiện ${reg.eventTitle}`);
+    return { success: true };
   };
 
   // 14. Ticket Booking & Payment Verification
@@ -2284,6 +2368,7 @@ export const AppProvider = ({ children }) => {
         updateEvent,
         deleteEvent,
         registerForEvent,
+        cancelEventRegistration,
         eventRegistrations: eventRegistrationsList,
 
         // Tickets

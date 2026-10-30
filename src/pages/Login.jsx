@@ -56,6 +56,19 @@ export const Login = () => {
 
         // Chờ 0.5s để người dùng nhìn thấy trạng thái "Đăng nhập thành công" trước khi chuyển hướng
         setTimeout(() => {
+          // Check pending ticket checkout
+          const pendingCheckout = localStorage.getItem('pending_ticket_checkout');
+          if (pendingCheckout) {
+            try {
+              const parsed = JSON.parse(pendingCheckout);
+              const destination = parsed.returnUrl || redirectTarget || '/tickets?resume_booking=1';
+              navigate(destination);
+              return;
+            } catch (err) {
+              console.error('Failed to parse pending ticket checkout', err);
+            }
+          }
+
           // Check pending ticket booking
           const pendingTicket = localStorage.getItem('pending_ticket_booking');
           if (pendingTicket) {
@@ -244,7 +257,10 @@ export const Login = () => {
       {/* Switch to Register */}
       <div className="text-center text-xs text-gray-500 pt-2 border-t border-gray-100">
         Bạn chưa có tài khoản?{' '}
-        <Link to="/register" className="font-bold text-museum-gold hover:text-museum-brown transition-colors">
+        <Link
+          to={redirectTarget ? `/register?redirect=${encodeURIComponent(redirectTarget)}` : '/register'}
+          className="font-bold text-museum-gold hover:text-museum-brown transition-colors"
+        >
           Đăng ký Khách tham quan ngay &rarr;
         </Link>
       </div>

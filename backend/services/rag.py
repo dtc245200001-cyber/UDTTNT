@@ -268,8 +268,52 @@ def _extract_artifacts_for_all_intents(intent: str, direct_data: dict, text: str
     return matched_ids[:6]
 
 
-def _match_all_related_items_from_text(text: str, query: str = "") -> list:
-    """Tự động trích xuất các thẻ chuyên đề, triển lãm, sự kiện nếu văn bản nhắc đến chủ đề tương ứng."""
+def _detect_query_scope(user_message: str, intent: str = "") -> str:
+    """
+    Xác định đúng phạm vi (scope) câu hỏi để đảm bảo tính tập trung, không hiển thị lẫn lộn:
+    - 'event': Khi hỏi về sự kiện, tọa đàm, workshop, lịch diễn ra...
+    - 'exhibition': Khi hỏi về triển lãm
+    - 'gallery': Khi hỏi về chuyên đề trưng bày, phòng trưng bày
+    - 'ticket': Khi hỏi về vé tham quan, giá vé
+    - 'artifact': Khi hỏi về hiện vật, bảo vật, tìm kiếm vị trí/thuyết minh/chi tiết hiện vật
+    """
+    if intent:
+        if "su_kien" in intent:
+            return "event"
+        if "trien_lam" in intent:
+            return "exhibition"
+        if "chuyen_de" in intent:
+            return "gallery"
+        if intent in ("gia_ve", "ve_tham_quan"):
+            return "ticket"
+
+    q = (user_message or "").lower()
+
+    if any(k in q for k in ["su kien", "sự kiện", "toa dam", "tọa đàm", "workshop", "lich dien ra", "lịch diễn ra", "tham gia su kien"]):
+        return "event"
+    if any(k in q for k in ["trien lam", "triển lãm"]):
+        return "exhibition"
+    if any(k in q for k in ["chuyen de", "chuyên đề", "phong trung bay", "phòng trưng bày"]):
+        return "gallery"
+    if any(k in q for k in ["gia ve", "giá vé", "mua ve", "đặt vé", "loai ve", "loại vé"]):
+        return "ticket"
+
+    # Mặc định: Hỏi về Hiện vật
+    return "artifact"
+
+
+def _match_all_related_items_from_text(text: str, query: str = "", intent: str = "") -> list:
+    """
+    Trích xuất các thẻ chuyên đề, triển lãm, sự kiện liên quan đúng theo phạm vi câu hỏi:
+    - Nếu hỏi về HIỆN VẬT: Tuyệt đối KHÔNG trả về sự kiện/chuyên đề/triển lãm ngoài lề.
+    - Nếu hỏi về SỰ KIỆN: Chỉ trả về thẻ sự kiện liên quan.
+    - Nếu hỏi về CHUYÊN ĐỀ: Chỉ trả về thẻ chuyên đề liên quan.
+    - Nếu hỏi về TRIỂN LÃM: Chỉ trả về thẻ triển lãm liên quan.
+    """
+    scope = _detect_query_scope(query, intent)
+    if scope in ("artifact", "ticket"):
+        return []
+
     try:
         from services.live_data_tools import (
             get_chuyen_de_trung_bay,
@@ -281,93 +325,96 @@ def _match_all_related_items_from_text(text: str, query: str = "") -> list:
         matched = []
         seen_keys = set()
 
-        # 1. Chuyên đề
-        cd_data = get_chuyen_de_trung_bay()
-        for g in (cd_data.get("galleries") or []):
-            gname = (g.get("name") or "").lower()
-            key_slugs = [gname]
-            if "điện biên" in gname: key_slugs.append("điện biên")
-            if "bát tràng" in gname: key_slugs.append("bát tràng")
-            if "rồng" in gname: key_slugs.append("rồng")
-            if "thiền môn" in gname: key_slugs.extend(["thiền môn", "phật giáo thời lý", "thời lý"])
-            if "non sông" in gname: key_slugs.append("non sông")
-            if "12 ngày đêm" in gname: key_slugs.append("12 ngày đêm")
-            if "bình dân" in gname: key_slugs.append("bình dân")
-            if "thi đua" in gname: key_slugs.append("thi đua")
+        # 1. Chuyên đề (chỉ khi hỏi về chuyên đề)
+        if scope == "gallery":
+            cd_data = get_chuyen_de_trung_bay()
+            for g in (cd_data.get("galleries") or []):
+                gname = (g.get("name") or "").lower()
+                key_slugs = [gname]
+                if "điện biên" in gname: key_slugs.append("điện biên")
+                if "bát tràng" in gname: key_slugs.append("bát tràng")
+                if "rồng" in gname: key_slugs.append("rồng")
+                if "thiền môn" in gname: key_slugs.extend(["thiền môn", "phật giáo thời lý", "thời lý"])
+                if "non sông" in gname: key_slugs.append("non sông")
+                if "12 ngày đêm" in gname: key_slugs.append("12 ngày đêm")
+                if "bình dân" in gname: key_slugs.append("bình dân")
+                if "thi đua" in gname: key_slugs.append("thi đua")
 
-            if any(k in combined for k in key_slugs):
-                gid = f"gallery_{g.get('id')}"
-                if gid not in seen_keys:
-                    seen_keys.add(gid)
-                    matched.append({
-                        "type": "gallery",
-                        "id": g.get("id"),
-                        "name": g.get("name", ""),
-                        "location": g.get("location", ""),
-                        "status": g.get("status", "Đang diễn ra"),
-                        "image": g.get("image", ""),
-                        "description": g.get("description", "") or g.get("detailed_content", ""),
-                        "start_date": g.get("start_date", ""),
-                        "end_date": g.get("end_date", ""),
-                        "detailed_content": g.get("detailed_content", ""),
-                        "gallery_images": g.get("gallery_images", []),
-                        "highlight_artifacts": g.get("highlight_artifacts", []),
-                    })
+                if any(k in combined for k in key_slugs):
+                    gid = f"gallery_{g.get('id')}"
+                    if gid not in seen_keys:
+                        seen_keys.add(gid)
+                        matched.append({
+                            "type": "gallery",
+                            "id": g.get("id"),
+                            "name": g.get("name", ""),
+                            "location": g.get("location", ""),
+                            "status": g.get("status", "Đang diễn ra"),
+                            "image": g.get("image", ""),
+                            "description": g.get("description", "") or g.get("detailed_content", ""),
+                            "start_date": g.get("start_date", ""),
+                            "end_date": g.get("end_date", ""),
+                            "detailed_content": g.get("detailed_content", ""),
+                            "gallery_images": g.get("gallery_images", []),
+                            "highlight_artifacts": g.get("highlight_artifacts", []),
+                        })
 
-        # 2. Triển lãm (cả đang diễn ra và đã kết thúc)
-        tl_data = get_trien_lam_dang_dien_ra()
-        tl_ended = get_trien_lam_da_ket_thuc()
-        all_ex = (tl_data.get("exhibitions") or []) + (tl_ended.get("exhibitions") or [])
-        for ex in all_ex:
-            exname = (ex.get("name") or "").lower()
-            ex_slugs = [exname]
-            if "thời lý" in exname or "di sản thời lý" in exname: ex_slugs.extend(["thời lý", "nhà lý"])
-            if "nguyễn" in exname or "trang phục" in exname: ex_slugs.extend(["nguyễn", "triều nguyễn", "nhà nguyễn", "áo dài"])
-            if "gốm việt" in exname: ex_slugs.extend(["gốm việt", "đồ gốm", "gốm"])
-            if "tinh hoa" in exname: ex_slugs.extend(["tinh hoa văn hóa", "bảo vật quốc gia"])
+        # 2. Triển lãm (chỉ khi hỏi về triển lãm)
+        elif scope == "exhibition":
+            tl_data = get_trien_lam_dang_dien_ra()
+            tl_ended = get_trien_lam_da_ket_thuc()
+            all_ex = (tl_data.get("exhibitions") or []) + (tl_ended.get("exhibitions") or [])
+            for ex in all_ex:
+                exname = (ex.get("name") or "").lower()
+                ex_slugs = [exname]
+                if "thời lý" in exname or "di sản thời lý" in exname: ex_slugs.extend(["thời lý", "nhà lý"])
+                if "nguyễn" in exname or "trang phục" in exname: ex_slugs.extend(["nguyễn", "triều nguyễn", "nhà nguyễn", "áo dài"])
+                if "gốm việt" in exname: ex_slugs.extend(["gốm việt", "đồ gốm", "gốm"])
+                if "tinh hoa" in exname: ex_slugs.extend(["tinh hoa văn hóa", "bảo vật quốc gia"])
 
-            if any(k in combined for k in ex_slugs):
-                exid = f"ex_{ex.get('id')}"
-                if exid not in seen_keys:
-                    seen_keys.add(exid)
-                    matched.append({
-                        "type": "exhibition",
-                        "id": ex.get("id"),
-                        "name": ex.get("name", ""),
-                        "location": ex.get("location", ""),
-                        "start_date": ex.get("start_date", ""),
-                        "end_date": ex.get("end_date", ""),
-                        "status": ex.get("status", "Đang diễn ra"),
-                        "artifacts_count": ex.get("artifacts_count", 0),
-                        "image": ex.get("image", ""),
-                        "description": ex.get("description", ""),
-                    })
+                if any(k in combined for k in ex_slugs):
+                    exid = f"ex_{ex.get('id')}"
+                    if exid not in seen_keys:
+                        seen_keys.add(exid)
+                        matched.append({
+                            "type": "exhibition",
+                            "id": ex.get("id"),
+                            "name": ex.get("name", ""),
+                            "location": ex.get("location", ""),
+                            "start_date": ex.get("start_date", ""),
+                            "end_date": ex.get("end_date", ""),
+                            "status": ex.get("status", "Đang diễn ra"),
+                            "artifacts_count": ex.get("artifacts_count", 0),
+                            "image": ex.get("image", ""),
+                            "description": ex.get("description", ""),
+                        })
 
-        # 3. Sự kiện
-        sk_data = get_su_kien_sap_dien_ra()
-        for ev in (sk_data.get("events") or []):
-            evname = (ev.get("title") or ev.get("name") or "").lower()
-            ev_slugs = [evname]
-            if "trống đồng" in evname or "đông sơn" in evname: ev_slugs.extend(["trống đồng", "đông sơn"])
-            if "gốm" in evname or "chu đậu" in evname: ev_slugs.extend(["chu đậu", "làm gốm"])
-            if "thăng long" in evname: ev_slugs.extend(["thăng long", "đêm bảo tàng"])
+        # 3. Sự kiện (chỉ khi hỏi về sự kiện)
+        elif scope == "event":
+            sk_data = get_su_kien_sap_dien_ra()
+            for ev in (sk_data.get("events") or []):
+                evname = (ev.get("title") or ev.get("name") or "").lower()
+                ev_slugs = [evname]
+                if "trống đồng" in evname or "đông sơn" in evname: ev_slugs.extend(["trống đồng", "đông sơn"])
+                if "gốm" in evname or "chu đậu" in evname: ev_slugs.extend(["chu đậu", "làm gốm"])
+                if "thăng long" in evname: ev_slugs.extend(["thăng long", "đêm bảo tàng"])
 
-            if any(k in combined for k in ev_slugs):
-                evid = f"ev_{ev.get('id')}"
-                if evid not in seen_keys:
-                    seen_keys.add(evid)
-                    matched.append({
-                        "type": "event",
-                        "id": ev.get("id"),
-                        "name": ev.get("title", ""),
-                        "date": ev.get("date", ""),
-                        "time": ev.get("time", ""),
-                        "location": ev.get("location", ""),
-                        "status": "Sắp diễn ra",
-                        "seats_remaining": ev.get("seats_remaining", 0),
-                        "image": ev.get("image", ""),
-                        "description": ev.get("description", ""),
-                    })
+                if any(k in combined for k in ev_slugs):
+                    evid = f"ev_{ev.get('id')}"
+                    if evid not in seen_keys:
+                        seen_keys.add(evid)
+                        matched.append({
+                            "type": "event",
+                            "id": ev.get("id"),
+                            "name": ev.get("title", ""),
+                            "date": ev.get("date", ""),
+                            "time": ev.get("time", ""),
+                            "location": ev.get("location", ""),
+                            "status": "Sắp diễn ra",
+                            "seats_remaining": ev.get("seats_remaining", 0),
+                            "image": ev.get("image", ""),
+                            "description": ev.get("description", ""),
+                        })
 
         return matched[:6]
     except Exception as e:
@@ -918,8 +965,16 @@ class RAGPipeline:
             elif decision.intent in ("gia_ve", "ve_tham_quan"):
                 direct_ans = _format_gia_ve_answer(decision.direct_data)
 
-            related_items = _extract_related_items(decision.intent, decision.direct_data)
-            artifact_ids = _extract_artifacts_for_all_intents(decision.intent, decision.direct_data)
+            scope = _detect_query_scope(user_message, decision.intent)
+            if scope in ("event", "exhibition", "gallery"):
+                related_items = _extract_related_items(decision.intent, decision.direct_data)
+                artifact_ids = []
+            elif scope == "artifact":
+                related_items = []
+                artifact_ids = _extract_artifacts_for_all_intents(decision.intent, decision.direct_data)
+            else:
+                related_items = []
+                artifact_ids = []
 
             if direct_ans:
                 return {
@@ -983,21 +1038,32 @@ class RAGPipeline:
 
         # Entity Linking trích xuất thẻ hiện vật
         low_ans = answer.lower()
+        related_items = []
         if "chua co thong tin" in low_ans or "khong co thong tin" in low_ans or "chua tim thay" in low_ans:
             sources = []
             artifact_ids = []
+            related_items = []
         else:
-            prev_mode, prev_aid = self.router.check_previous_turn_mode(history)
-            artifact_ids = self.entity_linking.resolve_artifact_ids(
-                final_mode="museum",
-                answer_text=answer,
-                intent=decision.intent,
-                retrieved_ids=retrieved_ids,
-                context_id=prev_aid if decision.is_followup else None
-            )
+            scope = _detect_query_scope(user_message, decision.intent)
+            if scope == "artifact":
+                prev_mode, prev_aid = self.router.check_previous_turn_mode(history)
+                artifact_ids = self.entity_linking.resolve_artifact_ids(
+                    final_mode="museum",
+                    answer_text=answer,
+                    intent=decision.intent,
+                    retrieved_ids=retrieved_ids,
+                    context_id=prev_aid if decision.is_followup else None
+                )
+                related_items = []
+            elif scope in ("event", "exhibition", "gallery"):
+                artifact_ids = []
+                related_items = _match_all_related_items_from_text(answer, user_message, decision.intent)
+            else:
+                artifact_ids = []
+                related_items = []
 
         self._answer_cache_set(user_message, answer, history)
-        return {"answer": answer, "sources": sources, "artifact_ids": artifact_ids}
+        return {"answer": answer, "sources": sources, "artifact_ids": artifact_ids, "related_items": related_items}
 
     async def process_chat_stream(
         self,
@@ -1079,8 +1145,16 @@ class RAGPipeline:
             elif decision.intent in ("gia_ve", "ve_tham_quan"):
                 direct_ans = _format_gia_ve_answer(decision.direct_data)
 
-            related_items = _extract_related_items(decision.intent, decision.direct_data)
-            artifact_ids = _extract_artifacts_for_all_intents(decision.intent, decision.direct_data)
+            scope = _detect_query_scope(user_message, decision.intent)
+            if scope in ("event", "exhibition", "gallery"):
+                related_items = _extract_related_items(decision.intent, decision.direct_data)
+                artifact_ids = []
+            elif scope == "artifact":
+                related_items = []
+                artifact_ids = _extract_artifacts_for_all_intents(decision.intent, decision.direct_data)
+            else:
+                related_items = []
+                artifact_ids = []
 
             if direct_ans:
                 yield direct_ans
@@ -1153,33 +1227,36 @@ class RAGPipeline:
                 full_answer.append(chunk)
             yield chunk
 
-        # Yield artifact cards và related items ở cuối stream
+        # Yield artifact cards hoặc related items ở cuối stream tùy theo phạm vi câu hỏi
         complete_text = "".join(full_answer)
         low_ans = complete_text.lower()
         if not ("chua co thong tin" in low_ans or "khong co thong tin" in low_ans or "chua tim thay" in low_ans):
-            prev_mode, prev_aid = self.router.check_previous_turn_mode(history)
-            artifact_ids = self.entity_linking.resolve_artifact_ids(
-                final_mode="museum",
-                answer_text=complete_text,
-                intent=decision.intent,
-                retrieved_ids=retrieved_ids,
-                context_id=prev_aid if decision.is_followup else None
-            )
+            scope = _detect_query_scope(user_message, decision.intent)
 
-            # Bổ sung artifact IDs theo chủ đề nếu danh sách còn ít
-            if len(artifact_ids) < 3:
-                topic_aids = _extract_artifacts_for_all_intents("museum_topic", {}, complete_text + " " + user_message)
-                for aid in topic_aids:
-                    if aid not in artifact_ids:
-                        artifact_ids.append(aid)
+            if scope == "artifact":
+                prev_mode, prev_aid = self.router.check_previous_turn_mode(history)
+                artifact_ids = self.entity_linking.resolve_artifact_ids(
+                    final_mode="museum",
+                    answer_text=complete_text,
+                    intent=decision.intent,
+                    retrieved_ids=retrieved_ids,
+                    context_id=prev_aid if decision.is_followup else None
+                )
 
-            if artifact_ids:
-                yield {"artifact_ids": artifact_ids[:6]}
+                # Bổ sung artifact IDs theo chủ đề nếu danh sách còn ít
+                if len(artifact_ids) < 3:
+                    topic_aids = _extract_artifacts_for_all_intents("museum_topic", {}, complete_text + " " + user_message)
+                    for aid in topic_aids:
+                        if aid not in artifact_ids:
+                            artifact_ids.append(aid)
 
-            # Trích xuất thẻ liên quan đa chiều (chuyên đề, triển lãm, sự kiện)
-            matched_items = _match_all_related_items_from_text(complete_text, user_message)
-            if matched_items:
-                yield {"related_items": matched_items[:6]}
+                if artifact_ids:
+                    yield {"artifact_ids": artifact_ids[:6]}
+
+            elif scope in ("event", "exhibition", "gallery"):
+                matched_items = _match_all_related_items_from_text(complete_text, user_message, decision.intent)
+                if matched_items:
+                    yield {"related_items": matched_items[:6]}
 
 
 # Khởi tạo singleton instance

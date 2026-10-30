@@ -30,7 +30,7 @@ import {
 } from '@/services/paymentService';
 import { exportToPDF } from '@/utils/exportHelpers';
 
-export const TicketBookingModal = ({ isOpen, onClose, selectedTicket }) => {
+export const TicketBookingModal = ({ isOpen, onClose, selectedTicket, initialFormData }) => {
   const navigate = useNavigate();
   const { currentUser, isAuthenticated, bookTicket, verifyBookingPayment, tickets, addToast } = useApp();
 
@@ -74,24 +74,34 @@ export const TicketBookingModal = ({ isOpen, onClose, selectedTicket }) => {
 
   // Sync when selectedTicket changes or modal opens
   useEffect(() => {
-    if (selectedTicket) {
+    if (initialFormData) {
       setFormData((prev) => ({
         ...prev,
-        ticketType: selectedTicket.name,
-        price: typeof selectedTicket.price === 'number' ? selectedTicket.price : 50000,
-        visitDate: prev.visitDate || todayStr,
+        ...initialFormData,
+        name: currentUser?.name || initialFormData.name || prev.name,
+        email: currentUser?.email || initialFormData.email || prev.email,
+        phone: currentUser?.phone || initialFormData.phone || prev.phone,
       }));
+    } else {
+      if (selectedTicket) {
+        setFormData((prev) => ({
+          ...prev,
+          ticketType: selectedTicket.name,
+          price: typeof selectedTicket.price === 'number' ? selectedTicket.price : 50000,
+          visitDate: prev.visitDate || todayStr,
+        }));
+      }
+      if (currentUser) {
+        setFormData((prev) => ({
+          ...prev,
+          name: currentUser.name || prev.name,
+          email: currentUser.email || prev.email,
+          phone: currentUser.phone || prev.phone,
+          visitDate: prev.visitDate || todayStr,
+        }));
+      }
     }
-    if (currentUser) {
-      setFormData((prev) => ({
-        ...prev,
-        name: currentUser.name || prev.name,
-        email: currentUser.email || prev.email,
-        phone: currentUser.phone || prev.phone,
-        visitDate: prev.visitDate || todayStr,
-      }));
-    }
-  }, [selectedTicket, currentUser, isOpen]);
+  }, [selectedTicket, currentUser, isOpen, initialFormData]);
 
   const paymentConfig = getPaymentConfig();
 
@@ -119,9 +129,19 @@ export const TicketBookingModal = ({ isOpen, onClose, selectedTicket }) => {
     if (e && e.preventDefault) e.preventDefault();
 
     if (!isAuthenticated) {
-      addToast('Bạn cần đăng nhập tài khoản để thực hiện đặt vé!', 'error');
+      if (!validateStep1()) {
+        return;
+      }
+      const currentPath = window.location.pathname || '/tickets';
+      const pendingData = {
+        formData,
+        selectedTicket: selectedTicket || { name: formData.ticketType, price: unitPrice },
+        returnUrl: `${currentPath}?resume_booking=1`,
+      };
+      localStorage.setItem('pending_ticket_checkout', JSON.stringify(pendingData));
+      addToast('Vui lòng đăng nhập tài khoản để tiếp tục thanh toán đơn vé của bạn.', 'info');
       onClose();
-      navigate('/login?redirect=/my-tickets');
+      navigate(`/login?redirect=${encodeURIComponent(pendingData.returnUrl)}`);
       return;
     }
 

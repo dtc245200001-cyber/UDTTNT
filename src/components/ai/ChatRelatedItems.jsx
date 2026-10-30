@@ -64,19 +64,19 @@ export const ChatRelatedItems = ({ items, onViewDetail }) => {
                   handleOpen();
                 }
               }}
-              className="flex-shrink-0 w-64 bg-white rounded-xl p-2.5 border border-museum-gold/30 shadow-2xs hover:shadow-md hover:border-museum-gold transition-all cursor-pointer snap-center text-left"
+              className="flex-shrink-0 w-[270px] sm:w-[280px] bg-white rounded-xl p-2.5 border border-museum-gold/30 shadow-2xs hover:shadow-md hover:border-museum-gold transition-all cursor-pointer snap-center text-left flex flex-col justify-between min-h-[142px]"
             >
-              <div className="flex gap-2.5">
+              <div className="flex gap-2.5 items-start">
                 <img
                   src={item.image || FALLBACK_IMG}
                   alt={item.name}
                   onError={(e) => {
                     e.target.src = FALLBACK_IMG;
                   }}
-                  className="w-16 h-16 object-cover rounded-lg flex-shrink-0 bg-museum-cream/50"
+                  className="w-16 h-16 object-cover rounded-lg flex-shrink-0 bg-museum-cream/50 border border-stone-100"
                 />
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <h4 className="font-bold text-[13px] text-museum-brown line-clamp-2 leading-snug mb-1">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-[12.5px] text-museum-brown line-clamp-2 leading-tight min-h-[32px] mb-1">
                     {item.name}
                   </h4>
                   {statusLabel && (
@@ -102,7 +102,7 @@ export const ChatRelatedItems = ({ items, onViewDetail }) => {
                   e.stopPropagation();
                   handleOpen();
                 }}
-                className="mt-2.5 w-full py-1.5 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-[11px] rounded-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                className="mt-2.5 w-full h-8 bg-museum-brown hover:bg-museum-brown-dk text-white font-bold text-[11px] rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Eye className="w-3.5 h-3.5 text-museum-gold-lt" />
                 <span>Xem chi tiết</span>
